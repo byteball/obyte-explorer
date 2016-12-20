@@ -1,0 +1,1 @@
+*/5 * * * * cd byteball-relay; node check_daemon.js 1>>~/.config/byteball-relay/check_daemon.log 2>>~/.config/byteball-relay/check_daemon.err

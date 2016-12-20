@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<head>
+	<title>Byteball-test</title>
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&amp;subset=cyrillic" rel="stylesheet">
+	<link rel="stylesheet" href="/styles/app.css">
+</head>
+<body>
+<div id="menu" class="rowFull">
+	<div id="menuSocial">
+		<a href="https://twitter.com/ByteballOrg" target="_blank"><img src="/img/Twitter_Logo_Blue.svg"></a>
+		<a id="menuSocialSlack" href="http://slack.byteball.org/" target="_blank"><img src="/img/Slack_Mark.svg"></a>
+	</div>
+	<div id="menuLeft">
+		<a href="/" id="menuLeftImg"><img src="/img/logo.png"></a>
+		<div id="menuLeftTitle"><a href="/">Byteball</a></div>
+		<div id="menuInput">
+			<form action="javascript:searchForm($('#inputSearch').val())" method="post">
+				<input type="text" id="inputSearch" placeholder="Search for unit or address">
+			</form>
+		</div>
+	</div>
+</div>
+<div id="infoMessage" onclick="hideInfoMessage()">InfoMessage</div>
+<div id="cy"></div>
+<div id="info" class="hideInfoBlock">
+	<div id="infoClose"><a href="javascript:" onclick="closeInfo()">Close</a></div>
+	<div id="defaultInfo">Select unit on the left</div>
+	<div id="listInfo">
+		<div>
+			<div id="unitParent">Unit <span id="unit"></span></div>
+		</div>
+		<div>
+			<div class="infoTitle" onclick="showHideBlock('authors')">Authors
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="authors"></div>
+		</div>
+		<div>
+			<div class="infoTitle" onclick="showHideBlock('children')">Children
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="children"></div>
+		</div>
+		<div>
+			<div class="infoTitle" onclick="showHideBlock('parents')">Parents
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="parents"></div>
+		</div>
+		<div>
+			<div class="infoTitle" onclick="showHideBlock('messages')">Messages
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="messages"></div>
+		</div>
+		<div>
+			<div class="infoTitle hideTitle" id="witnessesTitle" onclick="showHideBlock('witnesses')">
+				Witnesses
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="witnesses" style="display: none"></div>
+		</div>
+		<div>
+			<div class="infoTitle" onclick="showHideBlock('otherInfo')">Other information
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="otherInfo">
+				<div>Fees: <span id="fees"></span></div>
+				<div>Level: <span id="level"></span></div>
+				<div>Main chain index: <span id="main_chain_index"></span></div>
+				<div>Latest included mc index: <span id="latest_included_mc_index"></span></div>
+				<div>Is stable: <span id="is_stable"></span></div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="addressInfo">
+	<div id="addressClose" class="row"><a href="javascript:" onclick="closeAddress()">Close</a></div>
+	<div class="row" id="infoAndBalanceAddress">
+		<div style="margin-bottom: 10px;font-weight: bold">
+			<div><span id="address"></span></div>
+		</div>
+		<div>
+			<div id="balance"></div>
+		</div>
+	</div>
+	<div class="row" id="blockListUnspent" style="margin-top: 50px">
+		<div class="infoTitle" onclick="showHideBlock('listUnspent')">
+			Unspent
+			<div class="infoTitleImg"></div>
+		</div>
+		<div id="listUnspent"></div>
+	</div>
+	<div class="row" style="margin-top: 50px">
+		<div class="infoTitle" onclick="showHideBlock('tableListTransactions')">
+			Transactions
+			<div class="infoTitleImg"></div>
+		</div>
+		<table id="tableListTransactions" style="width: 100%">
+			<tbody id="listUnits"></tbody>
+		</table>
+	</div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/cytoscape.min.js"></script>
+<script src="/js/dagre.min.js"></script>
+<script src="/js/main.min.js"></script>
+</body>
+</html>
