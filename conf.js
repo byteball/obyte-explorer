@@ -45,4 +45,4 @@ exports.initial_peers = [
 	'wss://byteball.org/bb-test'
 ];
 
-console.log('finished relay conf');
+console.log('finished explorer conf');

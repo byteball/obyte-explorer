@@ -5,7 +5,7 @@
 	"version": "0.1.0",
 	"main": "start.js",
 	"keywords": [
-		"relay",
+		"explorer",
 		"byteball",
 		"full node"
 	],
@@ -15,11 +15,11 @@
 	},
 	"license": "MIT",
 	"repository": {
-		"url": "git://github.com/byteball/byteball-relay.git",
+		"url": "git://github.com/byteball/byteball-explorer.git",
 		"type": "git"
 	},
 	"bugs": {
-		"url": "https://github.com/byteball/byteball-relay/issues"
+		"url": "https://github.com/byteball/byteball-explorer/issues"
 	},
 	"browser": {
 		"request": "browser-request",
