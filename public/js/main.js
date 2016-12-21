@@ -133,7 +133,8 @@ function createCy() {
 			{
 				selector: '.active',
 				style: {
-					'background-color': '#2980b9',
+				//	'background-color': '#2980b9',
+					'border-color': '#333',
 					'border-width': '4'
 				}
 			}
