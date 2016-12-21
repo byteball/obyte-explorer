@@ -31,38 +31,38 @@
 			<div id="unitParent">Unit <span id="unit"></span></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock('authors')">Authors
+			<div class="infoTitle" onclick="showHideBlock(event, 'authors')">Authors
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="authors"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock('children')">Children
+			<div class="infoTitle" onclick="showHideBlock(event, 'children')">Children
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="children"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock('parents')">Parents
+			<div class="infoTitle" onclick="showHideBlock(event, 'parents')">Parents
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="parents"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock('messages')">Messages
+			<div class="infoTitle" onclick="showHideBlock(event, 'messages')">Messages
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="messages"></div>
 		</div>
 		<div>
-			<div class="infoTitle hideTitle" id="witnessesTitle" onclick="showHideBlock('witnesses')">
+			<div class="infoTitle hideTitle" id="witnessesTitle" onclick="showHideBlock(event, 'witnesses')">
 				Witnesses
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="witnesses" style="display: none"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock('otherInfo')">Other information
+			<div class="infoTitle" onclick="showHideBlock(event, 'otherInfo')">Other information
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="otherInfo">
@@ -86,14 +86,14 @@
 		</div>
 	</div>
 	<div class="row" id="blockListUnspent" style="margin-top: 50px">
-		<div class="infoTitle" onclick="showHideBlock('listUnspent')">
+		<div class="infoTitle" onclick="showHideBlock(event, 'listUnspent')">
 			Unspent
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="listUnspent"></div>
 	</div>
 	<div class="row" style="margin-top: 50px">
-		<div class="infoTitle" onclick="showHideBlock('tableListTransactions')">
+		<div class="infoTitle" onclick="showHideBlock(event, 'tableListTransactions')">
 			Transactions
 			<div class="infoTitleImg"></div>
 		</div>
