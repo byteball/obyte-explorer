@@ -68,8 +68,8 @@ function createCy() {
 					'background-color': '#fff',
 					'border-width': 1,
 					'border-color': '#2980b9',
-				//	'border-color': '#333',
-				//	'border-style': 'dotted',
+					//	'border-color': '#333',
+					//	'border-style': 'dotted',
 					'width': 25,
 					'height': 25
 				}
@@ -113,21 +113,21 @@ function createCy() {
 			{
 				selector: '.is_on_main_chain',
 				style: {
-				//	'border-width': 4,
-				//	'border-style': 'solid',
-				//	'border-color': '#2980b9'
-				//	'border-color': '#333'
+					//	'border-width': 4,
+					//	'border-style': 'solid',
+					//	'border-color': '#2980b9'
+					//	'border-color': '#333'
 					'background-color': '#9cc0da'
 				}
 			},
 			{
 				selector: '.is_stable',
 				style: {
-				//	'background-color': '#2980b9'
+					//	'background-color': '#2980b9'
 					'border-width': 4,
 					'border-style': 'solid',
 					'border-color': '#2980b9',
-				//	'background-color': '#9cc0da'
+					//	'background-color': '#9cc0da'
 				}
 			},
 			{
@@ -599,7 +599,7 @@ socket.on('prev', function(data) {
 function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 	var messagesOut = '', blockId = 0, key, asset;
 	messages.forEach(function(message) {
-		if ((message.app == 'payment' || message.app == 'text' || message.app == 'asset') && (message.payload)) {
+		if (message.payload) {
 			asset = message.payload.asset || 'null';
 			messagesOut +=
 				'<div class="message">' +
@@ -660,10 +660,15 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 				case 'text':
 					messagesOut += '<div>Text: ' + message.payload + '</div>';
 					break;
-				case 'asset':
+				default:
 					for (var key_payload in message.payload) {
-						if (key_payload != 'denominations') {
-							messagesOut += '<div class="asset">' + key_payload + ': ' + message.payload[key_payload] + '</div>';
+						if (message.app == 'asset' && key_payload == 'denominations') {
+							messagesOut += '<div>denominations:</div><div>';
+							messagesOut += JSON.stringify(message.payload[key_payload]);
+							messagesOut += '</div>';
+						}
+						else {
+							messagesOut += '<div>' + key_payload + ': ' + message.payload[key_payload] + '</div>';
 						}
 					}
 					break;
