@@ -433,20 +433,24 @@ function highlightNode(unit) {
 	if (activeNode) _cy.getElementById(activeNode).removeClass('active');
 	var el = _cy.getElementById(unit);
 	if (el.length) {
-		bWaitingForPrev = true;
+		var extent = _cy.extent();
+		var elPositionY = el.position().y;
 		lastActiveUnit = location.hash.substr(1);
 		el.addClass('active');
 		activeNode = el.id();
 		socket.emit('info', {unit: activeNode});
-		_cy.stop();
-		_cy.animate({
-			pan: {x: _cy.pan('x'), y: _cy.getCenterPan(el).y},
-			complete: function() {
-				bWaitingForPrev = false;
-			}
-		}, {
-			duration: 250
-		});
+		if (elPositionY < extent.y1 || elPositionY > extent.y2) {
+			bWaitingForPrev = true;
+			_cy.stop();
+			_cy.animate({
+				pan: {x: _cy.pan('x'), y: _cy.getCenterPan(el).y},
+				complete: function() {
+					bWaitingForPrev = false;
+				}
+			}, {
+				duration: 250
+			});
+		}
 		page = 'dag';
 	}
 	else {
@@ -468,7 +472,7 @@ function scrollUp() {
 	}
 }
 
-function showHideBlock(id) {
+function showHideBlock(event, id) {
 	var block = $('#' + id);
 	var target;
 	if (event.target.classList.contains('infoTitle')) {
@@ -598,9 +602,9 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 			asset = message.payload.asset || 'null';
 			messagesOut +=
 				'<div class="message">' +
-				'<div class="message_app infoTitleChild" onclick="showHideBlock(\'message_' + blockId + '\')">';
+				'<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'message_' + blockId + '\')">';
 			if (message.app == 'payment') {
-				messagesOut += message.app.substr(0, 1).toUpperCase() + message.app.substr(1) + ' in ' + (asset ? asset : 'bytes');
+				messagesOut += message.app.substr(0, 1).toUpperCase() + message.app.substr(1) + ' in ' + (asset == 'null' ? 'bytes' : asset);
 			}
 			else if (message.app == 'asset') {
 				messagesOut += 'Definition of new asset';
@@ -614,13 +618,13 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 			switch (message.app) {
 				case 'payment':
 					if (message.payload) {
-						messagesOut += '<div class="message_inputs"><div class="infoTitleInputs" onclick="showHideBlock(\'message_' + blockId + '\')">Inputs</div>' +
+						messagesOut += '<div class="message_inputs"><div class="infoTitleInputs" onclick="showHideBlock(event, \'message_' + blockId + '\')">Inputs</div>' +
 							'<div class="inputsInfo" id="message_' + (blockId++) + '">';
 
 						message.payload.inputs.forEach(function(input) {
 							if (input.type && input.type == 'issue') {
 								messagesOut +=
-									'<div class="infoTitleInput" onclick="showHideBlock(\'message_' + blockId + '\')">Issue</div>' +
+									'<div class="infoTitleInput" onclick="showHideBlock(event, \'message_' + blockId + '\')">Issue</div>' +
 									'<div class="inputInfo" id="message_' + (blockId++) + '">' +
 									'<div>Serial number: ' + input.serial_number + '</div>' +
 									'<div>Amount: ' + input.amount + '</div>' +
@@ -634,7 +638,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 						});
 
 						messagesOut += '</div></div>' +
-							'<div class="message_outputs"><div class="infoTitleInputs" onclick="showHideBlock(\'message_' + blockId + '\')">Outputs</div>' +
+							'<div class="message_outputs"><div class="infoTitleInputs" onclick="showHideBlock(event, \'message_' + blockId + '\')">Outputs</div>' +
 							'<div class="inputsInf" id="message_' + (blockId++) + '">';
 
 						outputsUnit[asset].forEach(function(output) {
