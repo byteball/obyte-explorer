@@ -1,6 +1,6 @@
 /*jslint node: true */
 "use strict";
-require('./relay');
+//require('./relay');
 var eventBus = require('byteballcore/event_bus.js');
 var express = require('express');
 var app = express();

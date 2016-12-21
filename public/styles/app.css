@@ -137,6 +137,7 @@ body {
 	font-weight: bold;
 	padding: 5px;
 	cursor: pointer;
+	color: #333333;
 }
 
 .infoTitle:hover {
@@ -149,7 +150,7 @@ body {
 
 .infoTitle > .infoTitleImg {
 	display: inline-block;
-	background-image: url(/img/black_down.png);
+	background-image: url(/img/arrow_down.png);
 	background-size: cover;
 	width: 12px;
 	height: 12px;
@@ -161,7 +162,7 @@ body {
 }
 
 .infoTitle.hideTitle:hover {
-	color: #000;
+	color: #333333;
 }
 
 #addressInfo .infoTitle {
@@ -182,6 +183,7 @@ body {
 	margin-bottom: 7px;
 	cursor: pointer;
 	background-color: #f1f1f1;
+	color: #333333;
 }
 
 .messagesInfo {
@@ -193,6 +195,7 @@ body {
 	font-weight: bold;
 	margin-bottom: 7px;
 	cursor: pointer;
+	color: #333333;
 }
 
 .inputsInfo, .inputInfo, .inputsInf {
@@ -235,7 +238,7 @@ a {
 }
 
 .asset {
-	margin-left: 2px;
+	margin-left: 10px;
 }
 
 #witnessesTitle {
