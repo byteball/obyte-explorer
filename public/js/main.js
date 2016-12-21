@@ -66,8 +66,10 @@ function createCy() {
 					'font-size': '13px',
 					'text-margin-y': '5px',
 					'background-color': '#fff',
-					'border-width': 3,
-					'border-color': '#2c3e50',
+					'border-width': 1,
+					'border-color': '#2980b9',
+				//	'border-color': '#333',
+				//	'border-style': 'dotted',
 					'width': 25,
 					'height': 25
 				}
@@ -91,40 +93,48 @@ function createCy() {
 			{
 				selector: 'edge',
 				style: {
-					'width': 3,
+					'width': 2,
 					'target-arrow-shape': 'triangle',
-					'line-color': '#99abd5',
-					'target-arrow-color': '#99abd5',
+					'line-color': '#2980b9',
+					'target-arrow-color': '#2980b9',
 					'curve-style': 'bezier'
 				}
 			},
 			{
 				selector: '.best_parent_unit',
 				style: {
-					'width': 4.5,
+					'width': 5,
 					'target-arrow-shape': 'triangle',
-					'line-color': '#99abd5',
-					'target-arrow-color': '#99abd5',
+					'line-color': '#2980b9',
+					'target-arrow-color': '#2980b9',
 					'curve-style': 'bezier'
 				}
 			},
 			{
 				selector: '.is_on_main_chain',
 				style: {
-					'border-color': '#0ec3a0'
+				//	'border-width': 4,
+				//	'border-style': 'solid',
+				//	'border-color': '#2980b9'
+				//	'border-color': '#333'
+					'background-color': '#9cc0da'
 				}
 			},
 			{
 				selector: '.is_stable',
 				style: {
-					'background-color': '#99abd5'
+				//	'background-color': '#2980b9'
+					'border-width': 4,
+					'border-style': 'solid',
+					'border-color': '#2980b9',
+				//	'background-color': '#9cc0da'
 				}
 			},
 			{
 				selector: '.active',
 				style: {
 					'background-color': '#2980b9',
-					'border-width': '0'
+					'border-width': '4'
 				}
 			}
 		],
