@@ -1,6 +1,7 @@
 /*jslint node: true */
 "use strict";
 require('./relay');
+var conf = require('byteballcore/conf.js');
 var eventBus = require('byteballcore/event_bus.js');
 var express = require('express');
 var app = express();
@@ -28,4 +29,4 @@ io.on('connection', function(socket) {
 	socket.on('nextPageTransactions', ws.nextPageTransactions);
 });
 
-server.listen(4000);
+server.listen(conf.webPort);
