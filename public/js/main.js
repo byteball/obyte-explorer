@@ -2,7 +2,7 @@ var _cy;
 var nodes, edges;
 var firstUnit, lastUnit, phantoms = {}, notStable = [];
 var nextPositionUpdates;
-var generateOffset = 0, newOffset = -120, oldOffset;
+var generateOffset = 0, newOffset = -116, oldOffset;
 var activeNode, waitGo;
 var notLastUnitUp = false, notLastUnitDown = true;
 var lastActiveUnit;
@@ -17,7 +17,7 @@ function init(_nodes, _edges) {
 	notStable = [];
 	nextPositionUpdates = null;
 	generateOffset = 0;
-	newOffset = -120;
+	newOffset = -116;
 	oldOffset = null;
 	createCy();
 	generate(nodes, edges);
@@ -169,6 +169,7 @@ function createCy() {
 		else if (notLastUnitUp === true && ext.y2 - (ext.h) < _cy.getElementById(nodes[0].data.unit).position().y) {
 			getPrev();
 		}
+		scroll.scrollTop(convertPosPanToPosScroll());
 	});
 
 	$(_cy.container()).on('wheel mousewheel', function(e) {
@@ -181,6 +182,16 @@ function createCy() {
 			else if (deltaY < 0) {
 				_cy.panBy({x: 0, y: -25});
 			}
+			scroll.scrollTop(convertPosPanToPosScroll());
+		}
+	});
+}
+
+function updListNotStableUnit() {
+	notStable = [];
+	_cy.nodes().forEach(function(node) {
+		if (!node.hasClass('is_stable')) {
+			notStable.push(node.id());
 		}
 	});
 }
@@ -203,12 +214,9 @@ function generate(_nodes, _edges) {
 			if (_node.is_stable) {
 				classes += 'is_stable ';
 			}
-			else {
-				if (notStable.indexOf(unit) == -1) notStable.push(unit);
-			}
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
-				newOffset_y = generateOffset - _node.y + 120;
+				newOffset_y = generateOffset - _node.y + 66;
 				first = true;
 			}
 			if (phantoms[unit]) {
@@ -240,6 +248,8 @@ function generate(_nodes, _edges) {
 	generateOffset = _cy.nodes()[_cy.nodes().length - 1].position().y;
 	nextPositionUpdates = generateOffset;
 	_cy.add(createEdges());
+	updListNotStableUnit();
+	updateScrollHeigth();
 }
 
 function setNew(_nodes, _edges) {
@@ -263,21 +273,18 @@ function setNew(_nodes, _edges) {
 			if (_node.is_stable) {
 				classes += 'is_stable ';
 			}
-			else {
-				if (notStable.indexOf(unit) == -1) notStable.push(unit);
-			}
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
-				newOffset_y = newOffset - (max - min) + _node.y + 120;
-				oldOffset = newOffset_y + 120;
-				newOffset -= (max - min) + _node.y + 120;
+				newOffset_y = newOffset - (max - min) + _node.y + 66;
+				oldOffset = newOffset_y + 66;
+				newOffset -= (max - min) + _node.y + 66;
 				first = true;
 				if (_cy.extent().y1 < oldOffset) {
 					_cy.stop();
 					_cy.animate({
 						pan: {
 							x: _cy.pan('x'),
-							y: _cy.pan('y') + ((max - min) + _node.y) + 86
+							y: _cy.pan('y') + ((max - min) + _node.y) + 66
 						}
 					}, {
 						duration: 300
@@ -301,6 +308,8 @@ function setNew(_nodes, _edges) {
 	generateAdd = fixConflicts(generateAdd);
 	_cy.add(generateAdd);
 	_cy.add(createEdges());
+	updListNotStableUnit();
+	updateScrollHeigth();
 }
 
 function createGraph(_nodes, _edges) {
@@ -391,7 +400,7 @@ function createEdges() {
 				out.push({
 					group: "nodes",
 					data: {id: _edges[k].data.target, unit_s: _edges[k].data.target.substr(0, 7) + '...'},
-					position: {x: position.x + offset, y: generateOffset + 120}
+					position: {x: position.x + offset, y: generateOffset + 66}
 				});
 				offset += 60;
 				out.push({group: "edges", data: _edges[k].data, classes: classes});
@@ -417,6 +426,7 @@ function setChangesStableUnits(arrStableUnits) {
 		}
 		notStable.splice(notStable.indexOf(objUnit.unit), 1);
 	});
+	updListNotStableUnit();
 }
 
 function cloneObj(obj) {
@@ -869,20 +879,20 @@ function getNextPageTransactions() {
 
 //adaptive
 function adaptiveShowInfo() {
-	$('#cy').addClass('showInfoBlock');
+	$('#cy, #scroll').addClass('showInfoBlock');
 	$('#info').removeClass('hideInfoBlock');
 }
 
 function closeInfo() {
 	$('#info').addClass('hideInfoBlock');
-	$('#cy').removeClass('showInfoBlock');
+	$('#cy, #scroll').removeClass('showInfoBlock');
 }
 
 function closeAddress() {
 	$('#addressInfo').hide();
 	$('#blockListUnspent').hide();
 	if (!_cy || !lastActiveUnit) {
-		$('#cy').show();
+		$('#cy, #scroll').show();
 		socket.emit('start', {type: 'last'});
 		location.hash = '';
 	}
@@ -909,4 +919,37 @@ function showInfoMessage(text, timeMs) {
 function hideInfoMessage() {
 	if (timerInfoMessage) clearTimeout(timerInfoMessage);
 	$('#infoMessage').hide(350).html('');
+}
+
+
+//scroll
+var scroll = $('#scroll');
+var scrollTopPos, scrollLowPos;
+
+function updateScrollHeigth() {
+	scrollTopPos = _cy.getElementById(nodes[0].data.unit).position().y;
+	scrollLowPos = _cy.getElementById(nodes[nodes.length - 1].data.unit).position().y + $('#scroll').height();
+	$('#scrollBody').height(scrollLowPos - scrollTopPos);
+	setTimeout(function() {
+		scroll.scrollTop(convertPosPanToPosScroll());
+	}, 1);
+}
+
+scroll.scroll(function(e) {
+	e.preventDefault();
+	_cy.pan('y', convertPosScrollToPosPan());
+});
+
+$(window).resize(function() {
+	scroll.scrollTop(convertPosPanToPosScroll());
+});
+
+function convertPosScrollToPosPan(posTop) {
+	if (!posTop) posTop = scroll.scrollTop();
+	return ((scroll.height() / 2) - scrollTopPos) - posTop;
+}
+
+function convertPosPanToPosScroll(posY) {
+	if (!posY) posY = _cy.pan('y');
+	return ((scroll.height() / 2) - scrollTopPos) - posY;
 }

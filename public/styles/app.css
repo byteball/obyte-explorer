@@ -315,14 +315,28 @@ a {
 	text-align: center;
 }
 
+#scroll {
+	position: absolute;
+	right: 451px;
+	top: 45px;
+	bottom: 0;
+	width: 50px;
+	overflow: auto;
+	z-index: 999;
+}
+
+#scrollBody {
+	width: 1px;
+}
+
 /* adaptive */
 
 @media all and (max-width: 1200px) {
-	#cy {
+	#cy, #scroll {
 		right: 0;
 	}
 
-	#cy.showInfoBlock {
+	#cy.showInfoBlock, #scroll.showInfoBlock {
 		display: none;
 	}
 
@@ -355,7 +369,7 @@ a {
 		height: 85px;
 	}
 
-	#cy, #info {
+	#cy, #scroll, #info {
 		top: 85px;
 	}
 
