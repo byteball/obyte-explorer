@@ -10,7 +10,7 @@
 		"full node"
 	],
 	"scripts": {
-		"start": "node start.js",
+		"start": "node explorer.js",
 		"minjs": "gulp"
 	},
 	"license": "MIT",

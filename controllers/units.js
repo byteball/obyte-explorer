@@ -147,15 +147,15 @@ function getUnitOutputs(unit, cb) {
 	getSpentOutputs(unit, function(outputsSpent) {
 		db.query("SELECT output_id, address, amount, asset, denomination, is_spent FROM outputs WHERE unit = ? ORDER BY output_index", [unit], function(rows) {
 			rows.forEach(function(row) {
-				if (!unitOutputs[row.asset]) {
-					unitOutputs[row.asset] = [];
-					if (outputsSpent[row.output_id]) {
-						row.spent = outputsSpent[row.output_id];
-					}
-					else {
-						row.spent = false;
-					}
+				if (!unitOutputs[row.asset]) unitOutputs[row.asset] = [];
+
+				if (outputsSpent[row.output_id]) {
+					row.spent = outputsSpent[row.output_id];
 				}
+				else {
+					row.spent = false;
+				}
+
 				unitOutputs[row.asset].push(row);
 			});
 			cb(unitOutputs);
@@ -169,7 +169,7 @@ function getInfoOnUnit(unit, cb) {
 			ifFound: function(objJoint) {
 				getParentsAndChildren(unit, function(objParentsAndChildren) {
 					getTransfersInfo(unit, function(transfersInfo) {
-						getUnitOutputs(unit, function(outputsUnit) {
+						getUnitOutputs(unit, function(unitOutputs) {
 							var objInfo = {
 								unit: unit,
 								child: objParentsAndChildren.children,
@@ -183,7 +183,7 @@ function getInfoOnUnit(unit, cb) {
 								is_stable: unitProps.is_stable,
 								messages: objJoint.unit.messages,
 								transfersInfo: transfersInfo,
-								outputsUnit: outputsUnit
+								outputsUnit: unitOutputs
 							};
 							if (objJoint.unit.witnesses) {
 								objInfo.witnesses = objJoint.unit.witnesses;
