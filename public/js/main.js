@@ -2,11 +2,12 @@ var _cy;
 var nodes, edges;
 var firstUnit, lastUnit, phantoms = {}, notStable = [];
 var nextPositionUpdates;
-var generateOffset = 0, newOffset = -120, oldOffset;
+var generateOffset = 0, newOffset = -116, oldOffset;
 var activeNode, waitGo;
 var notLastUnitUp = false, notLastUnitDown = true;
 var lastActiveUnit;
-var page;
+var page, isInit = false;
+var queueAnimationPanUp = [], animationPlaysPanUp = false;
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -17,10 +18,10 @@ function init(_nodes, _edges) {
 	notStable = [];
 	nextPositionUpdates = null;
 	generateOffset = 0;
-	newOffset = -120;
-	oldOffset = null;
+	newOffset = -116;
 	createCy();
 	generate(nodes, edges);
+	oldOffset = _cy.getElementById(nodes[0].data.unit).position().y + 66;
 	_cy.viewport({zoom: 1.01});
 	_cy.center(_cy.nodes()[0]);
 	page = 'dag';
@@ -29,6 +30,7 @@ function init(_nodes, _edges) {
 		notLastUnitUp = true;
 		highlightNode(location.hash.substr(1));
 	}
+	isInit = true;
 }
 
 function start() {
@@ -133,7 +135,7 @@ function createCy() {
 			{
 				selector: '.active',
 				style: {
-				//	'background-color': '#2980b9',
+					//	'background-color': '#2980b9',
 					'border-color': '#333',
 					'border-width': '4'
 				}
@@ -169,6 +171,7 @@ function createCy() {
 		else if (notLastUnitUp === true && ext.y2 - (ext.h) < _cy.getElementById(nodes[0].data.unit).position().y) {
 			getPrev();
 		}
+		scroll.scrollTop(convertPosPanToPosScroll());
 	});
 
 	$(_cy.container()).on('wheel mousewheel', function(e) {
@@ -181,6 +184,16 @@ function createCy() {
 			else if (deltaY < 0) {
 				_cy.panBy({x: 0, y: -25});
 			}
+			scroll.scrollTop(convertPosPanToPosScroll());
+		}
+	});
+}
+
+function updListNotStableUnit() {
+	notStable = [];
+	_cy.nodes().forEach(function(node) {
+		if (!node.hasClass('is_stable')) {
+			notStable.push(node.id());
 		}
 	});
 }
@@ -203,15 +216,12 @@ function generate(_nodes, _edges) {
 			if (_node.is_stable) {
 				classes += 'is_stable ';
 			}
-			else {
-				if (notStable.indexOf(unit) == -1) notStable.push(unit);
-			}
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
-				newOffset_y = generateOffset - _node.y + 120;
+				newOffset_y = generateOffset - _node.y + 66;
 				first = true;
 			}
-			if (phantoms[unit]) {
+			if (phantoms[unit] !== undefined) {
 				_cy.remove(_cy.getElementById(unit));
 				generateAdd.push({
 					group: "nodes",
@@ -240,9 +250,39 @@ function generate(_nodes, _edges) {
 	generateOffset = _cy.nodes()[_cy.nodes().length - 1].position().y;
 	nextPositionUpdates = generateOffset;
 	_cy.add(createEdges());
+	updListNotStableUnit();
+	updateScrollHeigth();
 }
 
-function setNew(_nodes, _edges) {
+
+function animationPanUp(distance) {
+	if (animationPlaysPanUp) {
+		queueAnimationPanUp.push(distance);
+	}
+	else {
+		_cy.stop();
+		animationPlaysPanUp = true;
+		var p = _cy.pan('y');
+		_cy.animate({
+			pan: {
+				x: _cy.pan('x'),
+				y: _cy.pan('y') + distance
+			}
+		}, {
+			duration: 250,
+			complete: function() {
+				oldOffset = _cy.getElementById(nodes[0].data.unit).position().y + 66;
+				animationPlaysPanUp = false;
+				if (queueAnimationPanUp.length) {
+					animationPanUp(queueAnimationPanUp[0]);
+					queueAnimationPanUp.splice(0, 1);
+				}
+			}
+		});
+	}
+}
+
+function setNew(_nodes, _edges, newUnits) {
 	var newOffset_x, newOffset_y, min = Infinity, max = -Infinity, left = Infinity, right = -Infinity, first = false, x, y, generateAdd = [], _node, classes = '', pos_iomc;
 	var graph = createGraph(_nodes, _edges);
 	graph.nodes().forEach(function(unit) {
@@ -263,25 +303,13 @@ function setNew(_nodes, _edges) {
 			if (_node.is_stable) {
 				classes += 'is_stable ';
 			}
-			else {
-				if (notStable.indexOf(unit) == -1) notStable.push(unit);
-			}
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
-				newOffset_y = newOffset - (max - min) + _node.y + 120;
-				oldOffset = newOffset_y + 120;
-				newOffset -= (max - min) + _node.y + 120;
+				newOffset_y = newOffset - (max - min) + _node.y + 66;
+				newOffset -= (max - min) + _node.y + 66;
 				first = true;
-				if (_cy.extent().y1 < oldOffset) {
-					_cy.stop();
-					_cy.animate({
-						pan: {
-							x: _cy.pan('x'),
-							y: _cy.pan('y') + ((max - min) + _node.y) + 86
-						}
-					}, {
-						duration: 300
-					});
+				if (newUnits && _cy.extent().y1 < oldOffset) {
+					animationPanUp(max + 67);
 				}
 			}
 			x = _node.x + newOffset_x;
@@ -301,6 +329,8 @@ function setNew(_nodes, _edges) {
 	generateAdd = fixConflicts(generateAdd);
 	_cy.add(generateAdd);
 	_cy.add(createEdges());
+	updListNotStableUnit();
+	updateScrollHeigth();
 }
 
 function createGraph(_nodes, _edges) {
@@ -378,6 +408,9 @@ function createEdges() {
 		k = cyEdges[a].source() + '_' + cyEdges[a].target();
 		if (_edges[k]) delete _edges[k];
 	}
+	for (k in phantoms) {
+		_cy.getElementById(k).position('y', generateOffset + 166);
+	}
 	for (k in _edges) {
 		if (_edges.hasOwnProperty(k)) {
 			classes = '';
@@ -391,7 +424,7 @@ function createEdges() {
 				out.push({
 					group: "nodes",
 					data: {id: _edges[k].data.target, unit_s: _edges[k].data.target.substr(0, 7) + '...'},
-					position: {x: position.x + offset, y: generateOffset + 120}
+					position: {x: position.x + offset, y: generateOffset + 166}
 				});
 				offset += 60;
 				out.push({group: "edges", data: _edges[k].data, classes: classes});
@@ -417,6 +450,7 @@ function setChangesStableUnits(arrStableUnits) {
 		}
 		notStable.splice(notStable.indexOf(objUnit.unit), 1);
 	});
+	updListNotStableUnit();
 }
 
 function cloneObj(obj) {
@@ -729,7 +763,7 @@ socket.on('new', function(data) {
 			}
 		}
 		firstUnit = nodes[0].rowid;
-		setNew(data.nodes, edges);
+		setNew(data.nodes, edges, true);
 		bWaitingForNew = false;
 		if (bHaveDelayedNewRequests) {
 			bHaveDelayedNewRequests = false;
@@ -840,14 +874,14 @@ function getNew() {
 }
 
 function getNext() {
-	if (!bWaitingForNext) {
+	if (!bWaitingForNext && isInit) {
 		socket.emit('next', {last: lastUnit, notStable: notStable});
 		bWaitingForNext = true;
 	}
 }
 
 function getPrev() {
-	if (!bWaitingForPrev) {
+	if (!bWaitingForPrev && isInit) {
 		socket.emit('prev', {first: firstUnit, notStable: notStable});
 		bWaitingForPrev = true;
 	}
@@ -869,20 +903,20 @@ function getNextPageTransactions() {
 
 //adaptive
 function adaptiveShowInfo() {
-	$('#cy').addClass('showInfoBlock');
+	$('#cy, #scroll').addClass('showInfoBlock');
 	$('#info').removeClass('hideInfoBlock');
 }
 
 function closeInfo() {
 	$('#info').addClass('hideInfoBlock');
-	$('#cy').removeClass('showInfoBlock');
+	$('#cy, #scroll').removeClass('showInfoBlock');
 }
 
 function closeAddress() {
 	$('#addressInfo').hide();
 	$('#blockListUnspent').hide();
 	if (!_cy || !lastActiveUnit) {
-		$('#cy').show();
+		$('#cy, #scroll').show();
 		socket.emit('start', {type: 'last'});
 		location.hash = '';
 	}
@@ -909,4 +943,37 @@ function showInfoMessage(text, timeMs) {
 function hideInfoMessage() {
 	if (timerInfoMessage) clearTimeout(timerInfoMessage);
 	$('#infoMessage').hide(350).html('');
+}
+
+
+//scroll
+var scroll = $('#scroll');
+var scrollTopPos, scrollLowPos;
+
+function updateScrollHeigth() {
+	scrollTopPos = _cy.getElementById(nodes[0].data.unit).position().y;
+	scrollLowPos = _cy.getElementById(nodes[nodes.length - 1].data.unit).position().y + $('#scroll').height() + 166;
+	$('#scrollBody').height(scrollLowPos - scrollTopPos);
+	setTimeout(function() {
+		scroll.scrollTop(convertPosPanToPosScroll());
+	}, 1);
+}
+
+scroll.scroll(function(e) {
+	e.preventDefault();
+	_cy.pan('y', convertPosScrollToPosPan());
+});
+
+$(window).resize(function() {
+	scroll.scrollTop(convertPosPanToPosScroll());
+});
+
+function convertPosScrollToPosPan(posTop) {
+	if (!posTop) posTop = scroll.scrollTop();
+	return ((scroll.height() / 2) - scrollTopPos) - posTop;
+}
+
+function convertPosPanToPosScroll(posY) {
+	if (!posY) posY = _cy.pan('y');
+	return ((scroll.height() / 2) - scrollTopPos) - posY;
 }
