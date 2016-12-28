@@ -309,7 +309,7 @@ function setNew(_nodes, _edges, newUnits) {
 				newOffset -= (max - min) + _node.y + 66;
 				first = true;
 				if (newUnits && _cy.extent().y1 < oldOffset) {
-					animationPanUp(max + 68);
+					animationPanUp(max + 67);
 				}
 			}
 			x = _node.x + newOffset_x;
