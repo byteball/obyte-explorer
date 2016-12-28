@@ -6,7 +6,8 @@ var generateOffset = 0, newOffset = -116, oldOffset;
 var activeNode, waitGo;
 var notLastUnitUp = false, notLastUnitDown = true;
 var lastActiveUnit;
-var page;
+var page, isInit = false;
+var queueAnimationPanUp = [], animationPlaysPanUp = false;
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -18,9 +19,9 @@ function init(_nodes, _edges) {
 	nextPositionUpdates = null;
 	generateOffset = 0;
 	newOffset = -116;
-	oldOffset = null;
 	createCy();
 	generate(nodes, edges);
+	oldOffset = _cy.getElementById(nodes[0].data.unit).position().y + 66;
 	_cy.viewport({zoom: 1.01});
 	_cy.center(_cy.nodes()[0]);
 	page = 'dag';
@@ -29,6 +30,7 @@ function init(_nodes, _edges) {
 		notLastUnitUp = true;
 		highlightNode(location.hash.substr(1));
 	}
+	isInit = true;
 }
 
 function start() {
@@ -133,7 +135,7 @@ function createCy() {
 			{
 				selector: '.active',
 				style: {
-				//	'background-color': '#2980b9',
+					//	'background-color': '#2980b9',
 					'border-color': '#333',
 					'border-width': '4'
 				}
@@ -219,7 +221,7 @@ function generate(_nodes, _edges) {
 				newOffset_y = generateOffset - _node.y + 66;
 				first = true;
 			}
-			if (phantoms[unit]) {
+			if (phantoms[unit] !== undefined) {
 				_cy.remove(_cy.getElementById(unit));
 				generateAdd.push({
 					group: "nodes",
@@ -252,7 +254,35 @@ function generate(_nodes, _edges) {
 	updateScrollHeigth();
 }
 
-function setNew(_nodes, _edges) {
+
+function animationPanUp(distance) {
+	if (animationPlaysPanUp) {
+		queueAnimationPanUp.push(distance);
+	}
+	else {
+		_cy.stop();
+		animationPlaysPanUp = true;
+		var p = _cy.pan('y');
+		_cy.animate({
+			pan: {
+				x: _cy.pan('x'),
+				y: _cy.pan('y') + distance
+			}
+		}, {
+			duration: 250,
+			complete: function() {
+				oldOffset = _cy.getElementById(nodes[0].data.unit).position().y + 66;
+				animationPlaysPanUp = false;
+				if (queueAnimationPanUp.length) {
+					animationPanUp(queueAnimationPanUp[0]);
+					queueAnimationPanUp.splice(0, 1);
+				}
+			}
+		});
+	}
+}
+
+function setNew(_nodes, _edges, newUnits) {
 	var newOffset_x, newOffset_y, min = Infinity, max = -Infinity, left = Infinity, right = -Infinity, first = false, x, y, generateAdd = [], _node, classes = '', pos_iomc;
 	var graph = createGraph(_nodes, _edges);
 	graph.nodes().forEach(function(unit) {
@@ -276,19 +306,10 @@ function setNew(_nodes, _edges) {
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
 				newOffset_y = newOffset - (max - min) + _node.y + 66;
-				oldOffset = newOffset_y + 66;
 				newOffset -= (max - min) + _node.y + 66;
 				first = true;
-				if (_cy.extent().y1 < oldOffset) {
-					_cy.stop();
-					_cy.animate({
-						pan: {
-							x: _cy.pan('x'),
-							y: _cy.pan('y') + ((max - min) + _node.y) + 66
-						}
-					}, {
-						duration: 300
-					});
+				if (newUnits && _cy.extent().y1 < oldOffset) {
+					animationPanUp(max + 68);
 				}
 			}
 			x = _node.x + newOffset_x;
@@ -387,6 +408,9 @@ function createEdges() {
 		k = cyEdges[a].source() + '_' + cyEdges[a].target();
 		if (_edges[k]) delete _edges[k];
 	}
+	for (k in phantoms) {
+		_cy.getElementById(k).position('y', generateOffset + 166);
+	}
 	for (k in _edges) {
 		if (_edges.hasOwnProperty(k)) {
 			classes = '';
@@ -400,7 +424,7 @@ function createEdges() {
 				out.push({
 					group: "nodes",
 					data: {id: _edges[k].data.target, unit_s: _edges[k].data.target.substr(0, 7) + '...'},
-					position: {x: position.x + offset, y: generateOffset + 66}
+					position: {x: position.x + offset, y: generateOffset + 166}
 				});
 				offset += 60;
 				out.push({group: "edges", data: _edges[k].data, classes: classes});
@@ -739,7 +763,7 @@ socket.on('new', function(data) {
 			}
 		}
 		firstUnit = nodes[0].rowid;
-		setNew(data.nodes, edges);
+		setNew(data.nodes, edges, true);
 		bWaitingForNew = false;
 		if (bHaveDelayedNewRequests) {
 			bHaveDelayedNewRequests = false;
@@ -850,14 +874,14 @@ function getNew() {
 }
 
 function getNext() {
-	if (!bWaitingForNext) {
+	if (!bWaitingForNext && isInit) {
 		socket.emit('next', {last: lastUnit, notStable: notStable});
 		bWaitingForNext = true;
 	}
 }
 
 function getPrev() {
-	if (!bWaitingForPrev) {
+	if (!bWaitingForPrev && isInit) {
 		socket.emit('prev', {first: firstUnit, notStable: notStable});
 		bWaitingForPrev = true;
 	}
@@ -928,7 +952,7 @@ var scrollTopPos, scrollLowPos;
 
 function updateScrollHeigth() {
 	scrollTopPos = _cy.getElementById(nodes[0].data.unit).position().y;
-	scrollLowPos = _cy.getElementById(nodes[nodes.length - 1].data.unit).position().y + $('#scroll').height();
+	scrollLowPos = _cy.getElementById(nodes[nodes.length - 1].data.unit).position().y + $('#scroll').height() + 166;
 	$('#scrollBody').height(scrollLowPos - scrollTopPos);
 	setTimeout(function() {
 		scroll.scrollTop(convertPosPanToPosScroll());
