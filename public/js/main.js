@@ -783,7 +783,7 @@ function generateTransactionsList(objTransactions, address) {
 
 		listTransactions += '<tr>' +
 			'<th colspan="3" align="left">' +
-			'<div class="transactionUnit"><a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
+			'<div class="transactionUnit">Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
 			'</th>' +
 			'<tr><td>';
 
