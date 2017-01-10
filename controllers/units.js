@@ -47,8 +47,9 @@ function getUnitsBeforeRowid(rowid, limit, cb) {
 		});
 		if (units.length) {
 			db.query("SELECT parenthoods.child_unit, parenthoods.parent_unit, units.ROWID, units.is_on_main_chain, units.is_stable, units.best_parent_unit \n\
-		FROM parenthoods, units WHERE parenthoods.child_unit IN \n\
-		(?) and units.unit=parenthoods.child_unit ORDER BY parenthoods.ROWID DESC", [units], function(rows) {
+		 FROM parenthoods, units WHERE \n\
+		 (parenthoods.child_unit IN (?) OR parenthoods.parent_unit IN (?))  \n\
+		 AND units.unit=parenthoods.child_unit ORDER BY parenthoods.ROWID DESC", [units, units], function(rows) {
 				rows.forEach(function(row) {
 					edges[row.child_unit + '_' + row.parent_unit] = {
 						data: {
@@ -70,27 +71,40 @@ function getUnitsBeforeRowid(rowid, limit, cb) {
 function getUnitsAfterRowid(rowid, limit, cb) {
 	var nodes = [];
 	var edges = {};
+	var units = [];
+
 	limit = limit ? 'LIMIT 0, ' + parseInt(limit) : '';
 
-	db.query("SELECT parenthoods.child_unit, parenthoods.parent_unit, units.ROWID, units.is_on_main_chain, units.is_stable, units.best_parent_unit \n\
-		FROM parenthoods, units WHERE parenthoods.child_unit IN \n\
-		(SELECT unit FROM units WHERE ROWID > ? ORDER BY ROWID ASC " + limit + ") and units.unit=parenthoods.child_unit ORDER BY parenthoods.ROWID DESC", [rowid], function(rows) {
-		rows.forEach(function(row) {
+	db.query("SELECT ROWID, unit, is_on_main_chain, is_stable FROM units WHERE ROWID > ? ORDER BY ROWID ASC " + limit + "", [rowid], function(rowsUnits) {
+		rowsUnits.forEach(function(row) {
 			nodes.push({
-				data: {unit: row.child_unit, unit_s: row.child_unit.substr(0, 7) + '...'},
+				data: {unit: row.unit, unit_s: row.unit.substr(0, 7) + '...'},
 				rowid: row.rowid,
 				is_on_main_chain: row.is_on_main_chain,
 				is_stable: row.is_stable
 			});
-			edges[row.child_unit + '_' + row.parent_unit] = {
-				data: {
-					source: row.child_unit,
-					target: row.parent_unit
-				},
-				best_parent_unit: row.parent_unit == row.best_parent_unit
-			};
+			units.push(row.unit);
 		});
-		cb(nodes, edges);
+		if (units.length) {
+			db.query("SELECT parenthoods.child_unit, parenthoods.parent_unit, units.ROWID, units.is_on_main_chain, units.is_stable, units.best_parent_unit \n\
+		 FROM parenthoods, units WHERE \n\
+		 (parenthoods.child_unit IN (?) OR parenthoods.parent_unit IN (?))  \n\
+		 AND units.unit=parenthoods.child_unit ORDER BY parenthoods.ROWID DESC", [units, units], function(rows) {
+				rows.forEach(function(row) {
+					edges[row.child_unit + '_' + row.parent_unit] = {
+						data: {
+							source: row.child_unit,
+							target: row.parent_unit
+						},
+						best_parent_unit: row.parent_unit == row.best_parent_unit
+					};
+				});
+				cb(nodes, edges);
+			});
+		}
+		else {
+			cb([], []);
+		}
 	});
 }
 

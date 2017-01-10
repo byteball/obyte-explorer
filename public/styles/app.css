@@ -21,11 +21,23 @@ body {
 }
 
 #menu input[type=text] {
-	width: 320px;
+	width: 280px;
 	height: 30px;
 	border: 1px solid #ccc;
 	outline: none;
-	padding: 0 5px;
+	padding: 0 35px 0 5px;
+}
+
+#submitSearch {
+	width: 32px;
+	height: 32px;
+	border: 0;
+	background: url(/img/search.png) center no-repeat transparent;
+	background-size: 20px;
+	padding: 12px;
+	cursor: pointer;
+	outline: none;
+	margin-left: -36px;
 }
 
 #menuLeft {
@@ -329,6 +341,39 @@ a {
 	width: 1px;
 }
 
+#goToTop {
+	width: 48px;
+	height: 48px;
+	position: absolute;
+	z-index: 999;
+	cursor: pointer;
+	background: url(/img/goToTop.svg) center no-repeat;
+	background-size: 28px;
+	top: 68px;
+	right: 490px;
+	border: 1px solid #5e5e5e;
+	border-radius: 100%;
+}
+
+#goToTop:hover {
+	background: url(/img/goToTop_hover.svg) center no-repeat;
+	background-size: 28px;
+	border: 1px solid #000;
+}
+
+#goToTop:hover > #titleGoToTop {
+	display: block;
+}
+
+#titleGoToTop {
+	position: absolute;
+	top: 52px;
+	text-align: center;
+	width: 68px;
+	left: -11px;
+	display: none;
+}
+
 /* adaptive */
 
 @media all and (max-width: 1200px) {
@@ -336,7 +381,11 @@ a {
 		right: 0;
 	}
 
-	#cy.showInfoBlock, #scroll.showInfoBlock {
+	#goToTop {
+		right: 39px;
+	}
+
+	#cy.showInfoBlock, #scroll.showInfoBlock, #goToTop.showInfoBlock {
 		display: none;
 	}
 
@@ -373,6 +422,11 @@ a {
 		top: 85px;
 	}
 
+	#goToTop {
+		top: 109px;
+		right: 22px;
+	}
+
 	#addressInfo {
 		top: 86px;
 	}
@@ -382,6 +436,6 @@ a {
 	}
 
 	#menuInput input[type=text] {
-		width: 95%;
+		width: 81%;
 	}
 }
