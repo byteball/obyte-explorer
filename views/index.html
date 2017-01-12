@@ -19,12 +19,16 @@
 		<div id="menuInput">
 			<form action="javascript:searchForm($('#inputSearch').val())" method="post">
 				<input type="text" id="inputSearch" placeholder="Search for unit or address">
+				<input type="submit" value="" id="submitSearch">
 			</form>
 		</div>
 	</div>
 </div>
 <div id="infoMessage" onclick="hideInfoMessage()">InfoMessage</div>
 <div id="cy"></div>
+<div id="goToTop" onclick="goToTop()">
+	<div id="titleGoToTop">Go to top</div>
+</div>
 <div id="scroll">
 	<div id="scrollBody"></div>
 </div>
