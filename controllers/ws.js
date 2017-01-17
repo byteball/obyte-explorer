@@ -88,7 +88,7 @@ function newUnits(data) {
 	var ws = this;
 
 	units.getUnitsThatBecameStable(data.notStable, function(arrStableUnits) {
-		units.getUnitsAfterRowid(data.unit, false, function(nodes, edges) {
+		units.getUnitsAfterRowid(data.unit, 100, function(nodes, edges) {
 			ws.emit('new', {
 				nodes: nodes,
 				edges: edges,

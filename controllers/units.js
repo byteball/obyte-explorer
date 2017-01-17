@@ -73,9 +73,7 @@ function getUnitsAfterRowid(rowid, limit, cb) {
 	var edges = {};
 	var units = [];
 
-	limit = limit ? 'LIMIT 0, ' + parseInt(limit) : '';
-
-	db.query("SELECT ROWID, unit, is_on_main_chain, is_stable FROM units WHERE ROWID > ? ORDER BY ROWID ASC " + limit + "", [rowid], function(rowsUnits) {
+	db.query("SELECT ROWID, unit, is_on_main_chain, is_stable FROM units WHERE ROWID > ? ORDER BY ROWID ASC LIMIT 0, ?", [rowid, limit], function(rowsUnits) {
 		rowsUnits.forEach(function(row) {
 			nodes.push({
 				data: {unit: row.unit, unit_s: row.unit.substr(0, 7) + '...'},
@@ -85,7 +83,18 @@ function getUnitsAfterRowid(rowid, limit, cb) {
 			});
 			units.push(row.unit);
 		});
+		nodes = nodes.sort(function(a,b){
+			if(a.rowid < b.rowid){
+				return 1;
+			}
+			if(a.rowid > b.rowid){
+				return -1;
+			}
+			return 0;
+		});
+
 		if (units.length) {
+
 			db.query("SELECT parenthoods.child_unit, parenthoods.parent_unit, units.ROWID, units.is_on_main_chain, units.is_stable, units.best_parent_unit \n\
 		 FROM parenthoods, units WHERE \n\
 		 (parenthoods.child_unit IN (?) OR parenthoods.parent_unit IN (?))  \n\

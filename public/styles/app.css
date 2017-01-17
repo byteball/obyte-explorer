@@ -34,10 +34,11 @@ body {
 	border: 0;
 	background: url(/img/search.png) center no-repeat transparent;
 	background-size: 20px;
-	padding: 12px;
 	cursor: pointer;
 	outline: none;
-	margin-left: -36px;
+	position: relative;
+	left: -36px;
+	vertical-align: middle;
 }
 
 #menuLeft {
