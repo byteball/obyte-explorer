@@ -199,6 +199,14 @@ body {
 	color: #333333;
 }
 
+.childNotSpoiler {
+	font-weight: bold;
+	padding: 5px;
+	margin-bottom: 7px;
+	background-color: #f3f3f3;
+	color: #333333;
+}
+
 .messagesInfo {
 	padding-left: 5px;
 	margin-bottom: 10px;
