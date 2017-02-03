@@ -687,7 +687,7 @@ socket.on('prev', function(data) {
 });
 
 function generateMessageInfo(messages, transfersInfo, outputsUnit) {
-	var messagesOut = '', blockId = 0, key, asset;
+	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
 	messages.forEach(function(message) {
 		if (message.payload) {
 			asset = message.payload.asset || 'null';
@@ -764,7 +764,10 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 					break;
 			}
 			messagesOut += '</div></div>';
-		}
+		}else if(message.app == 'payment' && message.payload_location == 'none' && !shownHiddenPayments){
+            messagesOut += '<div class="message childNotSpoiler">Hidden payments</div>';
+            shownHiddenPayments = true;
+        }
 	});
 	return messagesOut;
 }
