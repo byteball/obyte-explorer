@@ -383,6 +383,10 @@ a {
 	display: none;
 }
 
+.numberFormat{
+	cursor: pointer;
+}
+
 /* adaptive */
 
 @media all and (max-width: 1200px) {
