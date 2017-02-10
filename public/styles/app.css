@@ -383,10 +383,14 @@ a {
 	display: none;
 }
 
-.numberFormat{
+.numberFormat {
 	cursor: pointer;
 }
 
+#tableListTransactions {
+	width: 100%;
+    border-collapse: collapse;
+}
 /* adaptive */
 
 @media all and (max-width: 1200px) {

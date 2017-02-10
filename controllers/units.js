@@ -191,7 +191,6 @@ function getInfoOnUnit(unit, cb) {
 	storage.readUnitProps(db, unit, function(unitProps) {
 		storage.readJoint(db, unit, {
 			ifFound: function(objJoint) {
-				db.query("SELECT creation_date FROM units WHERE unit = ? LIMIT 0,1", [unit], function(unitsRow) {
 				getParentsAndChildren(unit, function(objParentsAndChildren) {
 					getTransfersInfo(unit, function(transfersInfo) {
 						getUnitOutputs(unit, function(unitOutputs) {
@@ -209,7 +208,7 @@ function getInfoOnUnit(unit, cb) {
 								messages: objJoint.unit.messages,
 								transfersInfo: transfersInfo,
 								outputsUnit: unitOutputs,
-								date: moment(unitsRow[0].creation_date).format()
+								date: moment(objJoint.unit.timestamp * 1000).format()
 							};
 							if (objJoint.unit.witnesses) {
 								objInfo.witnesses = objJoint.unit.witnesses;
@@ -223,7 +222,6 @@ function getInfoOnUnit(unit, cb) {
 							}
 						});
 					});
-				});
 				});
 			},
 			ifNotFound: function() {

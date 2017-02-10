@@ -844,9 +844,11 @@ function generateTransactionsList(objTransactions, address) {
 		transaction = objTransactions[k];
 
 		listTransactions += '<tr>' +
-			'<th colspan="3" align="left">' +
-			'<div class="transactionUnit">Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
-			'</th>' +
+			'<th class="transactionUnit" colspan="2" align="left">' +
+			'<div>Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
+			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">'+moment(transaction.date).format('DD.MM.YYYY HH:mm')+'</div></th>' +
+			'</tr>' +
+			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>'+
 			'<tr><td>';
 
 		transaction.from.forEach(function(objFrom) {
@@ -872,7 +874,7 @@ function generateTransactionsList(objTransactions, address) {
 				(_addressTo.spent === 0 ? 'not spent' : 'spent in ' + '<a href="#' + _addressTo.spent + '">' + _addressTo.spent + '</a>') +
 				')</div></div>';
 		}
-		listTransactions += '</td></tr>';
+		listTransactions += '</td></tr><tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
 	}
 	return listTransactions;
 }
