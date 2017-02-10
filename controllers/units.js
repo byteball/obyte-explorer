@@ -188,10 +188,10 @@ function getUnitOutputs(unit, cb) {
 }
 
 function getInfoOnUnit(unit, cb) {
-	db.query("SELECT creation_date FROM units WHERE unit = ? LIMIT 0,1", [unit], function(unitRow) {
 	storage.readUnitProps(db, unit, function(unitProps) {
 		storage.readJoint(db, unit, {
 			ifFound: function(objJoint) {
+				db.query("SELECT creation_date FROM units WHERE unit = ? LIMIT 0,1", [unit], function(unitsRow) {
 				getParentsAndChildren(unit, function(objParentsAndChildren) {
 					getTransfersInfo(unit, function(transfersInfo) {
 						getUnitOutputs(unit, function(unitOutputs) {
@@ -209,7 +209,7 @@ function getInfoOnUnit(unit, cb) {
 								messages: objJoint.unit.messages,
 								transfersInfo: transfersInfo,
 								outputsUnit: unitOutputs,
-								date: moment(unitRow[0].creation_date).format()
+								date: moment(unitsRow[0].creation_date).format()
 							};
 							if (objJoint.unit.witnesses) {
 								objInfo.witnesses = objJoint.unit.witnesses;
@@ -224,12 +224,12 @@ function getInfoOnUnit(unit, cb) {
 						});
 					});
 				});
+				});
 			},
 			ifNotFound: function() {
 				cb(null);
 			}
 		});
-	});
 	});
 }
 
