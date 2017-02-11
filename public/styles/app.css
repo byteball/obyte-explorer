@@ -384,7 +384,7 @@ a {
 }
 
 .numberFormat {
-	cursor: pointer;
+	/*cursor: pointer;*/
 }
 
 #tableListTransactions {
