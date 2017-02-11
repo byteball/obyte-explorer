@@ -2,6 +2,7 @@
 'use strict';
 
 var db = require('byteballcore/db.js');
+var moment = require('moment');
 
 
 function getAmountForInfoAddress(objTransactions, cb) {
@@ -86,7 +87,7 @@ function getUnitsForTransactionsAddress(address, page, cb) {
 function getAddressTransactions(address, page, cb) {
 	getUnitsForTransactionsAddress(address, page, function(arrUnit) {
 		if (arrUnit.length) {
-			db.query("SELECT inputs.unit, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index \n\
+			db.query("SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index \n\
 		FROM inputs, outputs, units \n\
 		WHERE (( inputs.unit IN (?) AND outputs.unit = inputs.unit ) OR ( outputs.unit IN (?) AND inputs.unit = outputs.unit )) \n\
 		AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
@@ -99,6 +100,7 @@ function getAddressTransactions(address, page, cb) {
 							key = row.unit + '_' + row.asset;
 							if (!objTransactions[key]) objTransactions[key] = {
 								unit: row.unit,
+								date: moment(row.creation_date).format(),
 								from: [],
 								to: {},
 								spent: false,

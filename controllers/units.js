@@ -3,6 +3,7 @@
 
 var db = require('byteballcore/db.js');
 var storage = require('byteballcore/storage.js');
+var moment = require('moment');
 
 function getLastUnits(cb) {
 	var nodes = [];
@@ -206,7 +207,8 @@ function getInfoOnUnit(unit, cb) {
 								is_stable: unitProps.is_stable,
 								messages: objJoint.unit.messages,
 								transfersInfo: transfersInfo,
-								outputsUnit: unitOutputs
+								outputsUnit: unitOutputs,
+								date: moment(objJoint.unit.timestamp * 1000).format()
 							};
 							if (objJoint.unit.witnesses) {
 								objInfo.witnesses = objJoint.unit.witnesses;

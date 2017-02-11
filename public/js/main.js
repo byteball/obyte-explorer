@@ -195,6 +195,7 @@ function createCy() {
 }
 
 function updListNotStableUnit() {
+	if(!_cy) return;
 	notStable = [];
 	_cy.nodes().forEach(function(node) {
 		if (!node.hasClass('is_stable')) {
@@ -718,12 +719,12 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 									'<div class="infoTitleInput" onclick="showHideBlock(event, \'message_' + blockId + '\')">Issue</div>' +
 									'<div class="inputInfo" id="message_' + (blockId++) + '">' +
 									'<div>Serial number: ' + input.serial_number + '</div>' +
-									'<div>Amount: ' + input.amount + '</div>' +
+									'<div>Amount: <span class="numberFormat">' + input.amount + '</span></div>' +
 									'</div>';
 							}
 							else {
 								key = input.unit + '_' + input.output_index + '_' + (asset);
-								messagesOut += '<div>' + transfersInfo[key].amount + ' from ' +
+								messagesOut += '<div><span class="numberFormat">' + transfersInfo[key].amount + '</span> from ' +
 									'<a href="#' + transfersInfo[key].unit + '">' + transfersInfo[key].unit + '</a></div>';
 							}
 						});
@@ -735,11 +736,11 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 						outputsUnit[asset].forEach(function(output) {
 							messagesOut += '<div class="outputs_div">';
 							if (output.is_spent) {
-								messagesOut += '<div>' + output.amount + ' to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
+								messagesOut += '<div><span class="numberFormat">' + output.amount + '</span> to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
 									'(spent in <a href="#' + output.spent + '">' + output.spent + '</a>)</div>';
 							}
 							else {
-								messagesOut += '<div>' + output.amount + ' to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
+								messagesOut += '<div><span class="numberFormat">' + output.amount + '</span> to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
 							}
 							messagesOut += '</div>';
 						});
@@ -793,7 +794,8 @@ socket.on('info', function(data) {
 		$('#children').html(childOut);
 		$('#parents').html(parentOut);
 		$('#authors').html(authorsOut);
-		$('#fees').html((parseInt(data.headers_commission) + parseInt(data.payload_commission)) + ' (' + data.headers_commission + ' headers, ' + data.payload_commission + ' payload)');
+		$('#received').html(moment(data.date).format('DD.MM.YYYY HH:mm'));
+		$('#fees').html('<span class="numberFormat">'+(parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> headers, <span class="numberFormat">' + data.payload_commission + '</span> payload)');
 		$('#level').html(data.level);
 		$('#main_chain_index').html(data.main_chain_index);
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
@@ -805,6 +807,7 @@ socket.on('info', function(data) {
 			$('#listInfo').show();
 		}
 		adaptiveShowInfo();
+		formatAllNumbers();
 	}
 	else {
 		showInfoMessage("Unit not found");
@@ -841,9 +844,11 @@ function generateTransactionsList(objTransactions, address) {
 		transaction = objTransactions[k];
 
 		listTransactions += '<tr>' +
-			'<th colspan="3" align="left">' +
-			'<div class="transactionUnit">Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
-			'</th>' +
+			'<th class="transactionUnit" colspan="2" align="left">' +
+			'<div>Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
+			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">'+moment(transaction.date).format('DD.MM.YYYY HH:mm')+'</div></th>' +
+			'</tr>' +
+			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>'+
 			'<tr><td>';
 
 		transaction.from.forEach(function(objFrom) {
@@ -851,12 +856,12 @@ function generateTransactionsList(objTransactions, address) {
 			if (objFrom.issue) {
 				listTransactions += '<div class="transactionUnitListAddress">' +
 					'<div>' + addressOut + '</div>' +
-					'<div>Issue ' + objFrom.amount + ' ' + transaction.asset + '</div>' +
+					'<div>Issue <span class="numberFormat">' + objFrom.amount + '</span> ' + transaction.asset + '</div>' +
 					'<div>serial number: ' + objFrom.serial_number + '</div></div>';
 			}
 			else {
 				listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
-					'<div>(' + objFrom.amount + ' ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ')</div></div>';
+					'<div>(<span class="numberFormat">' + objFrom.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ')</div></div>';
 			}
 		});
 		listTransactions += '</td><td><img width="32" src="' + (transaction.spent ? '/img/red_right2.png' : '/img/green_right2.png') + '"></td><td>';
@@ -865,11 +870,11 @@ function generateTransactionsList(objTransactions, address) {
 			addressOut = _addressTo.address == address ? '<span class="thisAddress">' + _addressTo.address + '</span>' : '<a href="#' + _addressTo.address + '">' + _addressTo.address + '</a>';
 
 			listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
-				'<div>(' + _addressTo.amount + ' ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ', ' +
+				'<div>(<span class="numberFormat">' + _addressTo.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ', ' +
 				(_addressTo.spent === 0 ? 'not spent' : 'spent in ' + '<a href="#' + _addressTo.spent + '">' + _addressTo.spent + '</a>') +
 				')</div></div>';
 		}
-		listTransactions += '</td></tr>';
+		listTransactions += '</td></tr><tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
 	}
 	return listTransactions;
 }
@@ -881,14 +886,14 @@ socket.on('addressInfo', function(data) {
 		nextPageTransactionsEnd = data.end;
 		for (var k in data.objBalance) {
 			if (k === 'bytes') {
-				balance += '<div>' + data.objBalance[k] + ' bytes</div>';
+				balance += '<div><span class="numberFormat">' + data.objBalance[k] + '</span> bytes</div>';
 			}
 			else {
-				balance += '<div>' + data.objBalance[k] + ' of ' + k + '</div>';
+				balance += '<div><span class="numberFormat">' + data.objBalance[k] + '</span> of ' + k + '</div>';
 			}
 		}
 		data.unspent.forEach(function(row) {
-			listUnspent += '<div><a href="#' + row.unit + '">' + row.unit + '</a> (' + row.amount + ' ' + (row.asset == null ? 'bytes' : row.asset) + ')</div>';
+			listUnspent += '<div><a href="#' + row.unit + '">' + row.unit + '</a> (<span class="numberFormat">' + row.amount + '</span> ' + (row.asset == null ? 'bytes' : row.asset) + ')</div>';
 		});
 		$('#address').html(data.address);
 		$('#balance').html(balance);
@@ -904,6 +909,7 @@ socket.on('addressInfo', function(data) {
 			$('#addressInfo').show();
 		}
 		page = 'address';
+		formatAllNumbers()
 	}
 	else {
 		showInfoMessage("Address not found");
@@ -916,6 +922,7 @@ socket.on('nextPageTransactions', function(data) {
 		pageTransactions++;
 		nextPageTransactionsEnd = data.end;
 		$('#listUnits').append(generateTransactionsList(data.objTransactions, data.address));
+		formatAllNumbers();
 	}
 	bWaitingForNextPageTransactions = false;
 });
@@ -1039,3 +1046,38 @@ function convertPosPanToPosScroll(posY, topPos) {
 	if (topPos === undefined) topPos = scrollTopPos;
 	return ((scroll.height() / 2) - topPos) - posY;
 }
+
+//Numbers
+
+function numberFormat(number) {
+	return number.replace(new RegExp("^(\\d{" + (number.length % 3 ? number.length % 3 : 0) + "})(\\d{3})", "g"), "$1 $2").replace(/(\d{3})+?/gi, "$1 ").trim().replace(/\s/gi, ",");
+}
+
+function formatAllNumbers() {
+	var numbersSpan = $('.numberFormat').not('.format');
+	$.each(numbersSpan, function(a, v) {
+		$(numbersSpan[a]).addClass('format').html(numberFormat(v.innerHTML));
+	})
+}
+
+$(document).on('mousedown', '.numberFormat', function(e) {
+	var self = $(this);
+	if(self.hasClass('format')) {
+		self.html(self.html().replace(/\,/g, '')).removeClass('format');
+	}
+});
+$(document).on('touchstart', '.numberFormat', function() {
+	var self = $(this);
+	if(self.hasClass('format')) {
+		self.html(self.html().replace(/\,/g, '')).removeClass('format');
+	}
+});
+$(document).on('mouseout', '.numberFormat', function() {
+	var self = $(this);
+	if (!self.hasClass('format')) {
+		self.addClass('format');
+		setTimeout(function() {
+			self.html(numberFormat(self.html()));
+		}, 250);
+	}
+});
