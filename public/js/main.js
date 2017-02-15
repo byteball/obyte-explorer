@@ -749,7 +749,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 					}
 					break;
 				case 'text':
-					messagesOut += '<div>Text: ' + message.payload + '</div>';
+					messagesOut += '<div>Text: ' + htmlEscape(message.payload) + '</div>';
 					break;
 				default:
 					for (var key_payload in message.payload) {
@@ -759,7 +759,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 							messagesOut += '</div>';
 						}
 						else {
-							messagesOut += '<div>' + key_payload + ': ' + message.payload[key_payload] + '</div>';
+							messagesOut += '<div>' + htmlEscape(key_payload + ': ' + message.payload[key_payload]) + '</div>';
 						}
 					}
 					break;
@@ -1081,3 +1081,14 @@ $(document).on('mouseout', '.numberFormat', function() {
 		}, 250);
 	}
 });
+
+
+//escape
+function htmlEscape(str) {
+	return str
+		.replace(/&/g, '&amp;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;');
+}
