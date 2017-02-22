@@ -1033,7 +1033,7 @@ scroll.scroll(function(e) {
 });
 
 $(window).resize(function() {
-	scroll.scrollTop(convertPosPanToPosScroll());
+	if(_cy) scroll.scrollTop(convertPosPanToPosScroll());
 });
 
 function convertPosScrollToPosPan(posTop) {
