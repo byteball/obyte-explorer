@@ -915,6 +915,7 @@ socket.on('addressInfo', function(data) {
 		showInfoMessage("Address not found");
 	}
 	bWaitingForNextPageTransactions = false;
+	if(!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
 });
 
 socket.on('nextPageTransactions', function(data) {
@@ -925,6 +926,7 @@ socket.on('nextPageTransactions', function(data) {
 		formatAllNumbers();
 	}
 	bWaitingForNextPageTransactions = false;
+	if(!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
 });
 
 function getNew() {
