@@ -38,7 +38,7 @@ function start(data) {
 		});
 	}
 	else if (data.type === 'address') {
-		address.getAddressInfo(data.address, function(objTransactions, unspent, objBalance, end) {
+		address.getAddressInfo(data.address, function(objTransactions, unspent, objBalance, end, definition) {
 			if (objTransactions === null) {
 				ws.emit('addressInfo');
 			}
@@ -48,7 +48,8 @@ function start(data) {
 					objTransactions: objTransactions,
 					unspent: unspent,
 					objBalance: objBalance,
-					end: end
+					end: end,
+					definition: definition
 				});
 			}
 		});

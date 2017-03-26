@@ -928,6 +928,15 @@ socket.on('addressInfo', function(data) {
 		if ($('#addressInfo').css('display') == 'none') {
 			$('#addressInfo').show();
 		}
+		if (data.definition) {
+			$('#definitionTitle').show();
+			$('#definition').html('<pre>' + JSON.stringify(JSON.parse(data.definition), null, '   ') + '</pre>');
+		} else {
+			$('#definition').hide();
+			if (!$('#definitionTitle').hasClass('hideTitle')) {
+				$('#definitionTitle').addClass('hideTitle').hide();
+			}
+		}
 		page = 'address';
 		formatAllNumbers()
 	}

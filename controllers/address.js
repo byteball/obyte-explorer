@@ -191,7 +191,19 @@ function getAddressInfo(address, cb) {
 					}
 				});
 
-				cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5);
+				db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL", [address], function(rowUnitAuthors) {
+					if (rowUnitAuthors.length) {
+						db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash], function(rowDefinitions) {
+							if (rowDefinitions) {
+								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, rowDefinitions[0].definition);
+							} else {
+								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false);
+							}
+						});
+					} else {
+						cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false);
+					}
+				});
 			}
 			else {
 				cb(null);
