@@ -4,6 +4,7 @@
 var db = require('byteballcore/db.js');
 var storage = require('byteballcore/storage.js');
 var moment = require('moment');
+var async = require('async');
 
 function getLastUnits(cb) {
 	var nodes = [];
@@ -84,11 +85,11 @@ function getUnitsAfterRowid(rowid, limit, cb) {
 			});
 			units.push(row.unit);
 		});
-		nodes = nodes.sort(function(a,b){
-			if(a.rowid < b.rowid){
+		nodes = nodes.sort(function(a, b) {
+			if (a.rowid < b.rowid) {
 				return 1;
 			}
-			if(a.rowid > b.rowid){
+			if (a.rowid > b.rowid) {
 				return -1;
 			}
 			return 0;
@@ -186,6 +187,44 @@ function getUnitOutputs(unit, cb) {
 		});
 	});
 }
+function getUnitCommissions(unit, cb) {
+	var assocCommissions = {headers: {}, witnessing: {}};
+	db.query("SELECT type, address, from_main_chain_index, to_main_chain_index FROM inputs WHERE unit = ? AND (type = 'headers_commission' OR type = 'witnessing')", [unit], function(rows) {
+		if (rows.length) {
+			async.each(rows, function(row, callback) {
+				var tableName, objectName;
+				if (row.type === 'headers_commission') {
+					tableName = 'headers_commission_outputs';
+					objectName = 'headers';
+				} else if (row.type === 'witnessing') {
+					tableName = 'witnessing_outputs';
+					objectName = 'witnessing';
+				}
+				if (tableName) {
+					db.query("SELECT amount FROM " + tableName + " WHERE address = ? AND main_chain_index >= ? AND main_chain_index <= ? ORDER BY main_chain_index",
+						[row.address, row.from_main_chain_index, row.to_main_chain_index],
+						function(rowsCommissionOutputs) {
+							assocCommissions[objectName][row.from_main_chain_index + '_' + row.to_main_chain_index] = {
+								address: row.address,
+								from_mci: row.from_main_chain_index,
+								to_mci: row.to_main_chain_index,
+								sum: rowsCommissionOutputs.reduce(function(accumulator, val) {
+									return accumulator + val.amount
+								}, 0)
+							};
+							callback();
+						});
+				} else {
+					callback();
+				}
+			}, function() {
+				cb(assocCommissions);
+			});
+		} else {
+			cb(assocCommissions);
+		}
+	});
+}
 
 function getInfoOnUnit(unit, cb) {
 	storage.readUnitProps(db, unit, function(unitProps) {
@@ -194,32 +233,35 @@ function getInfoOnUnit(unit, cb) {
 				getParentsAndChildren(unit, function(objParentsAndChildren) {
 					getTransfersInfo(unit, function(transfersInfo) {
 						getUnitOutputs(unit, function(unitOutputs) {
-							var objInfo = {
-								unit: unit,
-								child: objParentsAndChildren.children,
-								parents: objParentsAndChildren.parents,
-								authors: objJoint.unit.authors,
-								headers_commission: objJoint.unit.headers_commission,
-								payload_commission: objJoint.unit.payload_commission,
-								main_chain_index: unitProps.main_chain_index,
-								latest_included_mc_index: unitProps.latest_included_mc_index,
-								level: unitProps.level,
-								is_stable: unitProps.is_stable,
-								messages: objJoint.unit.messages,
-								transfersInfo: transfersInfo,
-								outputsUnit: unitOutputs,
-								date: moment(objJoint.unit.timestamp * 1000).format()
-							};
-							if (objJoint.unit.witnesses) {
-								objInfo.witnesses = objJoint.unit.witnesses;
-								cb(objInfo);
-							}
-							else {
-								storage.readWitnesses(db, unit, function(arrWitnesses) {
-									objInfo.witnesses = arrWitnesses;
+							getUnitCommissions(unit, function(assocCommissions) {
+								var objInfo = {
+									unit: unit,
+									child: objParentsAndChildren.children,
+									parents: objParentsAndChildren.parents,
+									authors: objJoint.unit.authors,
+									headers_commission: objJoint.unit.headers_commission,
+									payload_commission: objJoint.unit.payload_commission,
+									main_chain_index: unitProps.main_chain_index,
+									latest_included_mc_index: unitProps.latest_included_mc_index,
+									level: unitProps.level,
+									is_stable: unitProps.is_stable,
+									messages: objJoint.unit.messages,
+									transfersInfo: transfersInfo,
+									outputsUnit: unitOutputs,
+									date: moment(objJoint.unit.timestamp * 1000).format(),
+									assocCommissions: assocCommissions
+								};
+								if (objJoint.unit.witnesses) {
+									objInfo.witnesses = objJoint.unit.witnesses;
 									cb(objInfo);
-								});
-							}
+								}
+								else {
+									storage.readWitnesses(db, unit, function(arrWitnesses) {
+										objInfo.witnesses = arrWitnesses;
+										cb(objInfo);
+									});
+								}
+							});
 						});
 					});
 				});

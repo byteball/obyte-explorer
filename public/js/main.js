@@ -195,7 +195,7 @@ function createCy() {
 }
 
 function updListNotStableUnit() {
-	if(!_cy) return;
+	if (!_cy) return;
 	notStable = [];
 	_cy.nodes().forEach(function(node) {
 		if (!node.hasClass('is_stable')) {
@@ -205,7 +205,8 @@ function updListNotStableUnit() {
 }
 
 function generate(_nodes, _edges) {
-	var newOffset_x, newOffset_y, left = Infinity, right = -Infinity, first = false, generateAdd = [], _node, classes = '', pos_iomc;
+	var newOffset_x, newOffset_y, left = Infinity, right = -Infinity, first = false, generateAdd = [], _node,
+		classes = '', pos_iomc;
 	var graph = createGraph(_nodes, _edges);
 	graph.nodes().forEach(function(unit) {
 		_node = graph.node(unit);
@@ -294,7 +295,8 @@ function animationPanUp(distance) {
 }
 
 function setNew(_nodes, _edges, newUnits) {
-	var newOffset_x, newOffset_y, min = Infinity, max = -Infinity, left = Infinity, right = -Infinity, first = false, x, y, generateAdd = [], _node, classes = '', pos_iomc;
+	var newOffset_x, newOffset_y, min = Infinity, max = -Infinity, left = Infinity, right = -Infinity, first = false, x,
+		y, generateAdd = [], _node, classes = '', pos_iomc;
 	var graph = createGraph(_nodes, _edges);
 	graph.nodes().forEach(function(unit) {
 		_node = graph.node(unit);
@@ -423,7 +425,8 @@ function fixConflicts(arr) {
 }
 
 function createEdges() {
-	var _edges = cloneObj(edges), cyEdges = _cy.edges(), cyEdgesLength = cyEdges.length, k, out = [], position, offset = 0, offsetTop = 0, classes = '';
+	var _edges = cloneObj(edges), cyEdges = _cy.edges(), cyEdgesLength = cyEdges.length, k, out = [], position,
+		offset = 0, offsetTop = 0, classes = '';
 	for (var a = 0, l = cyEdgesLength; a < l; a++) {
 		k = cyEdges[a].source() + '_' + cyEdges[a].target();
 		if (_edges[k]) delete _edges[k];
@@ -627,7 +630,8 @@ $(window).scroll(function() {
 
 //websocket
 var socket = io.connect(location.href);
-var bWaitingForNext = false, bWaitingForNew = false, bHaveDelayedNewRequests = false, bWaitingForPrev = false, bWaitingForHighlightNode = false, bWaitingForNextPageTransactions = false;
+var bWaitingForNext = false, bWaitingForNew = false, bHaveDelayedNewRequests = false, bWaitingForPrev = false,
+	bWaitingForHighlightNode = false, bWaitingForNextPageTransactions = false;
 var nextPageTransactionsEnd = false, pageTransactions = 0;
 
 socket.on('connect', function() {
@@ -687,7 +691,7 @@ socket.on('prev', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
-function generateMessageInfo(messages, transfersInfo, outputsUnit) {
+function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions) {
 	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
 	messages.forEach(function(message) {
 		if (message.payload) {
@@ -722,10 +726,18 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 									'<div>Amount: <span class="numberFormat">' + input.amount + '</span></div>' +
 									'</div>';
 							}
-							else {
+							else if (input.output_index !== undefined) {
 								key = input.unit + '_' + input.output_index + '_' + (asset);
 								messagesOut += '<div><span class="numberFormat">' + transfersInfo[key].amount + '</span> from ' +
 									'<a href="#' + transfersInfo[key].unit + '">' + transfersInfo[key].unit + '</a></div>';
+							} else if (input.type === 'headers_commission' || input.type === 'witnessing') {
+								key = input.from_main_chain_index + '_' + input.to_main_chain_index;
+								var objName = (input.type === 'headers_commission' ? 'headers' : (input.type === 'witnessing' ? 'witnessing' : false));
+								if (objName) {
+									messagesOut += '<div><a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a> ' + objName + ' commissions from mci ' + assocCommissions[objName][key].from_mci +
+										' to mci ' + assocCommissions[objName][key].to_mci + '.' +
+										' Sum <span class="numberFormat">' + assocCommissions[objName][key].sum + '</span></div>';
+								}
 							}
 						});
 
@@ -765,10 +777,10 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 					break;
 			}
 			messagesOut += '</div></div>';
-		}else if(message.app == 'payment' && message.payload_location == 'none' && !shownHiddenPayments){
-            messagesOut += '<div class="message childNotSpoiler">Hidden payments</div>';
-            shownHiddenPayments = true;
-        }
+		} else if (message.app == 'payment' && message.payload_location == 'none' && !shownHiddenPayments) {
+			messagesOut += '<div class="message childNotSpoiler">Hidden payments</div>';
+			shownHiddenPayments = true;
+		}
 	});
 	return messagesOut;
 }
@@ -795,13 +807,13 @@ socket.on('info', function(data) {
 		$('#parents').html(parentOut);
 		$('#authors').html(authorsOut);
 		$('#received').html(moment(data.date).format('DD.MM.YYYY HH:mm:ss'));
-		$('#fees').html('<span class="numberFormat">'+(parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> headers, <span class="numberFormat">' + data.payload_commission + '</span> payload)');
+		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> headers, <span class="numberFormat">' + data.payload_commission + '</span> payload)');
 		$('#level').html(data.level);
 		$('#main_chain_index').html(data.main_chain_index);
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
 		$('#is_stable').html(data.is_stable);
 		$('#witnesses').html(witnessesOut);
-		$('#messages').html(generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit));
+		$('#messages').html(generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions));
 		if ($('#listInfo').css('display') == 'none') {
 			$('#defaultInfo').hide();
 			$('#listInfo').show();
@@ -846,20 +858,28 @@ function generateTransactionsList(objTransactions, address) {
 		listTransactions += '<tr>' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
 			'<div>Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
-			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">'+moment(transaction.date).format('DD.MM.YYYY HH:mm:ss')+'</div></th>' +
+			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(transaction.date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
 			'</tr>' +
-			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>'+
+			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
 			'<tr><td>';
-
 		transaction.from.forEach(function(objFrom) {
-			addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 			if (objFrom.issue) {
 				listTransactions += '<div class="transactionUnitListAddress">' +
 					'<div>' + addressOut + '</div>' +
 					'<div>Issue <span class="numberFormat">' + objFrom.amount + '</span> ' + transaction.asset + '</div>' +
 					'<div>serial number: ' + objFrom.serial_number + '</div></div>';
+			} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
+				var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
+				if (commissionName) {
+					listTransactions += '<div class="transactionUnitListAddress">' +
+						'<div><a href="#' + objFrom.address + '">' + objFrom.address + '</a> ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
+						' to mci ' + objFrom.to_mci + '.' +
+						' Sum <span class="numberFormat">' + objFrom.sum + '</span></div>' +
+						'</div>';
+				}
 			}
 			else {
+				addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 				listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
 					'<div>(<span class="numberFormat">' + objFrom.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ')</div></div>';
 			}
@@ -915,7 +935,7 @@ socket.on('addressInfo', function(data) {
 		showInfoMessage("Address not found");
 	}
 	bWaitingForNextPageTransactions = false;
-	if(!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
+	if (!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
 });
 
 socket.on('nextPageTransactions', function(data) {
@@ -926,7 +946,7 @@ socket.on('nextPageTransactions', function(data) {
 		formatAllNumbers();
 	}
 	bWaitingForNextPageTransactions = false;
-	if(!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
+	if (!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
 });
 
 function getNew() {
@@ -1035,7 +1055,7 @@ scroll.scroll(function(e) {
 });
 
 $(window).resize(function() {
-	if(_cy) scroll.scrollTop(convertPosPanToPosScroll());
+	if (_cy) scroll.scrollTop(convertPosPanToPosScroll());
 });
 
 function convertPosScrollToPosPan(posTop) {
@@ -1064,13 +1084,13 @@ function formatAllNumbers() {
 
 $(document).on('mousedown', '.numberFormat', function(e) {
 	var self = $(this);
-	if(self.hasClass('format')) {
+	if (self.hasClass('format')) {
 		self.html(self.html().replace(/\,/g, '')).removeClass('format');
 	}
 });
 $(document).on('touchstart', '.numberFormat', function() {
 	var self = $(this);
-	if(self.hasClass('format')) {
+	if (self.hasClass('format')) {
 		self.html(self.html().replace(/\,/g, '')).removeClass('format');
 	}
 });

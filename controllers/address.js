@@ -3,6 +3,7 @@
 
 var db = require('byteballcore/db.js');
 var moment = require('moment');
+var async = require('async');
 
 
 function getAmountForInfoAddress(objTransactions, cb) {
@@ -13,7 +14,8 @@ function getAmountForInfoAddress(objTransactions, cb) {
 	db.query("SELECT inputs.unit, outputs.address, outputs.amount, outputs.asset FROM inputs, outputs \n\
 		WHERE inputs.unit IN (?) AND outputs.unit = inputs.src_unit AND outputs.message_index = inputs.src_message_index AND outputs.output_index = inputs.src_output_index",
 		[arrTransactionsUnit], function(rowsAmount) {
-			db.query("SELECT unit, asset, serial_number, amount, address  FROM inputs WHERE unit IN (?) AND type='issue'", [arrTransactionsUnit], function(rowsIssue) {
+			db.query("SELECT unit, asset, type, serial_number, from_main_chain_index, to_main_chain_index, amount, address \n\
+				FROM inputs WHERE unit IN (?) AND (type='issue' OR type='headers_commission' OR type='witnessing')", [arrTransactionsUnit], function(rows) {
 				rowsAmount.forEach(function(row) {
 					key = row.unit + '_' + row.asset;
 					if (objTransactions[key]) objTransactions[key].from.push({
@@ -21,16 +23,48 @@ function getAmountForInfoAddress(objTransactions, cb) {
 						amount: row.amount
 					});
 				});
-				rowsIssue.forEach(function(row) {
-					key = row.unit + '_' + row.asset;
-					if (objTransactions[key]) objTransactions[key].from.push({
-						issue: true,
-						amount: row.amount,
-						serial_number: row.serial_number,
-						address: row.address
-					});
+				async.each(rows, function(row, callback) {
+					if (row.type === 'issue') {
+						key = row.unit + '_' + row.asset;
+						if (objTransactions[key]) objTransactions[key].from.push({
+							issue: true,
+							amount: row.amount,
+							serial_number: row.serial_number,
+							address: row.address
+						});
+						callback();
+					} else {
+						var tableName, commissionType;
+						if (row.type === 'headers_commission') {
+							tableName = 'headers_commission_outputs';
+							commissionType = 'headers';
+						} else if (row.type === 'witnessing') {
+							tableName = 'witnessing_outputs';
+							commissionType = 'witnessing';
+						}
+						if (tableName) {
+							db.query("SELECT amount FROM " + tableName + " WHERE address = ? AND main_chain_index >= ? AND main_chain_index <= ? ORDER BY main_chain_index",
+								[row.address, row.from_main_chain_index, row.to_main_chain_index],
+								function(rowsCommissionOutputs) {
+									key = row.unit + '_' + row.asset;
+									if (objTransactions[key]) objTransactions[key].from.push({
+										commissionType: commissionType,
+										address: row.address,
+										from_mci: row.from_main_chain_index,
+										to_mci: row.to_main_chain_index,
+										sum: rowsCommissionOutputs.reduce(function(accumulator, val) {
+											return accumulator + val.amount
+										}, 0)
+									});
+									callback();
+								});
+						} else {
+							callback();
+						}
+					}
+				}, function() {
+					cb(objTransactions);
 				});
-				cb(objTransactions);
 			})
 		});
 }
@@ -76,25 +110,24 @@ function getUnitsForTransactionsAddress(address, page, cb) {
 		AND units.unit = inputs.unit \n\
 		GROUP BY inputs.unit \n\
 		ORDER BY units.main_chain_index DESC LIMIT ?, 5", [address, address, page * 5], function(rows) {
-		var arrUnit = [];
-		rows.forEach(function(row) {
-			arrUnit.push(row.unit);
-		});
-		cb(arrUnit);
+
+		cb(rows.map(function(row) {
+			return row.unit;
+		}));
 	});
 }
 
 function getAddressTransactions(address, page, cb) {
 	getUnitsForTransactionsAddress(address, page, function(arrUnit) {
 		if (arrUnit.length) {
-			db.query("SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index \n\
+			db.query("SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type \n\
 		FROM inputs, outputs, units \n\
 		WHERE (( inputs.unit IN (?) AND outputs.unit = inputs.unit ) OR ( outputs.unit IN (?) AND inputs.unit = outputs.unit )) \n\
 		AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
 		AND units.unit = inputs.unit \n\
 		ORDER BY units.main_chain_index DESC",
 				[arrUnit, arrUnit], function(rowsTransactions) {
-					var key, del, objTransactions = {};
+					var key, objTransactions = {};
 					if (rowsTransactions.length) {
 						rowsTransactions.forEach(function(row) {
 							key = row.unit + '_' + row.asset;
@@ -107,7 +140,7 @@ function getAddressTransactions(address, page, cb) {
 								asset: row.asset,
 								output_id: row.output_id
 							};
-							if (objTransactions[key].from.indexOf(row.address) == -1) objTransactions[key].from.push(row.address);
+							if (objTransactions[key].from.indexOf(row.address) === -1) objTransactions[key].from.push(row.address);
 							if (!objTransactions[key].to[row.output_id + '_' + row.message_index + '_' + row.output_index]) {
 								objTransactions[key].to[row.output_id + '_' + row.message_index + '_' + row.output_index] = {
 									address: row.addressTo,
@@ -117,27 +150,11 @@ function getAddressTransactions(address, page, cb) {
 							}
 						});
 
-						for (var k in objTransactions) {
-							del = true;
-
-							if (del && objTransactions[k].from.indexOf(address) != -1) {
-								objTransactions[k].spent = true;
-								del = false;
+						for (var key in objTransactions) {
+							if (objTransactions[key].from.indexOf(address) !== -1) {
+								objTransactions[key].spent = true;
 							}
-							else {
-								for (key in objTransactions[k].to) {
-									if (objTransactions[k].to[key].address == address) {
-										del = false;
-										break;
-									}
-								}
-							}
-							if (del) {
-								delete objTransactions[k];
-							}
-							else {
-								objTransactions[k].from = [];
-							}
+							objTransactions[key].from = [];
 						}
 
 						getAmountForInfoAddress(objTransactions, function(objTransactions) {
