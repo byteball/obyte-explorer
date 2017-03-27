@@ -4,7 +4,7 @@
 var db = require('byteballcore/db.js');
 var moment = require('moment');
 var async = require('async');
-
+var BIGINT = 9223372036854775807;
 
 function getAmountForInfoAddress(objTransactions, cb) {
 	var arrTransactionsUnit = [], key;
@@ -100,18 +100,29 @@ function getSpentOutputs(objTransactions, cb) {
 }
 
 function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, cb) {
-	db.query("SELECT inputs.unit, inputs.ROWID AS inputsROWID, outputs.ROWID AS outputsROWID \n\
+	db.query("SELECT unit, MIN(ROWID) AS minRowid FROM inputs WHERE address = ? AND ROWID < ? GROUP BY unit ORDER BY ROWID DESC LIMIT 0, 5", [address, lastInputsROWID], function(rowsInputs) {
+		db.query("SELECT unit, MIN(ROWID) AS minRowid FROM outputs WHERE address = ? AND ROWID < ? GROUP BY unit ORDER BY ROWID DESC LIMIT 0, 5", [address, lastOutputsROWID], function(rowsOutputs) {
+			var arrUnitInputs = rowsInputs.length === 0 ? [""] : rowsInputs.map(function(row) {
+				return row.unit;
+			});
+			var arrUnitOutputs = rowsOutputs.length === 0 ? [""] : rowsOutputs.map(function(row) {
+				return row.unit;
+			});
+			db.query("SELECT inputs.unit \n\
 		FROM inputs, outputs, units \n\
-		WHERE (( inputs.unit IN ( SELECT unit FROM inputs WHERE address = ? AND ROWID < ? GROUP BY inputs.unit ORDER BY ROWID DESC LIMIT 0, 5)) \n\
-		OR ( outputs.unit IN ( SELECT unit FROM outputs WHERE address = ? AND ROWID < ? GROUP BY outputs.unit ORDER BY ROWID DESC LIMIT 0, 5))) \n\
+		WHERE (( inputs.unit IN (?)) \n\
+		OR ( outputs.unit IN (?))) \n\
 		AND inputs.unit = outputs.unit AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
 		AND units.unit = inputs.unit \n\
 		GROUP BY inputs.unit \n\
-		ORDER BY units.main_chain_index DESC", [address, lastInputsROWID, address, lastOutputsROWID], function(rows) {
-		var lastRow = rows[rows.length - 1];
-		cb(rows.map(function(row) {
-			return row.unit;
-		}), lastRow.inputsROWID, lastRow.outputsROWID);
+		ORDER BY units.main_chain_index DESC LIMIT 0, 5", [arrUnitInputs, arrUnitOutputs], function(rows) {
+				var lastInputsROWID = rowsInputs[rowsInputs.length - 1] ? rowsInputs[rowsInputs.length - 1].minRowid : BIGINT;
+				var lastOutputsROWID = rowsOutputs[rowsOutputs.length - 1] ? rowsOutputs[rowsOutputs.length - 1].minRowid : BIGINT;
+				cb(rows.map(function(row) {
+					return row.unit;
+				}), lastInputsROWID, lastOutputsROWID);
+			});
+		});
 	});
 }
 
@@ -174,7 +185,7 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, cb) 
 }
 
 function getAddressInfo(address, cb) {
-	getAddressTransactions(address, 9223372036854775807, 9223372036854775807, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
+	getAddressTransactions(address, BIGINT, BIGINT, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
 		db.query("SELECT * FROM outputs WHERE address=? and is_spent=0 ORDER BY output_id DESC", [address], function(rowsOutputs) {
 			if (objTransactions !== null || rowsOutputs.length) {
 				var objBalance = {bytes: 0}, unspent = [];
@@ -194,11 +205,11 @@ function getAddressInfo(address, cb) {
 							if (rowDefinitions) {
 								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, rowDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
 							} else {
-								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, false, false);
+								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, newLastInputsROWID, newLastOutputsROWID);
 							}
 						});
 					} else {
-						cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, false, false);
+						cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, newLastInputsROWID, newLastOutputsROWID);
 					}
 				});
 			}
