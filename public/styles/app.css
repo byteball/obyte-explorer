@@ -236,9 +236,13 @@ a {
 	text-decoration: none;
 }
 
-#info a {
+#info #authors > div, #info #children > div, #info #parents > div {
 	display: block;
 	padding: 5px;
+}
+
+pre{
+	margin: 0;
 }
 
 #otherInfo > div {

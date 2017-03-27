@@ -736,7 +736,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 								if (objName) {
 									messagesOut += '<div><a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a> ' + objName + ' commissions from mci ' + assocCommissions[objName][key].from_mci +
 										' to mci ' + assocCommissions[objName][key].to_mci + '.' +
-										' Sum <span class="numberFormat">' + assocCommissions[objName][key].sum + '</span></div>';
+										' Sum: <span class="numberFormat">' + assocCommissions[objName][key].sum + '</span> bytes</div>';
 								}
 							}
 						});
@@ -788,6 +788,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 socket.on('info', function(data) {
 	if (bWaitingForHighlightNode) bWaitingForHighlightNode = false;
 	if (data) {
+		console.log(data.authors);
 		var childOut = '', parentOut = '', authorsOut = '', witnessesOut = '';
 		data.child.forEach(function(unit) {
 			childOut += '<div><a href="#' + unit + '">' + unit + '</a></div>';
@@ -795,8 +796,13 @@ socket.on('info', function(data) {
 		data.parents.forEach(function(unit) {
 			parentOut += '<div><a href="#' + unit + '">' + unit + '</a></div>';
 		});
+		var incAuthors = 0;
 		data.authors.forEach(function(author) {
-			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a></div>';
+			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
+			if (author.definition) {
+				authorsOut += '<span class="infoTitle hideTitle" id="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">Definition<div class="infoTitleImg"></div></div>' +
+					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ') + '</pre></div></div>';
+			}
 		});
 		data.witnesses.forEach(function(witness) {
 			witnessesOut += '<div><a href="#' + witness + '">' + witness + '</a></div>';
@@ -871,10 +877,11 @@ function generateTransactionsList(objTransactions, address) {
 			} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
 				var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
 				if (commissionName) {
+					addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 					listTransactions += '<div class="transactionUnitListAddress">' +
-						'<div><a href="#' + objFrom.address + '">' + objFrom.address + '</a> ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
+						'<div>' + addressOut + ' ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
 						' to mci ' + objFrom.to_mci + '.' +
-						' Sum <span class="numberFormat">' + objFrom.sum + '</span></div>' +
+						' Sum: <span class="numberFormat">' + objFrom.sum + '</span> bytes</div>' +
 						'</div>';
 				}
 			}

@@ -226,6 +226,28 @@ function getUnitCommissions(unit, cb) {
 	});
 }
 
+function setDefinitionInAuthors(unit, objJoint, cb) {
+	async.eachOf(objJoint.unit.authors, function(value, key, callback) {
+		db.query("SELECT * FROM unit_authors WHERE unit = ? AND address = ? AND definition_chash IS NOT NULL", [unit, value.address], function(rowUnitAuthors) {
+			if (rowUnitAuthors.length) {
+				db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash], function(rowDefinitions) {
+					if (rowDefinitions) {
+						objJoint.unit.authors[key].definition = rowDefinitions[0].definition;
+					} else {
+						objJoint.unit.authors[key].definition = false;
+					}
+					callback();
+				});
+			} else {
+				objJoint.unit.authors[key].definition = false;
+				callback();
+			}
+		});
+	}, function() {
+		cb(objJoint)
+	});
+}
+
 function getInfoOnUnit(unit, cb) {
 	storage.readUnitProps(db, unit, function(unitProps) {
 		storage.readJoint(db, unit, {
@@ -234,33 +256,35 @@ function getInfoOnUnit(unit, cb) {
 					getTransfersInfo(unit, function(transfersInfo) {
 						getUnitOutputs(unit, function(unitOutputs) {
 							getUnitCommissions(unit, function(assocCommissions) {
-								var objInfo = {
-									unit: unit,
-									child: objParentsAndChildren.children,
-									parents: objParentsAndChildren.parents,
-									authors: objJoint.unit.authors,
-									headers_commission: objJoint.unit.headers_commission,
-									payload_commission: objJoint.unit.payload_commission,
-									main_chain_index: unitProps.main_chain_index,
-									latest_included_mc_index: unitProps.latest_included_mc_index,
-									level: unitProps.level,
-									is_stable: unitProps.is_stable,
-									messages: objJoint.unit.messages,
-									transfersInfo: transfersInfo,
-									outputsUnit: unitOutputs,
-									date: moment(objJoint.unit.timestamp * 1000).format(),
-									assocCommissions: assocCommissions
-								};
-								if (objJoint.unit.witnesses) {
-									objInfo.witnesses = objJoint.unit.witnesses;
-									cb(objInfo);
-								}
-								else {
-									storage.readWitnesses(db, unit, function(arrWitnesses) {
-										objInfo.witnesses = arrWitnesses;
+								setDefinitionInAuthors(unit, objJoint, function(objJoint) {
+									var objInfo = {
+										unit: unit,
+										child: objParentsAndChildren.children,
+										parents: objParentsAndChildren.parents,
+										authors: objJoint.unit.authors,
+										headers_commission: objJoint.unit.headers_commission,
+										payload_commission: objJoint.unit.payload_commission,
+										main_chain_index: unitProps.main_chain_index,
+										latest_included_mc_index: unitProps.latest_included_mc_index,
+										level: unitProps.level,
+										is_stable: unitProps.is_stable,
+										messages: objJoint.unit.messages,
+										transfersInfo: transfersInfo,
+										outputsUnit: unitOutputs,
+										date: moment(objJoint.unit.timestamp * 1000).format(),
+										assocCommissions: assocCommissions
+									};
+									if (objJoint.unit.witnesses) {
+										objInfo.witnesses = objJoint.unit.witnesses;
 										cb(objInfo);
-									});
-								}
+									}
+									else {
+										storage.readWitnesses(db, unit, function(arrWitnesses) {
+											objInfo.witnesses = arrWitnesses;
+											cb(objInfo);
+										});
+									}
+								});
 							});
 						});
 					});
