@@ -43,7 +43,7 @@ function getAmountForInfoAddress(objTransactions, cb) {
 							commissionType = 'witnessing';
 						}
 						if (tableName) {
-							db.query("SELECT amount FROM " + tableName + " WHERE address = ? AND main_chain_index >= ? AND main_chain_index <= ? ORDER BY main_chain_index",
+							db.query("SELECT SUM(amount) AS sum FROM " + tableName + " WHERE address = ? AND main_chain_index >= ? AND main_chain_index <= ? ORDER BY main_chain_index",
 								[row.address, row.from_main_chain_index, row.to_main_chain_index],
 								function(rowsCommissionOutputs) {
 									key = row.unit + '_' + row.asset;
@@ -52,9 +52,7 @@ function getAmountForInfoAddress(objTransactions, cb) {
 										address: row.address,
 										from_mci: row.from_main_chain_index,
 										to_mci: row.to_main_chain_index,
-										sum: rowsCommissionOutputs.reduce(function(accumulator, val) {
-											return accumulator + val.amount
-										}, 0)
+										sum: rowsCommissionOutputs[0].sum
 									});
 									callback();
 								});
@@ -104,12 +102,12 @@ function getSpentOutputs(objTransactions, cb) {
 function getUnitsForTransactionsAddress(address, page, cb) {
 	db.query("SELECT inputs.unit \n\
 		FROM inputs, outputs, units \n\
-		WHERE (( inputs.unit IN ( SELECT unit FROM inputs WHERE address = ? GROUP BY inputs.unit )) \n\
-		OR ( outputs.unit IN ( SELECT unit FROM outputs WHERE address = ? GROUP BY outputs.unit ))) \n\
+		WHERE (( inputs.unit IN ( SELECT unit FROM inputs WHERE address = ? GROUP BY inputs.unit ORDER BY ROWID DESC LIMIT ?, 5)) \n\
+		OR ( outputs.unit IN ( SELECT unit FROM outputs WHERE address = ? GROUP BY outputs.unit ORDER BY ROWID DESC LIMIT ?, 5))) \n\
 		AND inputs.unit = outputs.unit AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
 		AND units.unit = inputs.unit \n\
 		GROUP BY inputs.unit \n\
-		ORDER BY units.main_chain_index DESC LIMIT ?, 5", [address, address, page * 5], function(rows) {
+		ORDER BY units.main_chain_index DESC", [address, page * 5, address, page * 5], function(rows) {
 
 		cb(rows.map(function(row) {
 			return row.unit;
@@ -190,8 +188,7 @@ function getAddressInfo(address, cb) {
 						objBalance[row.asset] += row.amount;
 					}
 				});
-
-				db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL", [address], function(rowUnitAuthors) {
+				db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowUnitAuthors) {
 					if (rowUnitAuthors.length) {
 						db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash], function(rowDefinitions) {
 							if (rowDefinitions) {

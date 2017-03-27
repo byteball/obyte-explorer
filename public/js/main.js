@@ -144,6 +144,12 @@ function createCy() {
 					'border-color': '#333',
 					'border-width': '4'
 				}
+			},
+			{
+				selector: '.finalBad',
+				style: {
+					'background-color': 'red'
+				}
 			}
 		],
 		elements: {
@@ -220,9 +226,8 @@ function generate(_nodes, _edges) {
 		if (_node) {
 			classes = '';
 			if (_node.is_on_main_chain) classes += 'is_on_main_chain ';
-			if (_node.is_stable) {
-				classes += 'is_stable ';
-			}
+			if (_node.is_stable) classes += 'is_stable ';
+			if (_node.sequence === 'final-bad') classes += 'finalBad';
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
 				newOffset_y = generateOffset - _node.y + 66;
@@ -313,9 +318,8 @@ function setNew(_nodes, _edges, newUnits) {
 		if (_node) {
 			classes = '';
 			if (_node.is_on_main_chain) classes += 'is_on_main_chain ';
-			if (_node.is_stable) {
-				classes += 'is_stable ';
-			}
+			if (_node.is_stable) classes += 'is_stable ';
+			if (_node.sequence === 'final-bad') classes += 'finalBad';
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
 				newOffset_y = newOffset - (max - min) + 66;
@@ -370,7 +374,8 @@ function createGraph(_nodes, _edges) {
 			width: 32,
 			height: 32,
 			is_on_main_chain: node.is_on_main_chain,
-			is_stable: node.is_stable
+			is_stable: node.is_stable,
+			sequence: node.sequence
 		});
 	});
 	for (var k in _edges) {
@@ -788,7 +793,6 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 socket.on('info', function(data) {
 	if (bWaitingForHighlightNode) bWaitingForHighlightNode = false;
 	if (data) {
-		console.log(data.authors);
 		var childOut = '', parentOut = '', authorsOut = '', witnessesOut = '';
 		data.child.forEach(function(unit) {
 			childOut += '<div><a href="#' + unit + '">' + unit + '</a></div>';
@@ -800,9 +804,11 @@ socket.on('info', function(data) {
 		data.authors.forEach(function(author) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
-				authorsOut += '<span class="infoTitle hideTitle" id="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">Definition<div class="infoTitleImg"></div></div>' +
-					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ') + '</pre></div></div>';
+				authorsOut += '<span class="infoTitle hideTitle" id="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">Definition<div class="infoTitleImg"></div></span>' +
+					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ') + '</pre></div>';
+
 			}
+			authorsOut += '</div>';
 		});
 		data.witnesses.forEach(function(witness) {
 			witnessesOut += '<div><a href="#' + witness + '">' + witness + '</a></div>';
@@ -819,10 +825,15 @@ socket.on('info', function(data) {
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
 		$('#is_stable').html(data.is_stable);
 		$('#witnesses').html(witnessesOut);
-		$('#messages').html(generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions));
-		if ($('#listInfo').css('display') == 'none') {
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions));
+		if ($('#listInfo').css('display') === 'none') {
 			$('#defaultInfo').hide();
 			$('#listInfo').show();
+		}
+		if (data.sequence === 'final-bad') {
+			$('#divTitleMessage,#divFees').hide();
+		} else {
+			$('#divTitleMessage,#divFees').show();
 		}
 		adaptiveShowInfo();
 		formatAllNumbers();
@@ -941,8 +952,9 @@ socket.on('addressInfo', function(data) {
 		} else {
 			$('#definition').hide();
 			if (!$('#definitionTitle').hasClass('hideTitle')) {
-				$('#definitionTitle').addClass('hideTitle').hide();
+				$('#definitionTitle').addClass('hideTitle');
 			}
+			$('#definitionTitle').hide();
 		}
 		page = 'address';
 		formatAllNumbers()
