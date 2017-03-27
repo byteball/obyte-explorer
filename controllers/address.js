@@ -99,24 +99,24 @@ function getSpentOutputs(objTransactions, cb) {
 	setSpentOutputs();
 }
 
-function getUnitsForTransactionsAddress(address, page, cb) {
-	db.query("SELECT inputs.unit \n\
+function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, cb) {
+	db.query("SELECT inputs.unit, inputs.ROWID AS inputsROWID, outputs.ROWID AS outputsROWID \n\
 		FROM inputs, outputs, units \n\
-		WHERE (( inputs.unit IN ( SELECT unit FROM inputs WHERE address = ? GROUP BY inputs.unit ORDER BY ROWID DESC LIMIT ?, 5)) \n\
-		OR ( outputs.unit IN ( SELECT unit FROM outputs WHERE address = ? GROUP BY outputs.unit ORDER BY ROWID DESC LIMIT ?, 5))) \n\
+		WHERE (( inputs.unit IN ( SELECT unit FROM inputs WHERE address = ? AND ROWID < ? GROUP BY inputs.unit ORDER BY ROWID DESC LIMIT 0, 5)) \n\
+		OR ( outputs.unit IN ( SELECT unit FROM outputs WHERE address = ? AND ROWID < ? GROUP BY outputs.unit ORDER BY ROWID DESC LIMIT 0, 5))) \n\
 		AND inputs.unit = outputs.unit AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
 		AND units.unit = inputs.unit \n\
 		GROUP BY inputs.unit \n\
-		ORDER BY units.main_chain_index DESC", [address, page * 5, address, page * 5], function(rows) {
-
+		ORDER BY units.main_chain_index DESC", [address, lastInputsROWID, address, lastOutputsROWID], function(rows) {
+		var lastRow = rows[rows.length - 1];
 		cb(rows.map(function(row) {
 			return row.unit;
-		}));
+		}), lastRow.inputsROWID, lastRow.outputsROWID);
 	});
 }
 
-function getAddressTransactions(address, page, cb) {
-	getUnitsForTransactionsAddress(address, page, function(arrUnit) {
+function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, cb) {
+	getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, function(arrUnit, newLastInputsROWID, newLastOutputsROWID) {
 		if (arrUnit.length) {
 			db.query("SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type \n\
 		FROM inputs, outputs, units \n\
@@ -157,7 +157,7 @@ function getAddressTransactions(address, page, cb) {
 
 						getAmountForInfoAddress(objTransactions, function(objTransactions) {
 							getSpentOutputs(objTransactions, function(objTransactions) {
-								cb(objTransactions);
+								cb(objTransactions, newLastInputsROWID, newLastOutputsROWID);
 							});
 						});
 					}
@@ -174,7 +174,7 @@ function getAddressTransactions(address, page, cb) {
 }
 
 function getAddressInfo(address, cb) {
-	getAddressTransactions(address, 0, function(objTransactions) {
+	getAddressTransactions(address, 9223372036854775807, 9223372036854775807, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
 		db.query("SELECT * FROM outputs WHERE address=? and is_spent=0 ORDER BY output_id DESC", [address], function(rowsOutputs) {
 			if (objTransactions !== null || rowsOutputs.length) {
 				var objBalance = {bytes: 0}, unspent = [];
@@ -192,13 +192,13 @@ function getAddressInfo(address, cb) {
 					if (rowUnitAuthors.length) {
 						db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash], function(rowDefinitions) {
 							if (rowDefinitions) {
-								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, rowDefinitions[0].definition);
+								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, rowDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
 							} else {
-								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false);
+								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, false, false);
 							}
 						});
 					} else {
-						cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false);
+						cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, false, false);
 					}
 				});
 			}

@@ -637,7 +637,7 @@ $(window).scroll(function() {
 var socket = io.connect(location.href);
 var bWaitingForNext = false, bWaitingForNew = false, bHaveDelayedNewRequests = false, bWaitingForPrev = false,
 	bWaitingForHighlightNode = false, bWaitingForNextPageTransactions = false;
-var nextPageTransactionsEnd = false, pageTransactions = 0;
+var nextPageTransactionsEnd = false, lastInputsROWID = 0, lastOutputsROWID = 0;
 
 socket.on('connect', function() {
 	start();
@@ -920,7 +920,8 @@ function generateTransactionsList(objTransactions, address) {
 socket.on('addressInfo', function(data) {
 	if (data) {
 		var listUnspent = '', balance = '';
-		pageTransactions = 1;
+		lastInputsROWID = data.newLastInputsROWID;
+		lastOutputsROWID = data.newLastOutputsROWID;
 		nextPageTransactionsEnd = data.end;
 		for (var k in data.objBalance) {
 			if (k === 'bytes') {
@@ -968,7 +969,10 @@ socket.on('addressInfo', function(data) {
 
 socket.on('nextPageTransactions', function(data) {
 	if (data) {
-		pageTransactions++;
+		if(data.newLastOutputsROWID && data.newLastOutputsROWID) {
+			lastInputsROWID = data.newLastInputsROWID;
+			lastOutputsROWID = data.newLastOutputsROWID;
+		}
 		nextPageTransactionsEnd = data.end;
 		$('#listUnits').append(generateTransactionsList(data.objTransactions, data.address));
 		formatAllNumbers();
@@ -1012,7 +1016,11 @@ function getHighlightNode(unit) {
 
 function getNextPageTransactions() {
 	if (!bWaitingForNextPageTransactions && location.hash.length == 33) {
-		socket.emit('nextPageTransactions', {address: location.hash.substr(1), page: pageTransactions});
+		socket.emit('nextPageTransactions', {
+			address: location.hash.substr(1),
+			lastInputsROWID: lastInputsROWID,
+			lastOutputsROWID: lastOutputsROWID
+		});
 		bWaitingForNextPageTransactions = true;
 	}
 }

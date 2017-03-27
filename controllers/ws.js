@@ -38,7 +38,7 @@ function start(data) {
 		});
 	}
 	else if (data.type === 'address') {
-		address.getAddressInfo(data.address, function(objTransactions, unspent, objBalance, end, definition) {
+		address.getAddressInfo(data.address, function(objTransactions, unspent, objBalance, end, definition, newLastInputsROWID, newLastOutputsROWID) {
 			if (objTransactions === null) {
 				ws.emit('addressInfo');
 			}
@@ -49,7 +49,9 @@ function start(data) {
 					unspent: unspent,
 					objBalance: objBalance,
 					end: end,
-					definition: definition
+					definition: definition,
+					newLastInputsROWID: newLastInputsROWID,
+					newLastOutputsROWID: newLastOutputsROWID
 				});
 			}
 		});
@@ -151,11 +153,13 @@ function highlightNode(data) {
 function nextPageTransactions(data) {
 	var ws = this;
 
-	address.getAddressTransactions(data.address, data.page, function(objTransactions) {
+	address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
 		ws.emit('nextPageTransactions', {
 			address: data.address,
 			objTransactions: objTransactions,
-			end: objTransactions === null || Object.keys(objTransactions).length < 5
+			end: objTransactions === null || Object.keys(objTransactions).length < 5,
+			newLastInputsROWID: newLastInputsROWID,
+			newLastOutputsROWID: newLastOutputsROWID
 		});
 	});
 }
