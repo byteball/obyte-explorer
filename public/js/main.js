@@ -804,7 +804,7 @@ socket.on('info', function(data) {
 		data.authors.forEach(function(author) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
-				authorsOut += '<span class="infoTitle hideTitle" id="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">Definition<div class="infoTitleImg"></div></span>' +
+				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">Definition<div class="infoTitleImg"></div></span>' +
 					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ') + '</pre></div>';
 
 			}
@@ -948,14 +948,14 @@ socket.on('addressInfo', function(data) {
 			$('#addressInfo').show();
 		}
 		if (data.definition) {
-			$('#definitionTitle').show();
+			$('#definitionTitleInAddress').show();
 			$('#definition').html('<pre>' + JSON.stringify(JSON.parse(data.definition), null, '   ') + '</pre>');
 		} else {
 			$('#definition').hide();
-			if (!$('#definitionTitle').hasClass('hideTitle')) {
-				$('#definitionTitle').addClass('hideTitle');
+			if (!$('#definitionTitleInAddress').hasClass('hideTitle')) {
+				$('#definitionTitleInAddress').addClass('hideTitle');
 			}
-			$('#definitionTitle').hide();
+			$('#definitionTitleInAddress').hide();
 		}
 		page = 'address';
 		formatAllNumbers()
