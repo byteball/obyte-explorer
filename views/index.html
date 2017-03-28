@@ -4,7 +4,7 @@
 	<title>Byteball Explorer</title>
 	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
 	<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&amp;subset=cyrillic" rel="stylesheet">
-	<link rel="stylesheet" href="/styles/app.css?v6">
+	<link rel="stylesheet" href="/styles/app.css?v7">
 	<link rel="icon" href="/img/icon_16x16@2x.png">
 </head>
 <body>
@@ -61,7 +61,7 @@
 			<div id="parents"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'messages')">Messages
+			<div class="infoTitle" id="divTitleMessage" onclick="showHideBlock(event, 'messages')">Messages
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="messages"></div>
@@ -78,7 +78,7 @@
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="otherInfo">
-				<div>Fees: <span id="fees"></span></div>
+				<div id="divFees">Fees: <span id="fees"></span></div>
 				<div>Level: <span id="level"></span></div>
 				<div>Main chain index: <span id="main_chain_index"></span></div>
 				<div>Latest included mc index: <span id="latest_included_mc_index"></span></div>
@@ -96,6 +96,11 @@
 		<div>
 			<div id="balance"></div>
 		</div>
+		<div class="infoTitle hideTitle" id="definitionTitleInAddress" onclick="showHideBlock(event, 'definition')" style="display: none">
+			Definition
+			<div class="infoTitleImg"></div>
+		</div>
+		<div id="definition" style="display: none"></div>
 	</div>
 	<div class="row" id="blockListUnspent" style="margin-top: 50px">
 		<div class="infoTitle" onclick="showHideBlock(event, 'listUnspent')">
@@ -119,6 +124,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/cytoscape.min.js"></script>
 <script src="/js/dagre.min.js"></script>
-<script src="/js/main.js?v6"></script>
+<script src="/js/main.js?v7"></script>
 </body>
 </html>

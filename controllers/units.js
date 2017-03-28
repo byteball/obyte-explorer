@@ -4,12 +4,13 @@
 var db = require('byteballcore/db.js');
 var storage = require('byteballcore/storage.js');
 var moment = require('moment');
+var async = require('async');
 
 function getLastUnits(cb) {
 	var nodes = [];
 	var edges = {};
 
-	db.query("SELECT parenthoods.child_unit, parenthoods.parent_unit, units.ROWID, units.is_on_main_chain, units.is_stable, units.best_parent_unit \n\
+	db.query("SELECT parenthoods.child_unit, parenthoods.parent_unit, units.ROWID, units.is_on_main_chain, units.is_stable, units.best_parent_unit, units.sequence \n\
 		FROM parenthoods, units WHERE parenthoods.child_unit IN \n\
 		(SELECT unit FROM units ORDER BY ROWID DESC LIMIT 0, 100) and units.unit=parenthoods.child_unit ORDER BY parenthoods.ROWID DESC", function(rows) {
 		rows.forEach(function(row) {
@@ -17,7 +18,8 @@ function getLastUnits(cb) {
 				data: {unit: row.child_unit, unit_s: row.child_unit.substr(0, 7) + '...'},
 				rowid: row.rowid,
 				is_on_main_chain: row.is_on_main_chain,
-				is_stable: row.is_stable
+				is_stable: row.is_stable,
+				sequence: row.sequence
 			});
 			edges[row.child_unit + '_' + row.parent_unit] = {
 				data: {
@@ -36,13 +38,14 @@ function getUnitsBeforeRowid(rowid, limit, cb) {
 	var edges = {};
 	var units = [];
 
-	db.query("SELECT ROWID, unit, is_on_main_chain, is_stable FROM units WHERE ROWID < ? ORDER BY ROWID DESC LIMIT 0, ?", [rowid, limit], function(rowsUnits) {
+	db.query("SELECT ROWID, unit, is_on_main_chain, is_stable, sequence FROM units WHERE ROWID < ? ORDER BY ROWID DESC LIMIT 0, ?", [rowid, limit], function(rowsUnits) {
 		rowsUnits.forEach(function(row) {
 			nodes.push({
 				data: {unit: row.unit, unit_s: row.unit.substr(0, 7) + '...'},
 				rowid: row.rowid,
 				is_on_main_chain: row.is_on_main_chain,
-				is_stable: row.is_stable
+				is_stable: row.is_stable,
+				sequence: row.sequence
 			});
 			units.push(row.unit);
 		});
@@ -74,21 +77,22 @@ function getUnitsAfterRowid(rowid, limit, cb) {
 	var edges = {};
 	var units = [];
 
-	db.query("SELECT ROWID, unit, is_on_main_chain, is_stable FROM units WHERE ROWID > ? ORDER BY ROWID ASC LIMIT 0, ?", [rowid, limit], function(rowsUnits) {
+	db.query("SELECT ROWID, unit, is_on_main_chain, is_stable, sequence FROM units WHERE ROWID > ? ORDER BY ROWID ASC LIMIT 0, ?", [rowid, limit], function(rowsUnits) {
 		rowsUnits.forEach(function(row) {
 			nodes.push({
 				data: {unit: row.unit, unit_s: row.unit.substr(0, 7) + '...'},
 				rowid: row.rowid,
 				is_on_main_chain: row.is_on_main_chain,
-				is_stable: row.is_stable
+				is_stable: row.is_stable,
+				sequence: row.sequence
 			});
 			units.push(row.unit);
 		});
-		nodes = nodes.sort(function(a,b){
-			if(a.rowid < b.rowid){
+		nodes = nodes.sort(function(a, b) {
+			if (a.rowid < b.rowid) {
 				return 1;
 			}
-			if(a.rowid > b.rowid){
+			if (a.rowid > b.rowid) {
 				return -1;
 			}
 			return 0;
@@ -186,6 +190,70 @@ function getUnitOutputs(unit, cb) {
 		});
 	});
 }
+function getUnitCommissions(unit, cb) {
+	var assocCommissions = {headers: {}, witnessing: {}};
+	db.query("SELECT type, address, from_main_chain_index, to_main_chain_index FROM inputs WHERE unit = ? AND (type = 'headers_commission' OR type = 'witnessing')", [unit], function(rows) {
+		if (rows.length) {
+			async.each(rows, function(row, callback) {
+				var tableName, objectName;
+				if (row.type === 'headers_commission') {
+					tableName = 'headers_commission_outputs';
+					objectName = 'headers';
+				} else if (row.type === 'witnessing') {
+					tableName = 'witnessing_outputs';
+					objectName = 'witnessing';
+				}
+				if (tableName) {
+					db.query("SELECT SUM(amount) AS sum FROM " + tableName + " WHERE address = ? AND main_chain_index >= ? AND main_chain_index <= ? ORDER BY main_chain_index",
+						[row.address, row.from_main_chain_index, row.to_main_chain_index],
+						function(rowsCommissionOutputs) {
+							assocCommissions[objectName][row.from_main_chain_index + '_' + row.to_main_chain_index] = {
+								address: row.address,
+								from_mci: row.from_main_chain_index,
+								to_mci: row.to_main_chain_index,
+								sum: rowsCommissionOutputs[0].sum
+							};
+							callback();
+						});
+				} else {
+					callback();
+				}
+			}, function() {
+				cb(assocCommissions);
+			});
+		} else {
+			cb(assocCommissions);
+		}
+	});
+}
+
+function setDefinitionInAuthors(unit, objJoint, cb) {
+	async.eachOf(objJoint.unit.authors, function(value, key, callback) {
+		db.query("SELECT * FROM unit_authors WHERE unit = ? AND address = ? AND definition_chash IS NOT NULL", [unit, value.address], function(rowUnitAuthors) {
+			if (rowUnitAuthors.length) {
+				db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash], function(rowDefinitions) {
+					if (rowDefinitions) {
+						objJoint.unit.authors[key].definition = rowDefinitions[0].definition;
+					} else {
+						objJoint.unit.authors[key].definition = false;
+					}
+					callback();
+				});
+			} else {
+				objJoint.unit.authors[key].definition = false;
+				callback();
+			}
+		});
+	}, function() {
+		cb(objJoint)
+	});
+}
+
+function getUnitSequence(unit, cb) {
+	db.query('SELECT sequence FROM units WHERE unit = ?', [unit], function(rows) {
+		cb(rows[0].sequence);
+	});
+}
 
 function getInfoOnUnit(unit, cb) {
 	storage.readUnitProps(db, unit, function(unitProps) {
@@ -194,32 +262,40 @@ function getInfoOnUnit(unit, cb) {
 				getParentsAndChildren(unit, function(objParentsAndChildren) {
 					getTransfersInfo(unit, function(transfersInfo) {
 						getUnitOutputs(unit, function(unitOutputs) {
-							var objInfo = {
-								unit: unit,
-								child: objParentsAndChildren.children,
-								parents: objParentsAndChildren.parents,
-								authors: objJoint.unit.authors,
-								headers_commission: objJoint.unit.headers_commission,
-								payload_commission: objJoint.unit.payload_commission,
-								main_chain_index: unitProps.main_chain_index,
-								latest_included_mc_index: unitProps.latest_included_mc_index,
-								level: unitProps.level,
-								is_stable: unitProps.is_stable,
-								messages: objJoint.unit.messages,
-								transfersInfo: transfersInfo,
-								outputsUnit: unitOutputs,
-								date: moment(objJoint.unit.timestamp * 1000).format()
-							};
-							if (objJoint.unit.witnesses) {
-								objInfo.witnesses = objJoint.unit.witnesses;
-								cb(objInfo);
-							}
-							else {
-								storage.readWitnesses(db, unit, function(arrWitnesses) {
-									objInfo.witnesses = arrWitnesses;
-									cb(objInfo);
+							getUnitCommissions(unit, function(assocCommissions) {
+								setDefinitionInAuthors(unit, objJoint, function(objJoint) {
+									getUnitSequence(unit, function(sequence) {
+										var objInfo = {
+											unit: unit,
+											sequence: sequence,
+											child: objParentsAndChildren.children,
+											parents: objParentsAndChildren.parents,
+											authors: objJoint.unit.authors,
+											headers_commission: objJoint.unit.headers_commission,
+											payload_commission: objJoint.unit.payload_commission,
+											main_chain_index: unitProps.main_chain_index,
+											latest_included_mc_index: unitProps.latest_included_mc_index,
+											level: unitProps.level,
+											is_stable: unitProps.is_stable,
+											messages: objJoint.unit.messages,
+											transfersInfo: transfersInfo,
+											outputsUnit: unitOutputs,
+											date: moment(objJoint.unit.timestamp * 1000).format(),
+											assocCommissions: assocCommissions
+										};
+										if (objJoint.unit.witnesses) {
+											objInfo.witnesses = objJoint.unit.witnesses;
+											cb(objInfo);
+										}
+										else {
+											storage.readWitnesses(db, unit, function(arrWitnesses) {
+												objInfo.witnesses = arrWitnesses;
+												cb(objInfo);
+											});
+										}
+									});
 								});
-							}
+							});
 						});
 					});
 				});

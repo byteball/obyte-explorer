@@ -144,6 +144,12 @@ function createCy() {
 					'border-color': '#333',
 					'border-width': '4'
 				}
+			},
+			{
+				selector: '.finalBad',
+				style: {
+					'background-color': 'red'
+				}
 			}
 		],
 		elements: {
@@ -195,7 +201,7 @@ function createCy() {
 }
 
 function updListNotStableUnit() {
-	if(!_cy) return;
+	if (!_cy) return;
 	notStable = [];
 	_cy.nodes().forEach(function(node) {
 		if (!node.hasClass('is_stable')) {
@@ -205,7 +211,8 @@ function updListNotStableUnit() {
 }
 
 function generate(_nodes, _edges) {
-	var newOffset_x, newOffset_y, left = Infinity, right = -Infinity, first = false, generateAdd = [], _node, classes = '', pos_iomc;
+	var newOffset_x, newOffset_y, left = Infinity, right = -Infinity, first = false, generateAdd = [], _node,
+		classes = '', pos_iomc;
 	var graph = createGraph(_nodes, _edges);
 	graph.nodes().forEach(function(unit) {
 		_node = graph.node(unit);
@@ -219,9 +226,8 @@ function generate(_nodes, _edges) {
 		if (_node) {
 			classes = '';
 			if (_node.is_on_main_chain) classes += 'is_on_main_chain ';
-			if (_node.is_stable) {
-				classes += 'is_stable ';
-			}
+			if (_node.is_stable) classes += 'is_stable ';
+			if (_node.sequence === 'final-bad') classes += 'finalBad';
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
 				newOffset_y = generateOffset - _node.y + 66;
@@ -294,7 +300,8 @@ function animationPanUp(distance) {
 }
 
 function setNew(_nodes, _edges, newUnits) {
-	var newOffset_x, newOffset_y, min = Infinity, max = -Infinity, left = Infinity, right = -Infinity, first = false, x, y, generateAdd = [], _node, classes = '', pos_iomc;
+	var newOffset_x, newOffset_y, min = Infinity, max = -Infinity, left = Infinity, right = -Infinity, first = false, x,
+		y, generateAdd = [], _node, classes = '', pos_iomc;
 	var graph = createGraph(_nodes, _edges);
 	graph.nodes().forEach(function(unit) {
 		_node = graph.node(unit);
@@ -311,9 +318,8 @@ function setNew(_nodes, _edges, newUnits) {
 		if (_node) {
 			classes = '';
 			if (_node.is_on_main_chain) classes += 'is_on_main_chain ';
-			if (_node.is_stable) {
-				classes += 'is_stable ';
-			}
+			if (_node.is_stable) classes += 'is_stable ';
+			if (_node.sequence === 'final-bad') classes += 'finalBad';
 			if (!first) {
 				newOffset_x = -_node.x - ((right - left) / 2);
 				newOffset_y = newOffset - (max - min) + 66;
@@ -368,7 +374,8 @@ function createGraph(_nodes, _edges) {
 			width: 32,
 			height: 32,
 			is_on_main_chain: node.is_on_main_chain,
-			is_stable: node.is_stable
+			is_stable: node.is_stable,
+			sequence: node.sequence
 		});
 	});
 	for (var k in _edges) {
@@ -423,7 +430,8 @@ function fixConflicts(arr) {
 }
 
 function createEdges() {
-	var _edges = cloneObj(edges), cyEdges = _cy.edges(), cyEdgesLength = cyEdges.length, k, out = [], position, offset = 0, offsetTop = 0, classes = '';
+	var _edges = cloneObj(edges), cyEdges = _cy.edges(), cyEdgesLength = cyEdges.length, k, out = [], position,
+		offset = 0, offsetTop = 0, classes = '';
 	for (var a = 0, l = cyEdgesLength; a < l; a++) {
 		k = cyEdges[a].source() + '_' + cyEdges[a].target();
 		if (_edges[k]) delete _edges[k];
@@ -627,8 +635,9 @@ $(window).scroll(function() {
 
 //websocket
 var socket = io.connect(location.href);
-var bWaitingForNext = false, bWaitingForNew = false, bHaveDelayedNewRequests = false, bWaitingForPrev = false, bWaitingForHighlightNode = false, bWaitingForNextPageTransactions = false;
-var nextPageTransactionsEnd = false, pageTransactions = 0;
+var bWaitingForNext = false, bWaitingForNew = false, bHaveDelayedNewRequests = false, bWaitingForPrev = false,
+	bWaitingForHighlightNode = false, bWaitingForNextPageTransactions = false;
+var nextPageTransactionsEnd = false, lastInputsROWID = 0, lastOutputsROWID = 0;
 
 socket.on('connect', function() {
 	start();
@@ -687,7 +696,7 @@ socket.on('prev', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
-function generateMessageInfo(messages, transfersInfo, outputsUnit) {
+function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions) {
 	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
 	messages.forEach(function(message) {
 		if (message.payload) {
@@ -722,10 +731,17 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 									'<div>Amount: <span class="numberFormat">' + input.amount + '</span></div>' +
 									'</div>';
 							}
-							else {
+							else if (input.output_index !== undefined) {
 								key = input.unit + '_' + input.output_index + '_' + (asset);
 								messagesOut += '<div><span class="numberFormat">' + transfersInfo[key].amount + '</span> from ' +
 									'<a href="#' + transfersInfo[key].unit + '">' + transfersInfo[key].unit + '</a></div>';
+							} else if (input.type === 'headers_commission' || input.type === 'witnessing') {
+								key = input.from_main_chain_index + '_' + input.to_main_chain_index;
+								var objName = (input.type === 'headers_commission' ? 'headers' : (input.type === 'witnessing' ? 'witnessing' : false));
+								if (objName) {
+									messagesOut += '<div><span class="numberFormat">' + assocCommissions[objName][key].sum + '</span> bytes of ' + objName + ' commissions on <a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a>' +
+										' from mci ' + assocCommissions[objName][key].from_mci + ' to mci ' + assocCommissions[objName][key].to_mci + '</div>';
+								}
 							}
 						});
 
@@ -765,10 +781,10 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit) {
 					break;
 			}
 			messagesOut += '</div></div>';
-		}else if(message.app == 'payment' && message.payload_location == 'none' && !shownHiddenPayments){
-            messagesOut += '<div class="message childNotSpoiler">Hidden payments</div>';
-            shownHiddenPayments = true;
-        }
+		} else if (message.app == 'payment' && message.payload_location == 'none' && !shownHiddenPayments) {
+			messagesOut += '<div class="message childNotSpoiler">Hidden payments</div>';
+			shownHiddenPayments = true;
+		}
 	});
 	return messagesOut;
 }
@@ -783,8 +799,15 @@ socket.on('info', function(data) {
 		data.parents.forEach(function(unit) {
 			parentOut += '<div><a href="#' + unit + '">' + unit + '</a></div>';
 		});
+		var incAuthors = 0;
 		data.authors.forEach(function(author) {
-			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a></div>';
+			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
+			if (author.definition) {
+				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">Definition<div class="infoTitleImg"></div></span>' +
+					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ') + '</pre></div>';
+
+			}
+			authorsOut += '</div>';
 		});
 		data.witnesses.forEach(function(witness) {
 			witnessesOut += '<div><a href="#' + witness + '">' + witness + '</a></div>';
@@ -794,17 +817,22 @@ socket.on('info', function(data) {
 		$('#children').html(childOut);
 		$('#parents').html(parentOut);
 		$('#authors').html(authorsOut);
-		$('#received').html(moment(data.date).format('DD.MM.YYYY HH:mm'));
-		$('#fees').html('<span class="numberFormat">'+(parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> headers, <span class="numberFormat">' + data.payload_commission + '</span> payload)');
+		$('#received').html(moment(data.date).format('DD.MM.YYYY HH:mm:ss'));
+		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> headers, <span class="numberFormat">' + data.payload_commission + '</span> payload)');
 		$('#level').html(data.level);
 		$('#main_chain_index').html(data.main_chain_index);
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
 		$('#is_stable').html(data.is_stable);
 		$('#witnesses').html(witnessesOut);
-		$('#messages').html(generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit));
-		if ($('#listInfo').css('display') == 'none') {
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions));
+		if ($('#listInfo').css('display') === 'none') {
 			$('#defaultInfo').hide();
 			$('#listInfo').show();
+		}
+		if (data.sequence === 'final-bad') {
+			$('#divTitleMessage,#divFees').hide();
+		} else {
+			$('#divTitleMessage,#divFees').show();
 		}
 		adaptiveShowInfo();
 		formatAllNumbers();
@@ -846,20 +874,29 @@ function generateTransactionsList(objTransactions, address) {
 		listTransactions += '<tr>' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
 			'<div>Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
-			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">'+moment(transaction.date).format('DD.MM.YYYY HH:mm')+'</div></th>' +
+			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(transaction.date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
 			'</tr>' +
-			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>'+
+			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
 			'<tr><td>';
-
 		transaction.from.forEach(function(objFrom) {
-			addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 			if (objFrom.issue) {
 				listTransactions += '<div class="transactionUnitListAddress">' +
 					'<div>' + addressOut + '</div>' +
 					'<div>Issue <span class="numberFormat">' + objFrom.amount + '</span> ' + transaction.asset + '</div>' +
 					'<div>serial number: ' + objFrom.serial_number + '</div></div>';
+			} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
+				var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
+				if (commissionName) {
+					addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
+					listTransactions += '<div class="transactionUnitListAddress">' +
+						'<div>' + addressOut + ' ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
+						' to mci ' + objFrom.to_mci + '.' +
+						' Sum: <span class="numberFormat">' + objFrom.sum + '</span> bytes</div>' +
+						'</div>';
+				}
 			}
 			else {
+				addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 				listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
 					'<div>(<span class="numberFormat">' + objFrom.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ')</div></div>';
 			}
@@ -882,7 +919,8 @@ function generateTransactionsList(objTransactions, address) {
 socket.on('addressInfo', function(data) {
 	if (data) {
 		var listUnspent = '', balance = '';
-		pageTransactions = 1;
+		lastInputsROWID = data.newLastInputsROWID;
+		lastOutputsROWID = data.newLastOutputsROWID;
 		nextPageTransactionsEnd = data.end;
 		for (var k in data.objBalance) {
 			if (k === 'bytes') {
@@ -908,6 +946,16 @@ socket.on('addressInfo', function(data) {
 		if ($('#addressInfo').css('display') == 'none') {
 			$('#addressInfo').show();
 		}
+		if (data.definition) {
+			$('#definitionTitleInAddress').show();
+			$('#definition').html('<pre>' + JSON.stringify(JSON.parse(data.definition), null, '   ') + '</pre>');
+		} else {
+			$('#definition').hide();
+			if (!$('#definitionTitleInAddress').hasClass('hideTitle')) {
+				$('#definitionTitleInAddress').addClass('hideTitle');
+			}
+			$('#definitionTitleInAddress').hide();
+		}
 		page = 'address';
 		formatAllNumbers()
 	}
@@ -915,16 +963,21 @@ socket.on('addressInfo', function(data) {
 		showInfoMessage("Address not found");
 	}
 	bWaitingForNextPageTransactions = false;
+	if (!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
 });
 
 socket.on('nextPageTransactions', function(data) {
 	if (data) {
-		pageTransactions++;
+		if (data.newLastOutputsROWID && data.newLastOutputsROWID) {
+			lastInputsROWID = data.newLastInputsROWID;
+			lastOutputsROWID = data.newLastOutputsROWID;
+		}
 		nextPageTransactionsEnd = data.end;
 		$('#listUnits').append(generateTransactionsList(data.objTransactions, data.address));
 		formatAllNumbers();
 	}
 	bWaitingForNextPageTransactions = false;
+	if (!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
 });
 
 function getNew() {
@@ -962,7 +1015,11 @@ function getHighlightNode(unit) {
 
 function getNextPageTransactions() {
 	if (!bWaitingForNextPageTransactions && location.hash.length == 33) {
-		socket.emit('nextPageTransactions', {address: location.hash.substr(1), page: pageTransactions});
+		socket.emit('nextPageTransactions', {
+			address: location.hash.substr(1),
+			lastInputsROWID: lastInputsROWID,
+			lastOutputsROWID: lastOutputsROWID
+		});
 		bWaitingForNextPageTransactions = true;
 	}
 }
@@ -1033,7 +1090,7 @@ scroll.scroll(function(e) {
 });
 
 $(window).resize(function() {
-	if(_cy) scroll.scrollTop(convertPosPanToPosScroll());
+	if (_cy) scroll.scrollTop(convertPosPanToPosScroll());
 });
 
 function convertPosScrollToPosPan(posTop) {
@@ -1062,13 +1119,13 @@ function formatAllNumbers() {
 
 $(document).on('mousedown', '.numberFormat', function(e) {
 	var self = $(this);
-	if(self.hasClass('format')) {
+	if (self.hasClass('format')) {
 		self.html(self.html().replace(/\,/g, '')).removeClass('format');
 	}
 });
 $(document).on('touchstart', '.numberFormat', function() {
 	var self = $(this);
-	if(self.hasClass('format')) {
+	if (self.hasClass('format')) {
 		self.html(self.html().replace(/\,/g, '')).removeClass('format');
 	}
 });

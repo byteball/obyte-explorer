@@ -3,7 +3,8 @@
 
 var db = require('byteballcore/db.js');
 var moment = require('moment');
-
+var async = require('async');
+var BIGINT = 9223372036854775807;
 
 function getAmountForInfoAddress(objTransactions, cb) {
 	var arrTransactionsUnit = [], key;
@@ -13,7 +14,8 @@ function getAmountForInfoAddress(objTransactions, cb) {
 	db.query("SELECT inputs.unit, outputs.address, outputs.amount, outputs.asset FROM inputs, outputs \n\
 		WHERE inputs.unit IN (?) AND outputs.unit = inputs.src_unit AND outputs.message_index = inputs.src_message_index AND outputs.output_index = inputs.src_output_index",
 		[arrTransactionsUnit], function(rowsAmount) {
-			db.query("SELECT unit, asset, serial_number, amount, address  FROM inputs WHERE unit IN (?) AND type='issue'", [arrTransactionsUnit], function(rowsIssue) {
+			db.query("SELECT unit, asset, type, serial_number, from_main_chain_index, to_main_chain_index, amount, address \n\
+				FROM inputs WHERE unit IN (?) AND (type='issue' OR type='headers_commission' OR type='witnessing')", [arrTransactionsUnit], function(rows) {
 				rowsAmount.forEach(function(row) {
 					key = row.unit + '_' + row.asset;
 					if (objTransactions[key]) objTransactions[key].from.push({
@@ -21,16 +23,46 @@ function getAmountForInfoAddress(objTransactions, cb) {
 						amount: row.amount
 					});
 				});
-				rowsIssue.forEach(function(row) {
-					key = row.unit + '_' + row.asset;
-					if (objTransactions[key]) objTransactions[key].from.push({
-						issue: true,
-						amount: row.amount,
-						serial_number: row.serial_number,
-						address: row.address
-					});
+				async.each(rows, function(row, callback) {
+					if (row.type === 'issue') {
+						key = row.unit + '_' + row.asset;
+						if (objTransactions[key]) objTransactions[key].from.push({
+							issue: true,
+							amount: row.amount,
+							serial_number: row.serial_number,
+							address: row.address
+						});
+						callback();
+					} else {
+						var tableName, commissionType;
+						if (row.type === 'headers_commission') {
+							tableName = 'headers_commission_outputs';
+							commissionType = 'headers';
+						} else if (row.type === 'witnessing') {
+							tableName = 'witnessing_outputs';
+							commissionType = 'witnessing';
+						}
+						if (tableName) {
+							db.query("SELECT SUM(amount) AS sum FROM " + tableName + " WHERE address = ? AND main_chain_index >= ? AND main_chain_index <= ? ORDER BY main_chain_index",
+								[row.address, row.from_main_chain_index, row.to_main_chain_index],
+								function(rowsCommissionOutputs) {
+									key = row.unit + '_' + row.asset;
+									if (objTransactions[key]) objTransactions[key].from.push({
+										commissionType: commissionType,
+										address: row.address,
+										from_mci: row.from_main_chain_index,
+										to_mci: row.to_main_chain_index,
+										sum: rowsCommissionOutputs[0].sum
+									});
+									callback();
+								});
+						} else {
+							callback();
+						}
+					}
+				}, function() {
+					cb(objTransactions);
 				});
-				cb(objTransactions);
 			})
 		});
 }
@@ -67,34 +99,33 @@ function getSpentOutputs(objTransactions, cb) {
 	setSpentOutputs();
 }
 
-function getUnitsForTransactionsAddress(address, page, cb) {
-	db.query("SELECT inputs.unit \n\
+function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, cb) {
+	db.query("SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID \n\
 		FROM inputs, outputs, units \n\
-		WHERE (( inputs.unit IN ( SELECT unit FROM inputs WHERE address = ? GROUP BY inputs.unit )) \n\
-		OR ( outputs.unit IN ( SELECT unit FROM outputs WHERE address = ? GROUP BY outputs.unit ))) \n\
+		WHERE (( inputs.unit IN (SELECT unit FROM inputs WHERE address = ? AND ROWID < ? GROUP BY unit ORDER BY ROWID DESC LIMIT 0, 5)) \n\
+		OR ( outputs.unit IN (SELECT unit FROM outputs WHERE address = ? AND ROWID < ? GROUP BY unit ORDER BY ROWID DESC LIMIT 0, 5))) \n\
 		AND inputs.unit = outputs.unit AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
 		AND units.unit = inputs.unit \n\
 		GROUP BY inputs.unit \n\
-		ORDER BY units.main_chain_index DESC LIMIT ?, 5", [address, address, page * 5], function(rows) {
-		var arrUnit = [];
-		rows.forEach(function(row) {
-			arrUnit.push(row.unit);
-		});
-		cb(arrUnit);
+		ORDER BY units.ROWID DESC LIMIT 0, 5", [address, lastInputsROWID, address, lastOutputsROWID], function(rows) {
+		var lastRow = rows[rows.length - 1] || {};
+		cb(rows.map(function(row) {
+			return row.unit;
+		}), lastRow.inputsROWID, lastRow.outputsROWID);
 	});
 }
 
-function getAddressTransactions(address, page, cb) {
-	getUnitsForTransactionsAddress(address, page, function(arrUnit) {
+function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, cb) {
+	getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, function(arrUnit, newLastInputsROWID, newLastOutputsROWID) {
 		if (arrUnit.length) {
-			db.query("SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index \n\
+			db.query("SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type \n\
 		FROM inputs, outputs, units \n\
 		WHERE (( inputs.unit IN (?) AND outputs.unit = inputs.unit ) OR ( outputs.unit IN (?) AND inputs.unit = outputs.unit )) \n\
 		AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
 		AND units.unit = inputs.unit \n\
 		ORDER BY units.main_chain_index DESC",
 				[arrUnit, arrUnit], function(rowsTransactions) {
-					var key, del, objTransactions = {};
+					var key, objTransactions = {};
 					if (rowsTransactions.length) {
 						rowsTransactions.forEach(function(row) {
 							key = row.unit + '_' + row.asset;
@@ -107,7 +138,7 @@ function getAddressTransactions(address, page, cb) {
 								asset: row.asset,
 								output_id: row.output_id
 							};
-							if (objTransactions[key].from.indexOf(row.address) == -1) objTransactions[key].from.push(row.address);
+							if (objTransactions[key].from.indexOf(row.address) === -1) objTransactions[key].from.push(row.address);
 							if (!objTransactions[key].to[row.output_id + '_' + row.message_index + '_' + row.output_index]) {
 								objTransactions[key].to[row.output_id + '_' + row.message_index + '_' + row.output_index] = {
 									address: row.addressTo,
@@ -117,32 +148,16 @@ function getAddressTransactions(address, page, cb) {
 							}
 						});
 
-						for (var k in objTransactions) {
-							del = true;
-
-							if (del && objTransactions[k].from.indexOf(address) != -1) {
-								objTransactions[k].spent = true;
-								del = false;
+						for (var key in objTransactions) {
+							if (objTransactions[key].from.indexOf(address) !== -1) {
+								objTransactions[key].spent = true;
 							}
-							else {
-								for (key in objTransactions[k].to) {
-									if (objTransactions[k].to[key].address == address) {
-										del = false;
-										break;
-									}
-								}
-							}
-							if (del) {
-								delete objTransactions[k];
-							}
-							else {
-								objTransactions[k].from = [];
-							}
+							objTransactions[key].from = [];
 						}
 
 						getAmountForInfoAddress(objTransactions, function(objTransactions) {
 							getSpentOutputs(objTransactions, function(objTransactions) {
-								cb(objTransactions);
+								cb(objTransactions, newLastInputsROWID, newLastOutputsROWID);
 							});
 						});
 					}
@@ -159,7 +174,7 @@ function getAddressTransactions(address, page, cb) {
 }
 
 function getAddressInfo(address, cb) {
-	getAddressTransactions(address, 0, function(objTransactions) {
+	getAddressTransactions(address, BIGINT, BIGINT, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
 		db.query("SELECT * FROM outputs WHERE address=? and is_spent=0 ORDER BY output_id DESC", [address], function(rowsOutputs) {
 			if (objTransactions !== null || rowsOutputs.length) {
 				var objBalance = {bytes: 0}, unspent = [];
@@ -173,8 +188,19 @@ function getAddressInfo(address, cb) {
 						objBalance[row.asset] += row.amount;
 					}
 				});
-
-				cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5);
+				db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowUnitAuthors) {
+					if (rowUnitAuthors.length) {
+						db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash], function(rowDefinitions) {
+							if (rowDefinitions) {
+								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, rowDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
+							} else {
+								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, newLastInputsROWID, newLastOutputsROWID);
+							}
+						});
+					} else {
+						cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, newLastInputsROWID, newLastOutputsROWID);
+					}
+				});
 			}
 			else {
 				cb(null);
