@@ -739,9 +739,8 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 								key = input.from_main_chain_index + '_' + input.to_main_chain_index;
 								var objName = (input.type === 'headers_commission' ? 'headers' : (input.type === 'witnessing' ? 'witnessing' : false));
 								if (objName) {
-									messagesOut += '<div><a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a> ' + objName + ' commissions from mci ' + assocCommissions[objName][key].from_mci +
-										' to mci ' + assocCommissions[objName][key].to_mci + '.' +
-										' Sum: <span class="numberFormat">' + assocCommissions[objName][key].sum + '</span> bytes</div>';
+									messagesOut += '<div><span class="numberFormat">' + assocCommissions[objName][key].sum + '</span> bytes of headers commissions on <a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a>' +
+										' from mci ' + assocCommissions[objName][key].from_mci + ' to mci ' + assocCommissions[objName][key].to_mci + '</div>';
 								}
 							}
 						});
@@ -969,7 +968,7 @@ socket.on('addressInfo', function(data) {
 
 socket.on('nextPageTransactions', function(data) {
 	if (data) {
-		if(data.newLastOutputsROWID && data.newLastOutputsROWID) {
+		if (data.newLastOutputsROWID && data.newLastOutputsROWID) {
 			lastInputsROWID = data.newLastInputsROWID;
 			lastOutputsROWID = data.newLastOutputsROWID;
 		}
