@@ -189,12 +189,12 @@ function getAddressInfo(address, cb) {
 					}
 				});
 			}
-			db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowUnitAuthors) {
+			db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowsUnitAuthors) {
 				var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
-				if (rowUnitAuthors.length) {
-					db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash], function(rowDefinitions) {
-						if (rowDefinitions) {
-							cb(objTransactions, unspent, objBalance, end, rowDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
+				if (rowsUnitAuthors.length) {
+					db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowsUnitAuthors[0].definition_chash], function(rowsDefinitions) {
+						if (rowsDefinitions) {
+							cb(objTransactions, unspent, objBalance, end, rowsDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
 						} else {
 							cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
 						}
