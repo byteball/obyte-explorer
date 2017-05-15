@@ -930,14 +930,23 @@ socket.on('addressInfo', function(data) {
 				balance += '<div><span class="numberFormat">' + data.objBalance[k] + '</span> of ' + k + '</div>';
 			}
 		}
-		data.unspent.forEach(function(row) {
-			listUnspent += '<div><a href="#' + row.unit + '">' + row.unit + '</a> (<span class="numberFormat">' + row.amount + '</span> ' + (row.asset == null ? 'bytes' : row.asset) + ')</div>';
-		});
+		if(data.unspent) {
+			data.unspent.forEach(function(row) {
+				listUnspent += '<div><a href="#' + row.unit + '">' + row.unit + '</a> (<span class="numberFormat">' + row.amount + '</span> ' + (row.asset == null ? 'bytes' : row.asset) + ')</div>';
+			});
+		}
 		$('#address').html(data.address);
 		$('#balance').html(balance);
 		$('#listUnspent').html(listUnspent);
-		$('#listUnits').html(generateTransactionsList(data.objTransactions, data.address));
-		if (listUnspent != '') {
+		var transactionsList = generateTransactionsList(data.objTransactions, data.address);
+		if(transactionsList) {
+			$('#listUnits').html(transactionsList);
+			$('#titleListTransactions').show();
+		}else{
+			$('#listUnits').html('');
+			$('#titleListTransactions').hide();
+		}
+		if (listUnspent !== '') {
 			$('#blockListUnspent').show();
 		}
 		else {

@@ -38,21 +38,26 @@ function start(data) {
 		});
 	}
 	else if (data.type === 'address') {
-		address.getAddressInfo(data.address, function(objTransactions, unspent, objBalance, end, definition, newLastInputsROWID, newLastOutputsROWID) {
-			if (objTransactions === null) {
-				ws.emit('addressInfo');
-			}
-			else {
-				ws.emit('addressInfo', {
-					address: data.address,
-					objTransactions: objTransactions,
-					unspent: unspent,
-					objBalance: objBalance,
-					end: end,
-					definition: definition,
-					newLastInputsROWID: newLastInputsROWID,
-					newLastOutputsROWID: newLastOutputsROWID
+		db.query("SELECT unit FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL \n\
+		UNION \n\
+		SELECT unit FROM inputs WHERE address = ? \n\
+		UNION \n\
+		SELECT unit FROM outputs WHERE address = ? LIMIT 0,1", [data.address, data.address, data.address], function(rows) {
+			if(rows.length) {
+				address.getAddressInfo(data.address, function(objTransactions, unspent, objBalance, end, definition, newLastInputsROWID, newLastOutputsROWID) {
+					ws.emit('addressInfo', {
+						address: data.address,
+						objTransactions: objTransactions,
+						unspent: unspent,
+						objBalance: objBalance,
+						end: end,
+						definition: definition,
+						newLastInputsROWID: newLastInputsROWID,
+						newLastOutputsROWID: newLastOutputsROWID
+					});
 				});
+			}else{
+				ws.emit('addressInfo');
 			}
 		});
 	}
