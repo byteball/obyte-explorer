@@ -188,23 +188,21 @@ function getAddressInfo(address, cb) {
 						objBalance[row.asset] += row.amount;
 					}
 				});
-				db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowUnitAuthors) {
-					if (rowUnitAuthors.length) {
-						db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash], function(rowDefinitions) {
-							if (rowDefinitions) {
-								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, rowDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
-							} else {
-								cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, newLastInputsROWID, newLastOutputsROWID);
-							}
-						});
-					} else {
-						cb(objTransactions, unspent, objBalance, Object.keys(objTransactions).length < 5, false, newLastInputsROWID, newLastOutputsROWID);
-					}
-				});
 			}
-			else {
-				cb(null);
-			}
+			db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowsUnitAuthors) {
+				var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
+				if (rowsUnitAuthors.length) {
+					db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowsUnitAuthors[0].definition_chash], function(rowsDefinitions) {
+						if (rowsDefinitions) {
+							cb(objTransactions, unspent, objBalance, end, rowsDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
+						} else {
+							cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
+						}
+					});
+				} else {
+					cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
+				}
+			});
 		});
 	});
 }
