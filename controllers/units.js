@@ -277,6 +277,7 @@ function getInfoOnUnit(unit, cb) {
 											latest_included_mc_index: unitProps.latest_included_mc_index,
 											level: unitProps.level,
 											is_stable: unitProps.is_stable,
+											last_ball_unit: objJoint.unit.last_ball_unit,
 											messages: objJoint.unit.messages,
 											transfersInfo: transfersInfo,
 											outputsUnit: unitOutputs,

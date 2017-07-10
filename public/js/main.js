@@ -819,6 +819,7 @@ socket.on('info', function(data) {
 		$('#authors').html(authorsOut);
 		$('#received').html(moment(data.date).format('DD.MM.YYYY HH:mm:ss'));
 		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> headers, <span class="numberFormat">' + data.payload_commission + '</span> payload)');
+		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
 		$('#main_chain_index').html(data.main_chain_index);
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
