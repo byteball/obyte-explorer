@@ -784,7 +784,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						}
 						else if (typeof message.payload[key_payload] === "object") {
 							messagesOut += '<div>' + htmlEscape(key_payload) + ':</div><div>';
-							messagesOut += JSON.stringify(message.payload[key_payload]);
+							messagesOut += htmlEscape(JSON.stringify(message.payload[key_payload]));
 							messagesOut += '</div>';
 						} else {
 							messagesOut += '<div>' + htmlEscape(key_payload + ': ' + message.payload[key_payload]) + '</div>';
