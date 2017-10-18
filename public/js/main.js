@@ -782,8 +782,12 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 							messagesOut += JSON.stringify(message.payload[key_payload]);
 							messagesOut += '</div>';
 						}
-						else {
-							messagesOut += '<div>' + htmlEscape(key_payload + ': ' + JSON.Stringify(message.payload[key_payload])) + '</div>';
+						else if (typeof message.payload[key_payload] === "object") {
+							messagesOut += '<div>' + htmlEscape(key_payload) + ':</div><div>';
+							messagesOut += JSON.stringify(message.payload[key_payload]);
+							messagesOut += '</div>';
+						} else {
+							messagesOut += '<div>' + htmlEscape(key_payload + ': ' + message.payload[key_payload]) + '</div>';
 						}
 					}
 					break;
