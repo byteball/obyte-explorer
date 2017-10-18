@@ -783,7 +783,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 							messagesOut += '</div>';
 						}
 						else {
-							messagesOut += '<div>' + htmlEscape(key_payload + ': ' + message.payload[key_payload]) + '</div>';
+							messagesOut += '<div>' + htmlEscape(key_payload + ': ' + JSON.Stringify(message.payload[key_payload])) + '</div>';
 						}
 					}
 					break;
