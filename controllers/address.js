@@ -7,15 +7,15 @@ var async = require('async');
 var BIGINT = 9223372036854775807;
 
 function getAmountForInfoAddress(objTransactions, cb) {
-	var arrTransactionsUnit = [], key;
+	var arrTransactionsUnits = [], key;
 	for (key in objTransactions) {
-		if (arrTransactionsUnit.indexOf(objTransactions[key].unit) == -1) arrTransactionsUnit.push(objTransactions[key].unit);
+		if (arrTransactionsUnits.indexOf(objTransactions[key].unit) == -1) arrTransactionsUnits.push(objTransactions[key].unit);
 	}
 	db.query("SELECT inputs.unit, outputs.address, outputs.amount, outputs.asset FROM inputs, outputs \n\
 		WHERE inputs.unit IN (?) AND outputs.unit = inputs.src_unit AND outputs.message_index = inputs.src_message_index AND outputs.output_index = inputs.src_output_index",
-		[arrTransactionsUnit], function(rowsAmount) {
+		[arrTransactionsUnits], function(rowsAmount) {
 			db.query("SELECT unit, asset, type, serial_number, from_main_chain_index, to_main_chain_index, amount, address \n\
-				FROM inputs WHERE unit IN (?) AND (type='issue' OR type='headers_commission' OR type='witnessing')", [arrTransactionsUnit], function(rows) {
+				FROM inputs WHERE unit IN (?) AND (type='issue' OR type='headers_commission' OR type='witnessing')", [arrTransactionsUnits], function(rows) {
 				rowsAmount.forEach(function(row) {
 					key = row.unit + '_' + row.asset;
 					if (objTransactions[key]) objTransactions[key].from.push({
@@ -68,19 +68,19 @@ function getAmountForInfoAddress(objTransactions, cb) {
 }
 
 function getSpentOutputs(objTransactions, cb) {
-	var arrTransactionsUnit = [], key, key2;
+	var arrTransactionsUnits = [], key, key2;
 	for (key in objTransactions) {
-		if (arrTransactionsUnit.indexOf(objTransactions[key].unit) == -1) arrTransactionsUnit.push(objTransactions[key].unit);
+		if (arrTransactionsUnits.indexOf(objTransactions[key].unit) == -1) arrTransactionsUnits.push(objTransactions[key].unit);
 	}
-	var n = 0, l = arrTransactionsUnit.length - 1;
+	var n = 0, l = arrTransactionsUnits.length - 1;
 
 	function setSpentOutputs() {
 		db.query("SELECT outputs.output_id, outputs.message_index, outputs.output_index, outputs.asset, inputs.unit \n \
 		FROM outputs, inputs WHERE outputs.unit = ? AND is_spent = 1 AND inputs.src_unit = outputs.unit \n\
 		AND inputs.src_message_index = outputs.message_index AND inputs.src_output_index = outputs.output_index",
-			[arrTransactionsUnit[n]], function(rows) {
+			[arrTransactionsUnits[n]], function(rows) {
 				rows.forEach(function(row) {
-					key = arrTransactionsUnit[n] + '_' + row.asset;
+					key = arrTransactionsUnits[n] + '_' + row.asset;
 					key2 = row.output_id + '_' + row.message_index + '_' + row.output_index;
 					if (objTransactions[key] && objTransactions[key].to[key2]) {
 						objTransactions[key].to[key2].spent = row.unit;
