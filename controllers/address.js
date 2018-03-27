@@ -116,15 +116,15 @@ function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROW
 }
 
 function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, cb) {
-	getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, function(arrUnit, newLastInputsROWID, newLastOutputsROWID) {
-		if (arrUnit.length) {
+	getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, function(arrUnits, newLastInputsROWID, newLastOutputsROWID) {
+		if (arrUnits.length) {
 			db.query("SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type, "+ db.getUnixTimestamp("units.creation_date")+" AS timestamp \n\
 		FROM inputs, outputs, units \n\
 		WHERE (( inputs.unit IN (?) AND outputs.unit = inputs.unit ) OR ( outputs.unit IN (?) AND inputs.unit = outputs.unit )) \n\
 		AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
 		AND units.unit = inputs.unit \n\
 		ORDER BY units.main_chain_index DESC",
-				[arrUnit, arrUnit], function(rowsTransactions) {
+				[arrUnits, arrUnits], function(rowsTransactions) {
 					var key, objTransactions = {};
 					if (rowsTransactions.length) {
 						rowsTransactions.forEach(function(row) {
