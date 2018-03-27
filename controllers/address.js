@@ -102,8 +102,8 @@ function getSpentOutputs(objTransactions, cb) {
 function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, cb) {
 	db.query("SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID \n\
 		FROM inputs, outputs, units \n\
-		WHERE (( inputs.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5)) \n\
-		OR ( outputs.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))) \n\
+		WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5)) \n\
+		OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))) \n\
 		AND inputs.unit = outputs.unit AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
 		AND units.unit = inputs.unit \n\
 		GROUP BY inputs.unit \n\
