@@ -773,21 +773,23 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					}
 					break;
 				case 'text':
-					messagesOut += '<div>Text: ' + htmlEscape(message.payload) + '</div>';
+					messagesOut += '<pre class="payload">' + htmlEscape(message.payload) + '</pre>';
 					break;
 				default:
 					for (var key_payload in message.payload) {
 						if (message.app == 'asset' && key_payload == 'denominations') {
-							messagesOut += '<div>denominations:</div><div>';
+							messagesOut += '<div><label>denominations:</label></div>';
+							messagesOut += '<div class="payload">';
 							messagesOut += JSON.stringify(message.payload[key_payload]);
 							messagesOut += '</div>';
 						}
 						else if (typeof message.payload[key_payload] === "object") {
-							messagesOut += '<div>' + htmlEscape(key_payload) + ':</div><div>';
+							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
+							messagesOut += '<div class="payload">';
 							messagesOut += htmlEscape(JSON.stringify(message.payload[key_payload]));
 							messagesOut += '</div>';
 						} else {
-							messagesOut += '<div>' + htmlEscape(key_payload + ': ' + message.payload[key_payload]) + '</div>';
+							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ' + htmlEscape(message.payload[key_payload]) + '</div>';
 						}
 					}
 					break;
@@ -1165,7 +1167,7 @@ $(document).on('mouseout', '.numberFormat', function() {
 
 //escape
 function htmlEscape(str) {
-	return str
+	return String(str)
 		.replace(/&/g, '&amp;')
 		.replace(/"/g, '&quot;')
 		.replace(/'/g, '&#39;')
