@@ -95,7 +95,7 @@ body {
 #cy {
 	position: absolute;
 	left: 0;
-	right: 450px;
+	right: 34%;
 	top: 45px;
 	bottom: 0;
 	z-index: 999;
@@ -106,7 +106,7 @@ body {
 	right: 0;
 	top: 45px;
 	bottom: 0;
-	width: 450px;
+	width: 34%;
 	border-left: 1px solid #ccc;
 	overflow: auto;
 }
@@ -353,12 +353,13 @@ label {
 
 #scroll {
 	position: absolute;
-	right: 451px;
+	right: 34%;
 	top: 45px;
 	bottom: 0;
 	width: 50px;
 	overflow: auto;
 	z-index: 999;
+	margin-right: 1px;
 }
 
 #scrollBody {
@@ -374,9 +375,10 @@ label {
 	background: url(/img/goToTop.svg) center no-repeat;
 	background-size: 28px;
 	top: 68px;
-	right: 490px;
+	right: 34%;
 	border: 1px solid #5e5e5e;
 	border-radius: 100%;
+	margin-right: 40px;
 }
 
 #goToTop:hover {
