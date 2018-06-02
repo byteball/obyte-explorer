@@ -773,7 +773,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					}
 					break;
 				case 'text':
-					messagesOut += '<div class="payload">' + htmlEscape(message.payload) + '</div>';
+					messagesOut += '<pre class="payload">' + htmlEscape(message.payload) + '</pre>';
 					break;
 				default:
 					for (var key_payload in message.payload) {
