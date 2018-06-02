@@ -778,18 +778,18 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 				default:
 					for (var key_payload in message.payload) {
 						if (message.app == 'asset' && key_payload == 'denominations') {
-							messagesOut += '<div><strong>denominations:</strong></div>';
+							messagesOut += '<div><label>denominations:</label></div>';
 							messagesOut += '<div class="payload">';
 							messagesOut += JSON.stringify(message.payload[key_payload]);
 							messagesOut += '</div>';
 						}
 						else if (typeof message.payload[key_payload] === "object") {
-							messagesOut += '<div><strong>' + htmlEscape(key_payload) + ':</strong></div>';
+							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
 							messagesOut += '<div class="payload">';
 							messagesOut += htmlEscape(JSON.stringify(message.payload[key_payload]));
 							messagesOut += '</div>';
 						} else {
-							messagesOut += '<div class="payload"><strong>' + htmlEscape(key_payload) + ':</strong> ' + htmlEscape(message.payload[key_payload]) + '</div>';
+							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ' + htmlEscape(message.payload[key_payload]) + '</div>';
 						}
 					}
 					break;

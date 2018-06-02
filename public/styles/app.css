@@ -245,6 +245,12 @@ pre{
 	margin: 0;
 }
 
+label {
+	color: gray;
+	font-weight: normal;
+	font-style: italic;
+}
+
 .payload {
 	white-space: pre-wrap;
 	word-wrap: break-word;
