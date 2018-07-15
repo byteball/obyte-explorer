@@ -312,7 +312,7 @@ function getInfoOnUnit(unit, cb) {
 
 function getUnitsThatBecameStable(arrUnits, cb) {
 	if (!arrUnits.length) return cb([]);
-	db.query("SELECT unit, is_on_main_chain, is_stable FROM units WHERE unit IN (?) and is_stable = 1", [arrUnits], function(rows) {
+	db.query("SELECT unit, is_on_main_chain, is_stable FROM units WHERE unit IN("+arrUnits.map(db.escape).join(', ')+") AND is_stable=1", function(rows) {
 		cb(rows);
 	});
 }
