@@ -175,35 +175,55 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, cb) 
 
 function getAddressInfo(address, cb) {
 	getAddressTransactions(address, BIGINT, BIGINT, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
-		db.query("SELECT * FROM outputs WHERE address=? and is_spent=0 ORDER BY output_id DESC", [address], function(rowsOutputs) {
-			if (objTransactions !== null || rowsOutputs.length) {
-				var objBalance = {bytes: 0}, unspent = [];
-				rowsOutputs.forEach(function(row) {
-					unspent.push(row);
-					if (row.asset === null) {
-						objBalance.bytes += row.amount;
-					}
-					else {
-						if (!objBalance[row.asset]) objBalance[row.asset] = 0;
-						objBalance[row.asset] += row.amount;
+		db.query(
+			"SELECT * \n\
+			FROM outputs \n\
+			LEFT JOIN asset_metadata USING(asset)\n\
+			WHERE address=? and is_spent=0 \n\
+			ORDER BY output_id DESC"
+			, [address] 
+			, function(rowsOutputs) {
+				if (objTransactions !== null || rowsOutputs.length) {
+					var objBalance = {
+						bytes: {
+							amount: 0,
+							name: 'bytes',
+						}
+					};
+					var unspent = [];
+					rowsOutputs.forEach(function(row) {
+						unspent.push(row);
+						var assetKey = row.asset;
+						if (assetKey === null) {
+							objBalance.bytes.amount += row.amount;
+						}
+						else {
+							if (!objBalance[assetKey]) {
+								objBalance[assetKey] = {
+									amount: 0,
+									name: row.name || assetKey,
+								};
+							}
+							objBalance[assetKey].amount += row.amount;
+						}
+					});
+				}
+				db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowsUnitAuthors) {
+					var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
+					if (rowsUnitAuthors.length) {
+						db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowsUnitAuthors[0].definition_chash], function(rowsDefinitions) {
+							if (rowsDefinitions) {
+								cb(objTransactions, unspent, objBalance, end, rowsDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
+							} else {
+								cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
+							}
+						});
+					} else {
+						cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
 					}
 				});
 			}
-			db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowsUnitAuthors) {
-				var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
-				if (rowsUnitAuthors.length) {
-					db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowsUnitAuthors[0].definition_chash], function(rowsDefinitions) {
-						if (rowsDefinitions) {
-							cb(objTransactions, unspent, objBalance, end, rowsDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
-						} else {
-							cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
-						}
-					});
-				} else {
-					cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
-				}
-			});
-		});
+		);
 	});
 }
 

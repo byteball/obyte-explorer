@@ -31,23 +31,25 @@ function init(_nodes, _edges) {
 	_cy.center(_cy.nodes()[0]);
 	page = 'dag';
 
-	if (location.hash && location.hash.length == 45) {
+	var currHash = getUrlHashKey();
+	if (currHash && currHash.length == 45) {
 		notLastUnitUp = true;
-		highlightNode(location.hash.substr(1));
+		highlightNode(currHash.substr(1));
 	}
 	isInit = true;
 }
 
 function start() {
-	if (!location.hash || (location.hash.length != 45 && location.hash.length != 33)) {
+	var currHash = getUrlHashKey();
+	if (!currHash || (currHash.length != 45 && currHash.length != 33)) {
 		socket.emit('start', {type: 'last'});
 	}
-	else if (location.hash.length == 45) {
-		socket.emit('start', {type: 'unit', unit: location.hash.substr(1)});
+	else if (currHash.length == 45) {
+		socket.emit('start', {type: 'unit', unit: currHash.substr(1)});
 		notLastUnitUp = true;
 	}
-	else if (location.hash.length == 33) {
-		socket.emit('start', {type: 'address', address: location.hash.substr(1)});
+	else if (currHash.length == 33) {
+		socket.emit('start', {type: 'address', address: currHash.substr(1)});
 		$('#addressInfo').show();
 	}
 }
@@ -520,7 +522,7 @@ function highlightNode(unit) {
 	if (el.length && phantoms[unit] === undefined && phantomsTop[unit] === undefined) {
 		var extent = _cy.extent();
 		var elPositionY = el.position().y;
-		lastActiveUnit = location.hash.substr(1);
+		lastActiveUnit = getUrlHashKey().substr(1);
 		el.addClass('active');
 		activeNode = el.id();
 		socket.emit('info', {unit: activeNode});
@@ -609,14 +611,15 @@ function goToTop() {
 
 //events
 window.addEventListener('hashchange', function() {
-	if (location.hash.length == 45) {
-		highlightNode(location.hash.substr(1));
+	var currHash = getUrlHashKey();
+	if (currHash.length == 45) {
+		highlightNode(currHash.substr(1));
 		if ($('#addressInfo').css('display') == 'block') {
 			$('#addressInfo').hide();
 		}
 	}
-	else if (location.hash.length == 33) {
-		socket.emit('start', {type: 'address', address: location.hash.substr(1)});
+	else if (currHash.length == 33) {
+		socket.emit('start', {type: 'address', address: currHash.substr(1)});
 	}
 });
 
@@ -882,10 +885,16 @@ socket.on('new', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
-function generateTransactionsList(objTransactions, address) {
+function generateTransactionsList(objTransactions, address, filter) {
+	filter = filter || {};
 	var transaction, addressOut, _addressTo, listTransactions = '';
+	var filterAssetKey = filter.asset;
 	for (var k in objTransactions) {
 		transaction = objTransactions[k];
+		var transactionAssetKey = transaction.asset || 'bytes';
+		if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
+			continue;
+		}
 
 		listTransactions += '<tr>' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
@@ -932,45 +941,52 @@ function generateTransactionsList(objTransactions, address) {
 	return listTransactions;
 }
 
-socket.on('addressInfo', function(data) {
-	if (data) {
-		var listUnspent = '', balance = '';
-		lastInputsROWID = data.newLastInputsROWID;
-		lastOutputsROWID = data.newLastOutputsROWID;
-		nextPageTransactionsEnd = data.end;
-		for (var k in data.objBalance) {
-			if (k === 'bytes') {
-				balance += '<div><span class="numberFormat">' + data.objBalance[k] + '</span> bytes</div>';
+
+var addressInfoContent = {
+	currAddress: null,
+	currAssetKey: null,
+	setAddress: function (data) {
+		this.currAddress = data.address;
+
+		$('#address').html(data.address);
+	},
+	setBalance: function (data) {
+		var objBalance = data.objBalance;
+		var balance = '';
+
+		for (var assetKey in objBalance) {
+			var balanceData = objBalance[assetKey];
+			if (assetKey === 'bytes') {
+				balance += '<div><span class="numberFormat">' + balanceData.amount + '</span> bytes</div>';
 			}
 			else {
-				balance += '<div><span class="numberFormat">' + data.objBalance[k] + '</span> of ' + k + '</div>';
+				balance += '<div><span class="numberFormat">' + balanceData.amount + '</span> of ' + assetKey + '</div>';
 			}
 		}
-		if(data.unspent) {
-			data.unspent.forEach(function(row) {
-				listUnspent += '<div><a href="#' + row.unit + '">' + row.unit + '</a> (<span class="numberFormat">' + row.amount + '</span> ' + (row.asset == null ? 'bytes' : row.asset) + ')</div>';
-			});
-		}
-		$('#address').html(data.address);
+
 		$('#balance').html(balance);
-		$('#listUnspent').html(listUnspent);
-		var transactionsList = generateTransactionsList(data.objTransactions, data.address);
-		if(transactionsList) {
-			$('#listUnits').html(transactionsList);
-			$('#titleListTransactions').show();
-		}else{
-			$('#listUnits').html('');
-			$('#titleListTransactions').hide();
+	},
+	changeAsset: function (newAssetKey) {
+		updateUrlHashWithParams({asset: newAssetKey});
+	},
+	setAssets: function (data) {
+		var objBalance = data.objBalance;
+		var assetsOptions = '<option value="all" ' + (this.currAssetKey==='all' ? 'selected' : '') + '>All</option>';
+		
+		for (var assetKey in objBalance) {
+			var balanceData = objBalance[assetKey];
+			var balanceName = balanceData.name;
+			assetsOptions += [
+				'<option value="' + assetKey + '" ' + (assetKey === this.currAssetKey ? 'selected' : '') + '>',
+				assetKey + (balanceName !== assetKey ? (' (' + balanceName + ')') : ''),
+				'</option>'
+			].join('');
 		}
-		if (listUnspent !== '') {
-			$('#blockListUnspent').show();
-		}
-		else {
-			$('#blockListUnspent').hide();
-		}
-		if ($('#addressInfo').css('display') == 'none') {
-			$('#addressInfo').show();
-		}
+
+		$('#filterAddressAssets').html(assetsOptions);
+		$('#addressAssets').show();
+	},
+	setDefinition: function (data) {
 		if (data.definition) {
 			$('#definitionTitleInAddress').show();
 			$('#definition').html('<pre>' + JSON.stringify(JSON.parse(data.definition), null, '   ') + '</pre>');
@@ -980,6 +996,94 @@ socket.on('addressInfo', function(data) {
 				$('#definitionTitleInAddress').addClass('hideTitle');
 			}
 			$('#definitionTitleInAddress').hide();
+		}
+	},
+	setUnspent: function (data) {
+		var currAssetKey = this.currAssetKey;
+		var listUnspent = '';
+
+		if(data.unspent) {
+			data.unspent.forEach(function (row) {
+				var rowAssetKey = row.asset || 'bytes';
+				if (currAssetKey !== 'all' && rowAssetKey !== currAssetKey) {
+					return;
+				}
+
+				listUnspent += [
+					'<div>',
+					'<a href="#' + row.unit + '">' + row.unit + '</a> ',
+					'(<span class="numberFormat">' + row.amount + '</span> ',
+					(row.asset == null ? 'bytes' : row.asset) + ')',
+					'</div>'
+				].join('');
+			});
+		}
+
+		$('#listUnspent').html(listUnspent);
+
+		if (listUnspent !== '') {
+			$('#blockListUnspent').show();
+		} else {
+			$('#blockListUnspent').hide();
+		}
+	},
+	setTransactions: function (data) {
+		var transactionsList = generateTransactionsList(data.objTransactions, data.address, {
+			asset: this.currAssetKey,
+		});
+		if (transactionsList) {
+			$('#listUnits').html(transactionsList);
+			$('#titleListTransactions').show();
+		} else {
+			$('#listUnits').html('');
+			$('#titleListTransactions').hide();
+		}
+	},
+	setAdditionalData: function (data) {
+		lastInputsROWID = data.newLastInputsROWID;
+		lastOutputsROWID = data.newLastOutputsROWID;
+		nextPageTransactionsEnd = data.end;
+	},
+	appendTransactions: function (data) {
+		this.appendAdditionalData(data);
+		var transactionsList = generateTransactionsList(data.objTransactions, data.address, {
+			asset: this.currAssetKey,
+		});
+		if (transactionsList) {
+			$('#listUnits').append(transactionsList);
+		}
+	},
+	appendAdditionalData: function (data) {
+		if (data.newLastOutputsROWID && data.newLastOutputsROWID) {
+			lastInputsROWID = data.newLastInputsROWID;
+			lastOutputsROWID = data.newLastOutputsROWID;
+		}
+		nextPageTransactionsEnd = data.end;
+	},
+	setNew: function (assetKey, data) {
+		this.currAssetKey = assetKey;
+		this.setAddress(data);
+		this.setBalance(data);
+		this.setDefinition(data);
+		this.setAssets(data);
+		this.setAdditionalData(data);
+		this.setUnspent(data);
+		this.setTransactions(data);
+	}
+};
+
+function changeAsset(sel) {
+	addressInfoContent.changeAsset(sel.value);
+}
+
+socket.on('addressInfo', function(data) {
+	if (data) {
+		var currHashParams = getUrlHashParams();
+		var currAssetKey = currHashParams.asset ? decodeURIComponent(currHashParams.asset) : 'all';
+		addressInfoContent.setNew(currAssetKey, data);
+
+		if ($('#addressInfo').css('display') == 'none') {
+			$('#addressInfo').show();
 		}
 		page = 'address';
 		formatAllNumbers()
@@ -993,12 +1097,7 @@ socket.on('addressInfo', function(data) {
 
 socket.on('nextPageTransactions', function(data) {
 	if (data) {
-		if (data.newLastOutputsROWID && data.newLastOutputsROWID) {
-			lastInputsROWID = data.newLastInputsROWID;
-			lastOutputsROWID = data.newLastOutputsROWID;
-		}
-		nextPageTransactionsEnd = data.end;
-		$('#listUnits').append(generateTransactionsList(data.objTransactions, data.address));
+		addressInfoContent.appendTransactions(data);
 		formatAllNumbers();
 	}
 	bWaitingForNextPageTransactions = false;
@@ -1039,9 +1138,10 @@ function getHighlightNode(unit) {
 }
 
 function getNextPageTransactions() {
-	if (!bWaitingForNextPageTransactions && location.hash.length == 33) {
+	var currHash = getUrlHashKey();
+	if (!bWaitingForNextPageTransactions && currHash.length == 33) {
 		socket.emit('nextPageTransactions', {
-			address: location.hash.substr(1),
+			address: currHash.substr(1),
 			lastInputsROWID: lastInputsROWID,
 			lastOutputsROWID: lastOutputsROWID
 		});
@@ -1173,4 +1273,49 @@ function htmlEscape(str) {
 		.replace(/'/g, '&#39;')
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;');
+}
+
+//Url hash history
+function getUrlHashKey() {
+	var currHash = window.location.hash;
+	var currHashPrefix = '';
+	if (currHash) {
+		var currHashParts = currHash.split('?');
+		currHashPrefix = currHashParts[0];
+	}
+	return currHashPrefix;
+}
+
+function getUrlHashParams() {
+	var currHash = window.location.hash;
+	var currHashParams = {};
+	if (currHash) {
+		var currHashParts = currHash.split('?');
+		if (currHashParts.length >= 2) {
+			currHashParams = parseQueryParamsStrToObj(currHashParts[1]);
+		}
+	}
+	return currHashParams;
+}
+
+function updateUrlHashWithParams(params) {
+	var currHash = getUrlHashKey();
+	var currHashParams = getUrlHashParams();
+
+	var objResultParams = Object.assign({}, currHashParams, params);
+	var strResultParams = stringifyQueryParamsObjToStr(objResultParams);
+	
+	var resultUrl = currHash + (strResultParams.length ? ('?' + strResultParams) : '');
+
+	window.location.hash = resultUrl;
+}
+
+function parseQueryParamsStrToObj(str) {
+	return JSON.parse('{"' + decodeURI(str).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
+}
+
+function stringifyQueryParamsObjToStr(obj) {
+	return Object.keys(obj).map(function (k) {
+		return encodeURIComponent(k) + "=" + encodeURIComponent(obj[k]);
+	}).join('&');
 }
