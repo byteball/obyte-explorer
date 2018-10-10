@@ -99,32 +99,61 @@ function getSpentOutputs(objTransactions, cb) {
 	setSpentOutputs();
 }
 
-function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, cb) {
-	db.query("SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID \n\
-		FROM inputs, outputs, units \n\
-		WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5)) \n\
-		OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))) \n\
-		AND inputs.unit = outputs.unit AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
-		AND units.unit = inputs.unit \n\
-		GROUP BY inputs.unit \n\
-		ORDER BY units.ROWID DESC LIMIT 0, 5", [address, lastInputsROWID, address, lastOutputsROWID], function(rows) {
-		var lastRow = rows[rows.length - 1] || {};
-		cb(rows.map(function(row) {
-			return row.unit;
-		}), lastRow.inputsROWID, lastRow.outputsROWID);
-	});
+function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter, cb) {
+	var strFilterAsset = filter.asset;
+
+	var arrQueryParams = [
+		address, lastInputsROWID, address, lastOutputsROWID
+	];
+	var arrQuerySql = [
+		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID",
+		"FROM inputs, outputs, units",
+		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))",
+		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5)))",
+		"AND inputs.unit = outputs.unit",
+		getStrSqlFilterAssetForTransactions(strFilterAsset, arrQueryParams),
+		"AND units.unit = inputs.unit",
+		"GROUP BY inputs.unit",
+		"ORDER BY units.ROWID DESC LIMIT 0, 5"
+	];
+
+	db.query(
+		arrQuerySql.join(" \n"),
+		arrQueryParams,
+		function (rows) {
+			var lastRow = rows[rows.length - 1] || {};
+			cb(
+				rows.map(function (row) {
+					return row.unit;
+				}),
+				lastRow.inputsROWID,
+				lastRow.outputsROWID
+			);
+		}
+	);
 }
 
-function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, cb) {
-	getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, function(arrUnits, newLastInputsROWID, newLastOutputsROWID) {
+function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filter, cb) {
+	getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter, function(arrUnits, newLastInputsROWID, newLastOutputsROWID) {
 		if (arrUnits.length) {
-			db.query("SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type, "+ db.getUnixTimestamp("units.creation_date")+" AS timestamp \n\
-		FROM inputs, outputs, units \n\
-		WHERE units.unit IN (?) AND outputs.unit = inputs.unit \n\
-		AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset)) \n\
-		AND units.unit = inputs.unit \n\
-		ORDER BY units.main_chain_index DESC",
-				[arrUnits], function(rowsTransactions) {
+			var strFilterAsset = filter.asset;
+
+			var arrQueryParams = [
+				arrUnits
+			];
+			var arrQuerySql = [
+				"SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type, "+ db.getUnixTimestamp("units.creation_date")+" AS timestamp",
+				"FROM inputs, outputs, units",
+				"WHERE units.unit IN (?) AND outputs.unit = inputs.unit",
+				getStrSqlFilterAssetForTransactions(strFilterAsset, arrQueryParams),
+				"AND units.unit = inputs.unit",
+				"ORDER BY units.main_chain_index DESC"
+			];
+
+			db.query(
+				arrQuerySql.join(" \n"),
+				arrQueryParams,
+				function (rowsTransactions) {
 					var key, objTransactions = {};
 					if (rowsTransactions.length) {
 						rowsTransactions.forEach(function(row) {
@@ -173,38 +202,50 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, cb) 
 	});
 }
 
-function getAddressInfo(address, cb) {
-	getAddressTransactions(address, BIGINT, BIGINT, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
+function getStrSqlFilterAssetForTransactions(strFilterAsset, arrQueryParams) {
+	if (typeof strFilterAsset === 'undefined' || strFilterAsset === 'all') {
+		return "AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset))";
+	} else if (strFilterAsset === 'bytes') {
+		return "AND inputs.asset IS NULL AND outputs.asset IS NULL";
+	} else {
+		arrQueryParams.push(strFilterAsset);
+		arrQueryParams.push(strFilterAsset);
+		return "AND inputs.asset = ? AND outputs.asset = ?";
+	}
+}
+
+function getAddressInfo(address, filter, cb) {
+	getAddressTransactions(address, BIGINT, BIGINT, filter, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
 		db.query(
 			"SELECT * \n\
 			FROM outputs \n\
-			LEFT JOIN asset_metadata USING(asset)\n\
 			WHERE address=? and is_spent=0 \n\
 			ORDER BY output_id DESC"
 			, [address] 
 			, function(rowsOutputs) {
 				if (objTransactions !== null || rowsOutputs.length) {
-					var objBalance = {
-						bytes: {
-							amount: 0,
-							name: 'bytes',
-						}
-					};
-					var unspent = [];
+					var strFilterAsset = filter.asset;
+					var objBalance = { bytes: 0 }, unspent = [];
+					if (typeof strFilterAsset === 'undefined') {
+						strFilterAsset = 'all';
+					} else if (strFilterAsset === 'bytes') {
+						strFilterAsset = null;
+					}
+
 					rowsOutputs.forEach(function(row) {
-						unspent.push(row);
+						if (strFilterAsset === 'all' || strFilterAsset === row.asset) {
+							unspent.push(row);
+						}
+
 						var assetKey = row.asset;
 						if (assetKey === null) {
-							objBalance.bytes.amount += row.amount;
+							objBalance.bytes += row.amount;
 						}
 						else {
 							if (!objBalance[assetKey]) {
-								objBalance[assetKey] = {
-									amount: 0,
-									name: row.name || assetKey,
-								};
+								objBalance[assetKey] = 0;
 							}
-							objBalance[assetKey].amount += row.amount;
+							objBalance[assetKey] += row.amount;
 						}
 					});
 				}

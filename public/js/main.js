@@ -49,7 +49,15 @@ function start() {
 		notLastUnitUp = true;
 	}
 	else if (currHash.length == 33) {
-		socket.emit('start', {type: 'address', address: currHash.substr(1)});
+		var currHashParams = getUrlHashParams();
+		var paramAsset = currHashParams.asset;
+		socket.emit('start', {
+			type: 'address',
+			address: currHash.substr(1),
+			filter: {
+				asset: paramAsset
+			}
+		});
 		$('#addressInfo').show();
 	}
 }
@@ -619,7 +627,15 @@ window.addEventListener('hashchange', function() {
 		}
 	}
 	else if (currHash.length == 33) {
-		socket.emit('start', {type: 'address', address: currHash.substr(1)});
+		var currHashParams = getUrlHashParams();
+		var paramAsset = currHashParams.asset;
+		socket.emit('start', {
+			type: 'address',
+			address: currHash.substr(1),
+			filter: {
+				asset: paramAsset,
+			},
+		});
 	}
 });
 
@@ -974,11 +990,9 @@ var addressInfoContent = {
 		var assetsOptions = '<option value="all" ' + (this.currAssetKey==='all' ? 'selected' : '') + '>All</option>';
 		
 		for (var assetKey in objBalance) {
-			var balanceData = objBalance[assetKey];
-			var balanceName = balanceData.name;
 			assetsOptions += [
 				'<option value="' + assetKey + '" ' + (assetKey === this.currAssetKey ? 'selected' : '') + '>',
-				assetKey + (balanceName !== assetKey ? (' (' + balanceName + ')') : ''),
+				assetKey,
 				'</option>'
 			].join('');
 		}
@@ -1079,7 +1093,7 @@ function changeAsset(sel) {
 socket.on('addressInfo', function(data) {
 	if (data) {
 		var currHashParams = getUrlHashParams();
-		var currAssetKey = currHashParams.asset ? decodeURIComponent(currHashParams.asset) : 'all';
+		var currAssetKey = currHashParams.asset || 'all';
 		addressInfoContent.setNew(currAssetKey, data);
 
 		if ($('#addressInfo').css('display') == 'none') {
@@ -1140,10 +1154,16 @@ function getHighlightNode(unit) {
 function getNextPageTransactions() {
 	var currHash = getUrlHashKey();
 	if (!bWaitingForNextPageTransactions && currHash.length == 33) {
+		var currHashParams = getUrlHashParams();
+		var paramAsset = currHashParams.asset;
+
 		socket.emit('nextPageTransactions', {
 			address: currHash.substr(1),
 			lastInputsROWID: lastInputsROWID,
-			lastOutputsROWID: lastOutputsROWID
+			lastOutputsROWID: lastOutputsROWID,
+			filter: {
+				asset: paramAsset,
+			},
 		});
 		bWaitingForNextPageTransactions = true;
 	}
@@ -1311,7 +1331,7 @@ function updateUrlHashWithParams(params) {
 }
 
 function parseQueryParamsStrToObj(str) {
-	return JSON.parse('{"' + decodeURI(str).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
+	return JSON.parse('{"' + decodeURIComponent(decodeURI(str).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"')) + '"}');
 }
 
 function stringifyQueryParamsObjToStr(obj) {

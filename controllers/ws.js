@@ -44,7 +44,7 @@ function start(data) {
 		UNION \n\
 		SELECT unit FROM outputs WHERE address = ? LIMIT 0,1", [data.address, data.address, data.address], function(rows) {
 			if(rows.length) {
-				address.getAddressInfo(data.address, function(objTransactions, unspent, objBalance, end, definition, newLastInputsROWID, newLastOutputsROWID) {
+				address.getAddressInfo(data.address, data.filter || {}, function(objTransactions, unspent, objBalance, end, definition, newLastInputsROWID, newLastOutputsROWID) {
 					ws.emit('addressInfo', {
 						address: data.address,
 						objTransactions: objTransactions,
@@ -158,7 +158,7 @@ function highlightNode(data) {
 function nextPageTransactions(data) {
 	var ws = this;
 
-	address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
+	address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {}, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
 		ws.emit('nextPageTransactions', {
 			address: data.address,
 			objTransactions: objTransactions,
