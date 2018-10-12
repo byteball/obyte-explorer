@@ -190,6 +190,18 @@ body {
 	margin-bottom: -1px;
 }
 
+#addressInfo .address-assets {
+	font-style: normal;
+	display: block;
+}
+#addressInfo .address-assets .filter-address-assets {
+    height: 30px;
+    border: 1px solid #ccc;
+    outline: none;
+	padding: 0 35px 0 5px;
+	cursor: pointer;
+}
+
 .infoTitleChild {
 	font-weight: bold;
 	padding: 5px;
