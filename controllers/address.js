@@ -102,16 +102,13 @@ function getSpentOutputs(objTransactions, cb) {
 function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter, cb) {
 	var strFilterAsset = filter.asset;
 
-	var arrQueryParams = [
-		address, lastInputsROWID, address, lastOutputsROWID
-	];
 	var arrQuerySql = [
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID",
 		"FROM inputs, outputs, units",
 		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))",
 		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5)))",
 		"AND inputs.unit = outputs.unit",
-		getStrSqlFilterAssetForTransactions(strFilterAsset, arrQueryParams),
+		getStrSqlFilterAssetForTransactions(strFilterAsset),
 		"AND units.unit = inputs.unit",
 		"GROUP BY inputs.unit",
 		"ORDER BY units.ROWID DESC LIMIT 0, 5"
@@ -119,7 +116,7 @@ function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROW
 
 	db.query(
 		arrQuerySql.join(" \n"),
-		arrQueryParams,
+		[address, lastInputsROWID, address, lastOutputsROWID],
 		function (rows) {
 			var lastRow = rows[rows.length - 1] || {};
 			cb(
@@ -138,21 +135,18 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 		if (arrUnits.length) {
 			var strFilterAsset = filter.asset;
 
-			var arrQueryParams = [
-				arrUnits
-			];
 			var arrQuerySql = [
 				"SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type, "+ db.getUnixTimestamp("units.creation_date")+" AS timestamp",
 				"FROM inputs, outputs, units",
 				"WHERE units.unit IN (?) AND outputs.unit = inputs.unit",
-				getStrSqlFilterAssetForTransactions(strFilterAsset, arrQueryParams),
+				getStrSqlFilterAssetForTransactions(strFilterAsset),
 				"AND units.unit = inputs.unit",
 				"ORDER BY units.main_chain_index DESC"
 			];
 
 			db.query(
 				arrQuerySql.join(" \n"),
-				arrQueryParams,
+				[arrUnits],
 				function (rowsTransactions) {
 					var key, objTransactions = {};
 					if (rowsTransactions.length) {
@@ -202,15 +196,14 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 	});
 }
 
-function getStrSqlFilterAssetForTransactions(strFilterAsset, arrQueryParams) {
+function getStrSqlFilterAssetForTransactions(strFilterAsset) {
 	if (typeof strFilterAsset === 'undefined' || strFilterAsset === 'all') {
 		return "AND (( inputs.asset IS NULL AND outputs.asset IS NULL ) OR (inputs.asset = outputs.asset))";
 	} else if (strFilterAsset === 'bytes') {
 		return "AND inputs.asset IS NULL AND outputs.asset IS NULL";
 	} else {
-		arrQueryParams.push(strFilterAsset);
-		arrQueryParams.push(strFilterAsset);
-		return "AND inputs.asset = ? AND outputs.asset = ?";
+		var strEscapedFilterAsset = db.escape(strFilterAsset);
+		return "AND inputs.asset = " + strEscapedFilterAsset + " AND outputs.asset = " + strEscapedFilterAsset;
 	}
 }
 
