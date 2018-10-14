@@ -95,18 +95,18 @@
 		<div style="margin-bottom: 10px;font-weight: bold">
 			<div><span id="address"></span></div>
 		</div>
-		<div>
-			<div id="balance"></div>
-		</div>
-		<label id="addressAssets" class="infoTitle address-assets" style="display: none">
-			Assets
-			<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
-		</label>
 		<div class="infoTitle hideTitle" id="definitionTitleInAddress" onclick="showHideBlock(event, 'definition')" style="display: none">
 			Definition
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="definition" style="display: none"></div>
+		<div>
+			<div id="balance"></div>
+		</div>
+		<label id="addressAssets" class="infoTitle address-assets" style="display: none">
+			Show transactions in assets:
+			<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
+		</label>
 	</div>
 	<div class="row" id="blockListUnspent" style="margin-top: 50px">
 		<div class="infoTitle" onclick="showHideBlock(event, 'listUnspent')">
