@@ -968,19 +968,19 @@ var addressInfoContent = {
 	},
 	setBalance: function (data) {
 		var objBalance = data.objBalance;
-		var balance = '';
+		var resultStr = '';
 
 		for (var assetKey in objBalance) {
-			var balanceData = objBalance[assetKey];
+			var balance = objBalance[assetKey];
 			if (assetKey === 'bytes') {
-				balance += '<div><span class="numberFormat">' + balanceData.amount + '</span> bytes</div>';
+				resultStr += '<div><span class="numberFormat">' + balance + '</span> bytes</div>';
 			}
 			else {
-				balance += '<div><span class="numberFormat">' + balanceData.amount + '</span> of ' + assetKey + '</div>';
+				resultStr += '<div><span class="numberFormat">' + balance + '</span> of ' + assetKey + '</div>';
 			}
 		}
 
-		$('#balance').html(balance);
+		$('#balance').html(resultStr);
 	},
 	changeAsset: function (newAssetKey) {
 		updateUrlHashWithParams({asset: newAssetKey});

@@ -105,8 +105,8 @@ function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROW
 	var arrQuerySql = [
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID",
 		"FROM inputs, outputs, units",
-		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))",
-		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5)))",
+		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? " + getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5))",
+		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? " + getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5)))",
 		"AND inputs.unit = outputs.unit",
 		getStrSqlFilterAssetForTransactions(strFilterAsset),
 		"AND units.unit = inputs.unit",
@@ -204,6 +204,16 @@ function getStrSqlFilterAssetForTransactions(strFilterAsset) {
 	} else {
 		var strEscapedFilterAsset = db.escape(strFilterAsset);
 		return "AND inputs.asset = " + strEscapedFilterAsset + " AND outputs.asset = " + strEscapedFilterAsset;
+	}
+}
+
+function getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) {
+	if (typeof strFilterAsset === 'undefined' || strFilterAsset === 'all') {
+		return "";
+	} else if (strFilterAsset === 'bytes') {
+		return "AND asset IS NULL";
+	} else {
+		return "AND asset = " + db.escape(strFilterAsset);
 	}
 }
 
