@@ -1,7 +1,7 @@
 /*jslint node: true */
 "use strict";
-var conf = require('byteballcore/conf.js');
-var myWitnesses = require('byteballcore/my_witnesses.js');
+var conf = require('ocore/conf.js');
+var myWitnesses = require('ocore/my_witnesses.js');
 
 
 function replaceConsoleLog () {
@@ -14,7 +14,7 @@ function replaceConsoleLog () {
 
 function start () {
 	console.log('starting');
-	var network = require('byteballcore/network.js');
+	var network = require('ocore/network.js');
 	if (conf.initial_peers)
 		conf.initial_peers.forEach(function (url) {
 			network.findOutboundPeerOrConnect(url);
