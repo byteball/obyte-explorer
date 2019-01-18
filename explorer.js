@@ -1,5 +1,14 @@
 /*jslint node: true */
 "use strict";
+var fs = require('fs');
+var desktopApp = require('ocore/desktop_app.js');
+var appDataDir = desktopApp.getAppDataDir();
+var path = require('path');
+
+if (require.main === module && !fs.existsSync(appDataDir) && fs.existsSync(path.dirname(appDataDir)+'/byteball-explorer')){
+	console.log('=== will rename old explorer data dir');
+	fs.renameSync(path.dirname(appDataDir)+'/byteball-explorer', appDataDir);
+}
 require('./relay');
 var conf = require('ocore/conf.js');
 var eventBus = require('ocore/event_bus.js');
