@@ -60,7 +60,7 @@ exports.initial_witnesses = [
 ];
 */
 exports.initial_peers = [
-	'wss://byteball.org/bb'
+	'wss://obyte.org/bb'
 ];
 
 console.log('finished explorer conf');
