@@ -18,6 +18,7 @@ body {
 #menuInput {
 	float: left;
 	margin-left: 15px;
+	position: relative;
 }
 
 #menu input[type=text] {
@@ -26,6 +27,7 @@ body {
 	border: 1px solid #ccc;
 	outline: none;
 	padding: 0 35px 0 5px;
+	float: left;
 }
 
 #submitSearch {
@@ -36,8 +38,8 @@ body {
 	background-size: 20px;
 	cursor: pointer;
 	outline: none;
-	position: relative;
-	left: -36px;
+	position: absolute;
+	right: 0;
 	vertical-align: middle;
 }
 
@@ -420,6 +422,94 @@ label {
 	width: 100%;
     border-collapse: collapse;
 }
+
+.trigger-legend {
+    bottom: 0;
+    position: absolute;
+    margin: 20px;
+    font-size: 30px;
+    width: 40px;
+	height: 40px;
+	z-index: 1001;
+}
+
+.modal {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	opacity: 0;
+	visibility: hidden;
+	transform: scale(1.1);
+	transition: visibility 0s linear 0.25s, opacity 0.25s 0s, transform 0.25s;
+	z-index: 1002;
+}
+.modal-content {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-color: white;
+	padding: 1rem 1.5rem;
+	width: 85%;
+	max-width: 24rem;
+	border-radius: 0.5rem;
+}
+.close-button {
+	float: right;
+	width: 1.5rem;
+	line-height: 1.5rem;
+	text-align: center;
+	cursor: pointer;
+	border-radius: 0.25rem;
+	background-color: lightgray;
+}
+.close-button:hover {
+	background-color: darkgray;
+}
+.show-modal {
+	opacity: 1;
+	visibility: visible;
+	transform: scale(1.0);
+	transition: visibility 0s linear 0s, opacity 0.25s 0s, transform 0.25s;
+}
+
+.sprite-legend {
+	background: url('../img/icon-legend.png') no-repeat;
+	background-size: 90px 90px;
+	width: 30px;
+	height: 30px;
+	
+}
+.sprite-legend span {
+	position: absolute;
+    margin-left: 35px;
+    margin-top: 5px;
+}
+.sprite-1-1 {
+	background-position: 0px 0px;
+}
+.sprite-1-2 {
+	background-position: -30px 0px;
+}
+.sprite-1-3 {
+	background-position: -60px 0px;
+}
+.sprite-2-1 {
+	background-position: 0px -30px;
+}
+.sprite-2-2 {
+	background-position: -30px -30px;
+}
+.sprite-2-3 {
+	background-position: -60px -30px;
+}
+.sprite-3-1 {
+	background-position: 0px -60px;
+}
+
 /* adaptive */
 
 @media all and (max-width: 1200px) {
@@ -431,8 +521,8 @@ label {
 		right: 39px;
 	}
 
-	#cy.showInfoBlock, #scroll.showInfoBlock, #goToTop.showInfoBlock {
-		display: none;
+	#cy.showInfoBlock, #scroll.showInfoBlock, #goToTop.showInfoBlock, .trigger-legend.showInfoBlock {
+		display: none !important;
 	}
 
 	#info {
