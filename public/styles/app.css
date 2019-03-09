@@ -424,13 +424,17 @@ label {
 }
 
 .trigger-legend {
-    bottom: 0;
-    position: absolute;
-    margin: 20px;
-    font-size: 30px;
-    width: 40px;
+	bottom: 0;
+	position: absolute;
+	margin: 20px;
+	font-size: 24px;
+	width: 40px;
 	height: 40px;
 	z-index: 1001;
+	color: #2980b9;
+	font-weight: bold;
+	background: whitesmoke;
+	border: 1px solid silver;
 }
 
 .modal {
@@ -485,8 +489,8 @@ label {
 }
 .sprite-legend span {
 	position: absolute;
-    margin-left: 35px;
-    margin-top: 5px;
+	margin-left: 35px;
+	margin-top: 5px;
 }
 .sprite-1-1 {
 	background-position: 0px 0px;
