@@ -59,6 +59,7 @@ function start() {
 			}
 		});
 		$('#addressInfo').show();
+		$('.trigger-legend').hide();
 	}
 }
 
@@ -624,6 +625,7 @@ window.addEventListener('hashchange', function() {
 		highlightNode(currHash.substr(1));
 		if ($('#addressInfo').css('display') == 'block') {
 			$('#addressInfo').hide();
+			$('.trigger-legend').show();
 		}
 	}
 	else if (currHash.length == 33) {
@@ -1098,6 +1100,7 @@ socket.on('addressInfo', function(data) {
 
 		if ($('#addressInfo').css('display') == 'none') {
 			$('#addressInfo').show();
+			$('.trigger-legend').hide();
 		}
 		page = 'address';
 		formatAllNumbers()
@@ -1182,6 +1185,7 @@ function closeInfo() {
 
 function closeAddress() {
 	$('#addressInfo').hide();
+	$('.trigger-legend').show();
 	$('#blockListUnspent').hide();
 	if (!_cy || !lastActiveUnit) {
 		$('#cy, #scroll, #goToTop').show();

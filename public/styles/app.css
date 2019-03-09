@@ -521,7 +521,7 @@ label {
 	}
 
 	#cy.showInfoBlock, #scroll.showInfoBlock, #goToTop.showInfoBlock, .trigger-legend.showInfoBlock {
-		display: none;
+		display: none !important;
 	}
 
 	#info {
