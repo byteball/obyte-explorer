@@ -12,7 +12,8 @@ exports.storage = 'sqlite';
 
 exports.selectedLanguage = 'en';
 exports.languagesAvailable = {
-	en: {name: "English", file: "en"}
+	en: {name: "English", file: "en"},
+	da: {name: "Dansk", file: "explorer_da-DK"}
 };
 
 exports.initial_witnesses = [
