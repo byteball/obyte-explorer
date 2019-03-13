@@ -10,6 +10,10 @@ exports.webPort = 4000;
 
 exports.storage = 'sqlite';
 
+exports.selectedLanguage = 'en';
+exports.languagesAvailable = {
+	en: {name: "English", file: "en"}
+};
 
 exports.initial_witnesses = [
 	'BVVJ2K7ENPZZ3VYZFWQWK7ISPCATFIW3',
