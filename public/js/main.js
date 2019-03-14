@@ -939,7 +939,7 @@ function generateTransactionsList(objTransactions, address, filter) {
 
 		listTransactions += '<tr>' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
-			'<div>Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
+			'<div>'+ $('#unitID').text() +' <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
 			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(transaction.date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
 			'</tr>' +
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
@@ -1012,7 +1012,7 @@ var addressInfoContent = {
 	},
 	setAssets: function (data) {
 		var objBalance = data.objBalance;
-		var assetsOptions = '<option value="all" ' + (this.currAssetKey==='all' ? 'selected' : '') + '>All</option>';
+		var assetsOptions = '<option value="all" ' + (this.currAssetKey==='all' ? 'selected' : '') + '>'+ $('#labelAll').text() +'</option>';
 		
 		for (var assetKey in objBalance) {
 			assetsOptions += [

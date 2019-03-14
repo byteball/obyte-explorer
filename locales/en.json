@@ -43,6 +43,7 @@
 	"appTypePoll": "Poll",
 	"appTypeVote": "Vote",
 	"appTypeText": "Text",
+	"labelAll": "All",
 	"labelInputs": "Inputs",
 	"labelOutputs": "Outputs",
 	"labelHeaders": "headers",
