@@ -36,5 +36,6 @@ Session.vim
 .netrwhist
 *~
 
+package-lock.json
 log
 .env

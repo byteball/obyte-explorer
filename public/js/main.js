@@ -592,7 +592,7 @@ function searchForm(text) {
 		location.hash = text;
 	}
 	else {
-		showInfoMessage("Please enter a unit or address");
+		showInfoMessage($('#infoMessagePleaseEnter').text());
 	}
 	$('#inputSearch').val('');
 }
@@ -674,7 +674,7 @@ socket.on('connect', function() {
 
 socket.on('start', function(data) {
 	init(data.nodes, data.edges);
-	if (data.not_found) showInfoMessage("Unit not found");
+	if (data.not_found) showInfoMessage($('#infoMessageUnitNotFound').text());
 	notLastUnitDown = true;
 	if (bWaitingForHighlightNode) bWaitingForHighlightNode = false;
 });
@@ -733,14 +733,37 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 			messagesOut +=
 				'<div class="message">' +
 				'<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'message_' + blockId + '\')">';
-			if (message.app == 'payment') {
-				messagesOut += message.app.substr(0, 1).toUpperCase() + message.app.substr(1) + ' in ' + (asset == 'null' ? 'bytes' : asset);
-			}
-			else if (message.app == 'asset') {
-				messagesOut += 'Definition of new asset';
-			}
-			else {
-				messagesOut += message.app.substr(0, 1).toUpperCase() + message.app.substr(1);
+			switch (message.app) {
+				case 'payment':
+					messagesOut += $('#appTypePayment').text() + ' (' + (asset == 'null' ? 'bytes' : asset) + ')';
+					break;
+				case 'asset':
+					messagesOut += $('#appTypeAsset').text();
+					break;
+				case 'data':
+					messagesOut += $('#appTypeData').text();
+					break;
+				case 'data_feed':
+					messagesOut += $('#appTypeDataFeed').text();
+					break;
+				case 'profile':
+					messagesOut += $('#appTypeProfile').text();
+					break;
+				case 'attestation':
+					messagesOut += $('#appTypeAttestation').text();
+					break;
+				case 'poll':
+					messagesOut += $('#appTypePoll').text();
+					break;
+				case 'vote':
+					messagesOut += $('#appTypeVote').text();
+					break;
+				case 'text':
+					messagesOut += $('#appTypeText').text();
+					break;
+				default:
+					messagesOut += message.app.substr(0, 1).toUpperCase() + message.app.substr(1);
+					break;
 			}
 			messagesOut += '</div>' +
 				'<div class="messagesInfo" id="message_' + (blockId++) + '">';
@@ -748,7 +771,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 			switch (message.app) {
 				case 'payment':
 					if (message.payload) {
-						messagesOut += '<div class="message_inputs"><div class="infoTitleInputs" onclick="showHideBlock(event, \'message_' + blockId + '\')">Inputs</div>' +
+						messagesOut += '<div class="message_inputs"><div class="infoTitleInputs" onclick="showHideBlock(event, \'message_' + blockId + '\')">'+ $('#labelInputs').text() +'</div>' +
 							'<div class="inputsInfo" id="message_' + (blockId++) + '">';
 
 						message.payload.inputs.forEach(function(input) {
@@ -775,7 +798,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						});
 
 						messagesOut += '</div></div>' +
-							'<div class="message_outputs"><div class="infoTitleInputs" onclick="showHideBlock(event, \'message_' + blockId + '\')">Outputs</div>' +
+							'<div class="message_outputs"><div class="infoTitleInputs" onclick="showHideBlock(event, \'message_' + blockId + '\')">'+ $('#labelOutputs').text() +'</div>' +
 							'<div class="inputsInf" id="message_' + (blockId++) + '">';
 
 						outputsUnit[asset].forEach(function(output) {
@@ -799,7 +822,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 				default:
 					for (var key_payload in message.payload) {
 						if (message.app == 'asset' && key_payload == 'denominations') {
-							messagesOut += '<div><label>denominations:</label></div>';
+							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
 							messagesOut += '<div class="payload">';
 							messagesOut += JSON.stringify(message.payload[key_payload]);
 							messagesOut += '</div>';
@@ -817,7 +840,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 			}
 			messagesOut += '</div></div>';
 		} else if (message.app == 'payment' && message.payload_location == 'none' && !shownHiddenPayments) {
-			messagesOut += '<div class="message childNotSpoiler">Hidden payments</div>';
+			messagesOut += '<div class="message childNotSpoiler">' + $('#hiddenPayments').text() + '</div>';
 			shownHiddenPayments = true;
 		}
 	});
@@ -838,7 +861,7 @@ socket.on('info', function(data) {
 		data.authors.forEach(function(author) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
-				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">Definition<div class="infoTitleImg"></div></span>' +
+				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">'+ $('#labelDefinition').text() +'<div class="infoTitleImg"></div></span>' +
 					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ') + '</pre></div>';
 
 			}
@@ -853,7 +876,7 @@ socket.on('info', function(data) {
 		$('#parents').html(parentOut);
 		$('#authors').html(authorsOut);
 		$('#received').html(moment(data.date).format('DD.MM.YYYY HH:mm:ss'));
-		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> headers, <span class="numberFormat">' + data.payload_commission + '</span> payload)');
+		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
 		$('#witnessed_level').html(data.witnessed_level);
@@ -875,7 +898,7 @@ socket.on('info', function(data) {
 		formatAllNumbers();
 	}
 	else {
-		showInfoMessage("Unit not found");
+		showInfoMessage($('#infoMessageUnitNotFound').text());
 	}
 });
 
@@ -916,7 +939,7 @@ function generateTransactionsList(objTransactions, address, filter) {
 
 		listTransactions += '<tr>' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
-			'<div>Unit <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
+			'<div>'+ $('#unitID').text() +' <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
 			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(transaction.date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
 			'</tr>' +
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
@@ -989,7 +1012,7 @@ var addressInfoContent = {
 	},
 	setAssets: function (data) {
 		var objBalance = data.objBalance;
-		var assetsOptions = '<option value="all" ' + (this.currAssetKey==='all' ? 'selected' : '') + '>All</option>';
+		var assetsOptions = '<option value="all" ' + (this.currAssetKey==='all' ? 'selected' : '') + '>'+ $('#labelAll').text() +'</option>';
 		
 		for (var assetKey in objBalance) {
 			assetsOptions += [
@@ -1106,7 +1129,7 @@ socket.on('addressInfo', function(data) {
 		formatAllNumbers()
 	}
 	else {
-		showInfoMessage("Address not found");
+		showInfoMessage($('#infoMessageAddressNotFound').text());
 	}
 	bWaitingForNextPageTransactions = false;
 	if (!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();

@@ -18,85 +18,107 @@
 		<!--div id="menuLeftTitle"><a href="https://obyte.org/">Byteball</a></div-->
 		<div id="menuInput">
 			<form action="javascript:searchForm($('#inputSearch').val())" method="post">
-				<input type="text" id="inputSearch" placeholder="Search for unit or address">
+				<input type="text" id="inputSearch" placeholder="<%= i18n.__('searchUnitOrAddress') %>">
 				<input type="submit" value="" id="submitSearch">
 			</form>
 		</div>
 	</div>
 </div>
-<div id="infoMessage" onclick="hideInfoMessage()">InfoMessage</div>
+<div style="display:none;">
+	<div id="infoMessagePleaseEnter"><%= i18n.__('infoMessagePleaseEnter') %></div>
+	<div id="infoMessageUnitNotFound"><%= i18n.__('infoMessageUnitNotFound') %></div>
+	<div id="infoMessageAddressNotFound"><%= i18n.__('infoMessageAddressNotFound') %></div>
+	<div id="hiddenPayments"><%= i18n.__('hiddenPayments') %></div>
+	<div id="appTypePayment"><%= i18n.__('appTypePayment') %></div>
+	<div id="appTypeAsset"><%= i18n.__('appTypeAsset') %></div>
+	<div id="appTypeData"><%= i18n.__('appTypeData') %></div>
+	<div id="appTypeDataFeed"><%= i18n.__('appTypeDataFeed') %></div>
+	<div id="appTypeProfile"><%= i18n.__('appTypeProfile') %></div>
+	<div id="appTypeAttestation"><%= i18n.__('appTypeAttestation') %></div>
+	<div id="appTypePoll"><%= i18n.__('appTypePoll') %></div>
+	<div id="appTypeVote"><%= i18n.__('appTypeVote') %></div>
+	<div id="appTypeText"><%= i18n.__('appTypeText') %></div>
+	<div id="labelInputs"><%= i18n.__('labelInputs') %></div>
+	<div id="labelOutputs"><%= i18n.__('labelOutputs') %></div>
+	<div id="labelHeaders"><%= i18n.__('labelHeaders') %></div>
+	<div id="labelPayload"><%= i18n.__('labelPayload') %></div>
+	<div id="labelDefinition"><%= i18n.__('labelDefinition') %></div>
+	<div id="labelAll"><%= i18n.__('labelAll') %></div>
+	<div id="unitID"><%= i18n.__('unitID') %></div>
+</div>
+<div id="infoMessage" onclick="hideInfoMessage()"></div>
 <div id="cy"></div>
 <div id="goToTop" onclick="goToTop()">
-	<div id="titleGoToTop">Go to top</div>
+	<div id="titleGoToTop"><%= i18n.__('goToTop') %></div>
 </div>
 <div id="scroll">
 	<div id="scrollBody">&nbsp;</div>
 </div>
 <div id="info" class="hideInfoBlock">
-	<div id="infoClose"><a href="javascript:" onclick="closeInfo()">Close</a></div>
-	<div id="defaultInfo">Select unit on the left</div>
+	<div id="infoClose"><a href="javascript:" onclick="closeInfo()"><%= i18n.__('closeButton') %></a></div>
+	<div id="defaultInfo"><%= i18n.__('selectUnit') %></div>
 	<div id="listInfo">
 		<div>
-			<div id="unitParent">Unit <span id="unit"></span></div>
+			<div id="unitParent"><%= i18n.__('unitID') %> <span id="unit"></span></div>
 		</div>
 		<div>
-			<div style="padding-left: 5px">Received: <span id="received"></span></div>
+			<div style="padding-left: 5px"><%= i18n.__('received') %> <span id="received"></span></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'authors')">Authors
+			<div class="infoTitle" onclick="showHideBlock(event, 'authors')"><%= i18n.__('authors') %>
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="authors"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'children')">Children
+			<div class="infoTitle" onclick="showHideBlock(event, 'children')"><%= i18n.__('children') %>
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="children"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'parents')">Parents
+			<div class="infoTitle" onclick="showHideBlock(event, 'parents')"><%= i18n.__('parents') %>
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="parents"></div>
 		</div>
 		<div>
-			<div class="infoTitle" id="divTitleMessage" onclick="showHideBlock(event, 'messages')">Messages
+			<div class="infoTitle" id="divTitleMessage" onclick="showHideBlock(event, 'messages')"><%= i18n.__('messages') %>
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="messages"></div>
 		</div>
 		<div>
 			<div class="infoTitle hideTitle" id="witnessesTitle" onclick="showHideBlock(event, 'witnesses')">
-				Witnesses
+				<%= i18n.__('witnesses') %>
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="witnesses" style="display: none"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'otherInfo')">Technical information
+			<div class="infoTitle" onclick="showHideBlock(event, 'otherInfo')"><%= i18n.__('techInfo') %>
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="otherInfo">
-				<div id="divFees">Fees: <span id="fees"></span></div>
-				<div>Level: <span id="level"></span></div>
-				<div>Witnessed level: <span id="witnessed_level"></span></div>
-				<div>Last ball unit: <span id="last_ball_unit"></span></div>
-				<div>Main chain index: <span id="main_chain_index"></span></div>
-				<div>Latest included mc index: <span id="latest_included_mc_index"></span></div>
-				<div>Is stable: <span id="is_stable"></span></div>
+				<div id="divFees"><%= i18n.__('labelFees') %> <span id="fees"></span></div>
+				<div><%= i18n.__('labelLevel') %> <span id="level"></span></div>
+				<div><%= i18n.__('labelWitnessedLevel') %> <span id="witnessed_level"></span></div>
+				<div><%= i18n.__('labelLastBallUnit') %> <span id="last_ball_unit"></span></div>
+				<div><%= i18n.__('labelMci') %> <span id="main_chain_index"></span></div>
+				<div><%= i18n.__('labelLatestMci') %> <span id="latest_included_mc_index"></span></div>
+				<div><%= i18n.__('labelIsStable') %> <span id="is_stable"></span></div>
 			</div>
 		</div>
 	</div>
 </div>
 <div id="addressInfo">
-	<div id="addressClose" class="row"><a href="javascript:" onclick="closeAddress()">Close</a></div>
+	<div id="addressClose" class="row"><a href="javascript:" onclick="closeAddress()"><%= i18n.__('closeButton') %></a></div>
 	<div class="row" id="infoAndBalanceAddress">
 		<div style="margin-bottom: 10px;font-weight: bold">
 			<div><span id="address"></span></div>
 		</div>
 		<div class="infoTitle hideTitle" id="definitionTitleInAddress" onclick="showHideBlock(event, 'definition')" style="display: none">
-			Definition
+			<%= i18n.__('labelDefinition') %>
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="definition" style="display: none"></div>
@@ -104,20 +126,20 @@
 			<div id="balance"></div>
 		</div>
 		<label id="addressAssets" class="address-assets" style="display: none; padding-top: 10px">
-			Show transactions in assets:
+			<%= i18n.__('transactionsInAssets') %>
 			<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
 		</label>
 	</div>
 	<div class="row" id="blockListUnspent" style="margin-top: 50px">
 		<div class="infoTitle" onclick="showHideBlock(event, 'listUnspent')">
-			Unspent
+			<%= i18n.__('unspent') %>
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="listUnspent"></div>
 	</div>
 	<div class="row" style="margin-top: 50px">
 		<div class="infoTitle" id="titleListTransactions" style="display: none" onclick="showHideBlock(event, 'tableListTransactions')">
-			Transactions
+			<%= i18n.__('transactions') %>
 			<div class="infoTitleImg"></div>
 		</div>
 		<table id="tableListTransactions">
@@ -129,14 +151,14 @@
 <div class="modal">
 	<div class="modal-content">
 		<span class="close-button">×</span>
-		<h2>Unit Legend</h2>
-		<div class="sprite-legend sprite-1-1"><span>- not on main chain, not stable</span></div>
-		<div class="sprite-legend sprite-2-1"><span>- main chain, not stable</span></div>
-		<div class="sprite-legend sprite-3-1"><span>- bad unit</span></div>
-		<div class="sprite-legend sprite-1-2"><span>- not on main chain, stable/confirmed/final</span></div>
-		<div class="sprite-legend sprite-2-2"><span>- main chain, stable/confirmed/final</span></div>
-		<div class="sprite-legend sprite-1-3"><span>- not on main chain, selected</span></div>
-		<div class="sprite-legend sprite-2-3"><span>- main chain, selected</span></div>
+		<h2><%= i18n.__('unitLegend') %></h2>
+		<div class="sprite-legend sprite-1-1"><span>- <%= i18n.__('notMcNotStable') %></span></div>
+		<div class="sprite-legend sprite-2-1"><span>- <%= i18n.__('mcNotStable') %></span></div>
+		<div class="sprite-legend sprite-3-1"><span>- <%= i18n.__('badUnit') %></span></div>
+		<div class="sprite-legend sprite-1-2"><span>- <%= i18n.__('notMcFinal') %></span></div>
+		<div class="sprite-legend sprite-2-2"><span>- <%= i18n.__('mcFinal') %></span></div>
+		<div class="sprite-legend sprite-1-3"><span>- <%= i18n.__('notMcSelected') %></span></div>
+		<div class="sprite-legend sprite-2-3"><span>- <%= i18n.__('mcSelected') %></span></div>
 	</div>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
@@ -144,6 +166,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/cytoscape.min.js"></script>
 <script src="/js/dagre.min.js"></script>
-<script src="/js/main.js?v15"></script>
+<script src="/js/main.js?v16"></script>
 </body>
 </html>

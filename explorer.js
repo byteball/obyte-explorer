@@ -17,11 +17,29 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var ws = require('./controllers/ws');
+var i18nModule = require("i18n");
 
+var arrLanguages = [];
+for (var index in conf.languagesAvailable) {
+	arrLanguages.push(conf.languagesAvailable[index].file);
+}
+
+i18nModule.configure({
+	updateFiles: false,
+	locales: arrLanguages,
+	directory: __dirname + '/locales'
+});
+var i18n = {};
+i18nModule.init(i18n);
+i18nModule.setLocale(i18n, conf.languagesAvailable[conf.selectedLanguage].file);
+
+app.engine('html', require('ejs').renderFile);
 app.use(express.static(__dirname + '/public'));
+app.set('views', __dirname + '/views'); // general config
+app.set('view engine', 'html');
 
 app.get('/', function(req, res) {
-	res.sendFile(__dirname + '/views/index.html');
+	res.render('index', {i18n: i18n});
 });
 
 eventBus.on('new_joint', function() {
