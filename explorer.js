@@ -25,6 +25,7 @@ for (var index in conf.languagesAvailable) {
 }
 
 i18nModule.configure({
+	updateFiles: false,
 	locales: arrLanguages,
 	directory: __dirname + '/locales'
 });

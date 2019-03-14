@@ -46,6 +46,5 @@
 	"labelInputs": "输入",
 	"labelOutputs": "输出",
 	"labelHeaders": "数据头",
-	"labelPayload": "数据包",
-	"labelAll": "labelAll"
+	"labelPayload": "数据包"
 }
