@@ -882,7 +882,7 @@ socket.on('info', function(data) {
 		$('#witnessed_level').html(data.witnessed_level);
 		$('#main_chain_index').html(data.main_chain_index);
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
-		$('#is_stable').html(data.is_stable);
+		$('#is_stable').html(data.is_stable ? $('#statusFinal').text() : $('#statusNotStable').text());
 		$('#witnesses').html(witnessesOut);
 		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions));
 		if ($('#listInfo').css('display') === 'none') {
