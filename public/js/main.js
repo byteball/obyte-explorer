@@ -945,6 +945,7 @@ function generateTransactionsList(objTransactions, address, filter) {
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
 			'<tr><td>';
 		transaction.from.forEach(function(objFrom) {
+			var addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 			if (objFrom.issue) {
 				listTransactions += '<div class="transactionUnitListAddress">' +
 					'<div>' + addressOut + '</div>' +
@@ -953,7 +954,6 @@ function generateTransactionsList(objTransactions, address, filter) {
 			} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
 				var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
 				if (commissionName) {
-					addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 					listTransactions += '<div class="transactionUnitListAddress">' +
 						'<div>' + addressOut + ' ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
 						' to mci ' + objFrom.to_mci + '.' +
@@ -962,7 +962,6 @@ function generateTransactionsList(objTransactions, address, filter) {
 				}
 			}
 			else {
-				addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 				listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
 					'<div>(<span class="numberFormat">' + objFrom.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ')</div></div>';
 			}
