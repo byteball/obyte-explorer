@@ -830,7 +830,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						else if (typeof message.payload[key_payload] === "object") {
 							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
 							messagesOut += '<div class="payload">';
-							messagesOut += htmlEscape(JSON.stringify(message.payload[key_payload]));
+							messagesOut += htmlEscape(JSON.stringify(message.payload[key_payload], null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   '));
 							messagesOut += '</div>';
 						} else {
 							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ' + htmlEscape(message.payload[key_payload]) + '</div>';
@@ -862,7 +862,7 @@ socket.on('info', function(data) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
 				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">'+ $('#labelDefinition').text() +'<div class="infoTitleImg"></div></span>' +
-					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ') + '</pre></div>';
+					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ') + '</pre></div>';
 
 			}
 			authorsOut += '</div>';
@@ -1027,7 +1027,7 @@ var addressInfoContent = {
 	setDefinition: function (data) {
 		if (data.definition) {
 			$('#definitionTitleInAddress').show();
-			$('#definition').html('<pre>' + JSON.stringify(JSON.parse(data.definition), null, '   ') + '</pre>');
+			$('#definition').html('<pre>' + JSON.stringify(JSON.parse(data.definition), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ') + '</pre>');
 		} else {
 			$('#definition').hide();
 			if (!$('#definitionTitleInAddress').hasClass('hideTitle')) {
