@@ -57,5 +57,6 @@
 	"responseUnit" : "Response unit:",
 	"response" : "Response:",
 	"bounced" : "Bounced",
-	"notBounced" : "Not bounced"
+	"notBounced" : "Not bounced",
+	"aaResponse" : "AA response"
 }

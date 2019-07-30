@@ -725,6 +725,13 @@ socket.on('prev', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
+function generateAaResponseInfo(aa_response){
+	return '<div><ul><li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
+	(aa_response.response ? ('<li>'+ $('#response').text() +' ' + JSON.stringify(JSON.parse(aa_response.response), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ')+ '</li>') : "") +
+	(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +' <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
+	'</ul></div>';
+}
+
 function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions) {
 	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
 	messages.forEach(function(message) {
@@ -893,6 +900,12 @@ socket.on('info', function(data) {
 			$('#divTitleMessage,#divFees').hide();
 		} else {
 			$('#divTitleMessage,#divFees').show();
+		}
+		if (data.aa_response) {
+			$('#aaResponse').html(generateAaResponseInfo(data.aa_response));
+			$('#divTitleAaResponse,#aaResponse').show();
+		} else {
+			$('#divTitleAaResponse,#aaResponse').hide();
 		}
 		adaptiveShowInfo();
 		formatAllNumbers();

@@ -51,6 +51,7 @@
 	<div id="bounced"><%= i18n.__('bounced') %></div>
 	<div id="notBounced"><%= i18n.__('notBounced') %></div>
 	<div id="responseUnit"><%= i18n.__('responseUnit') %></div>
+	<div id="response"><%= i18n.__('response') %></div>
 	<div id="statusNotStable"><%= i18n.__('statusNotStable') %></div>
 	<div id="statusFinal"><%= i18n.__('statusFinal') %></div>
 </div>
@@ -95,6 +96,12 @@
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="messages"></div>
+		</div>
+		<div>
+			<div class="infoTitle" id="divTitleAaResponse" onclick="showHideBlock(event, 'aaResponse')"><%= i18n.__('aaResponse') %>
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="aaResponse"></div>
 		</div>
 		<div>
 			<div class="infoTitle hideTitle" id="witnessesTitle" onclick="showHideBlock(event, 'witnesses')">
