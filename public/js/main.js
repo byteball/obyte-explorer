@@ -926,6 +926,28 @@ socket.on('new', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
+function generateAaResponsesList(arrAaResponses){
+
+	var listAaResponses = '';
+	arrAaResponses.forEach(function(aa_response){
+		listAaResponses+= '<tr>' +
+		'<th class="transactionUnit" colspan="2" align="left">' +
+		'<div>'+ $('#triggerUnitID').text() +' <a href="#' + aa_response.trigger_unit + '">' + aa_response.trigger_unit + '</a></div>' +
+		'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(aa_response.creation_date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
+		'</tr>' +
+		'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr><tr><td colspan="3"><div>'+
+		'<ul>' +
+		'<li>'+ $('#triggerAddress').text() +' <a href="#' + aa_response.trigger_address + '">' + aa_response.trigger_address + '</a></li>' +
+		'<li>MCI : ' + aa_response.mci + '</li>' +
+		'<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
+		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +' <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
+		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + JSON.stringify(JSON.parse(aa_response.response), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ')+ '</li>') : "") +
+		'</ul></div></td></tr>';
+	})
+	listAaResponses += '<tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
+ 	return	listAaResponses;
+}
+
 function generateTransactionsList(objTransactions, address, filter) {
 	filter = filter || {};
 	var transaction, addressOut, _addressTo, listTransactions = '';
@@ -1041,7 +1063,7 @@ var addressInfoContent = {
 			$('#stateVarsTitleInAddress').show();
 			var html = "<ul>";
 			for (var key in data.objStateVars){
-				html+="<li>" + key + ": " + data.objStateVars[key];
+				html+="<li>" + key + ": '" + data.objStateVars[key] +"'";
 			}
 			html+="</ul>";
 			$('#stateVars').html(html);
@@ -1051,6 +1073,18 @@ var addressInfoContent = {
 				$('#stateVarsTitleInAddress').addClass('hideTitle');
 			}
 			$('#stateVarsTitleInAddress').hide();
+		}
+	},
+	setAaResponses: function (data) {
+		if (data.arrAaResponses) {
+			$('#aaResponsesTitleInAddress').show();
+			$('#aaResponses').html(generateAaResponsesList(data.arrAaResponses));
+		} else {
+			$('#aaResponses').hide();
+			if (!$('#aaResponsesTitleInAddress').hasClass('hideTitle')) {
+				$('#aaResponsesTitleInAddress').addClass('hideTitle');
+			}
+			$('#aaResponsesTitleInAddress').hide();
 		}
 	},
 	setUnspent: function (data) {
@@ -1121,6 +1155,7 @@ var addressInfoContent = {
 		this.setBalance(data);
 		this.setDefinition(data);
 		this.setStateVars(data);
+		this.setAaResponses(data);
 		this.setAssets(data);
 		this.setAdditionalData(data);
 		this.setUnspent(data);

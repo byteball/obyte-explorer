@@ -50,5 +50,12 @@
 	"labelOutputs": "Outputs",
 	"labelHeaders": "headers",
 	"labelPayload": "payload",
-	"labelStateVars": "State vars"
+	"labelStateVars": "State vars",
+	"labelAaResponses": "Last AA responses",
+	"triggerUnitID" : "Trigger unit:",
+	"triggerAddress" : "Trigger address:",
+	"responseUnit" : "Response unit:",
+	"response" : "Response:",
+	"bounced" : "Bounced",
+	"notBounced" : "Not bounced"
 }

@@ -10,6 +10,9 @@ exports.webPort = 4000;
 
 exports.storage = 'sqlite';
 
+exports.stateVarsListed = 100;
+exports.aaResponsesListed = 10;
+
 exports.selectedLanguage = 'en';
 exports.languagesAvailable = {
 	en: {name: "English", file: "en"},

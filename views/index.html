@@ -46,6 +46,11 @@
 	<div id="labelStateVars"><%= i18n.__('labelStateVars') %></div>
 	<div id="labelAll"><%= i18n.__('labelAll') %></div>
 	<div id="unitID"><%= i18n.__('unitID') %></div>
+	<div id="triggerUnitID"><%= i18n.__('triggerUnitID') %></div>
+	<div id="triggerAddress"><%= i18n.__('triggerAddress') %></div>
+	<div id="bounced"><%= i18n.__('bounced') %></div>
+	<div id="notBounced"><%= i18n.__('notBounced') %></div>
+	<div id="responseUnit"><%= i18n.__('responseUnit') %></div>
 	<div id="statusNotStable"><%= i18n.__('statusNotStable') %></div>
 	<div id="statusFinal"><%= i18n.__('statusFinal') %></div>
 </div>
@@ -130,6 +135,11 @@
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="stateVars" style="display: none"></div>
+		<div class="infoTitle hideTitle" id="aaResponsesTitleInAddress" onclick="showHideBlock(event, 'aaResponses')" style="display: none">
+				<%= i18n.__('labelAaResponses') %>
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="aaResponses" style="display: none"></div>
 		<div>
 			<div>
 				<div id="balance" style="padding-top: 10px"></div>
