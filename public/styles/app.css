@@ -250,7 +250,7 @@ a {
 	text-decoration: none;
 }
 
-#info #authors > div, #info #children > div, #info #parents > div , #info #witnesses > div{
+#info #authors > div, #info #children > div, #info #parents > div , #info #witnesses > div, #info #triggerUnit > div{
 	display: block;
 	padding: 5px;
 }
