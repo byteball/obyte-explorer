@@ -6,6 +6,7 @@ var constants = require('ocore/constants.js');
 var moment = require('moment');
 var async = require('async');
 var BIGINT = 9223372036854775807;
+var kvstore = require('ocore/kvstore.js');
 
 function getAmountForInfoAddress(objTransactions, cb) {
 	var arrTransactionsUnits = [], key;
@@ -258,7 +259,9 @@ function getAddressInfo(address, filter, cb) {
 					db.query("SELECT definition FROM aa_addresses WHERE address=?", [address], function (rows) {
 						if (rows.length === 0)
 							return findRegularDefinition();
-						cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID);
+						getStateVars(address, function(objStateVars){
+							cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, objStateVars);
+						});
 					});
 				}
 				else
@@ -284,6 +287,26 @@ function getAddressInfo(address, filter, cb) {
 	});
 }
 
+function getStateVars(address, handle){
+	var options = {};
+	options.gte = "st\n" + address + "\n";
+	options.lte = "st\n" + address + "\n\uFFFF";
+	options.limit = 100;
+
+	var objStateVars = {}
+	var handleData = function (data){
+		objStateVars[data.key.slice(36)] = data.value;
+	}
+
+	var stream = kvstore.createReadStream(options);
+	stream.on('data', handleData)
+	.on('end', function(){
+		handle(objStateVars);
+	})
+	.on('error', function(error){
+		throw Error('error from data stream: '+error);
+	});
+}
 
 exports.getAddressInfo = getAddressInfo;
 exports.getAddressTransactions = getAddressTransactions;

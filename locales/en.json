@@ -49,5 +49,6 @@
 	"labelInputs": "Inputs",
 	"labelOutputs": "Outputs",
 	"labelHeaders": "headers",
-	"labelPayload": "payload"
+	"labelPayload": "payload",
+	"labelStateVars": "State vars"
 }

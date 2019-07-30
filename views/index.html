@@ -43,6 +43,7 @@
 	<div id="labelHeaders"><%= i18n.__('labelHeaders') %></div>
 	<div id="labelPayload"><%= i18n.__('labelPayload') %></div>
 	<div id="labelDefinition"><%= i18n.__('labelDefinition') %></div>
+	<div id="labelStateVars"><%= i18n.__('labelStateVars') %></div>
 	<div id="labelAll"><%= i18n.__('labelAll') %></div>
 	<div id="unitID"><%= i18n.__('unitID') %></div>
 	<div id="statusNotStable"><%= i18n.__('statusNotStable') %></div>
@@ -124,14 +125,20 @@
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="definition" style="display: none"></div>
-		<div>
-			<div id="balance"></div>
+		<div class="infoTitle hideTitle" id="stateVarsTitleInAddress" onclick="showHideBlock(event, 'stateVars')" style="display: none">
+			<%= i18n.__('labelStateVars') %>
+			<div class="infoTitleImg"></div>
 		</div>
-		<label id="addressAssets" class="address-assets" style="display: none; padding-top: 10px">
-			<%= i18n.__('transactionsInAssets') %>
-			<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
-		</label>
-	</div>
+		<div id="stateVars" style="display: none"></div>
+		<div>
+			<div>
+				<div id="balance" style="padding-top: 10px"></div>
+			</div>
+			<label id="addressAssets" class="address-assets" style="display: none; padding-top: 10px">
+				<%= i18n.__('transactionsInAssets') %>
+				<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
+			</label>
+		</div>
 	<div class="row" id="blockListUnspent" style="margin-top: 50px">
 		<div class="infoTitle" onclick="showHideBlock(event, 'listUnspent')">
 			<%= i18n.__('unspent') %>

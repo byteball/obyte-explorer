@@ -1036,6 +1036,23 @@ var addressInfoContent = {
 			$('#definitionTitleInAddress').hide();
 		}
 	},
+	setStateVars: function (data) {
+		if (data.objStateVars) {
+			$('#stateVarsTitleInAddress').show();
+			var html = "<ul>";
+			for (var key in data.objStateVars){
+				html+="<li>" + key + ": " + data.objStateVars[key];
+			}
+			html+="</ul>";
+			$('#stateVars').html(html);
+		} else {
+			$('#stateVars').hide();
+			if (!$('#stateVarsTitleInAddress').hasClass('hideTitle')) {
+				$('#stateVarsTitleInAddress').addClass('hideTitle');
+			}
+			$('#stateVarsTitleInAddress').hide();
+		}
+	},
 	setUnspent: function (data) {
 		var currAssetKey = this.currAssetKey;
 		var listUnspent = '';
@@ -1103,6 +1120,7 @@ var addressInfoContent = {
 		this.setAddress(data);
 		this.setBalance(data);
 		this.setDefinition(data);
+		this.setStateVars(data);
 		this.setAssets(data);
 		this.setAdditionalData(data);
 		this.setUnspent(data);
