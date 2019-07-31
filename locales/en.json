@@ -58,5 +58,7 @@
 	"response" : "Response:",
 	"bounced" : "Bounced",
 	"notBounced" : "Not bounced",
-	"aaResponse" : "AA response"
+	"aaResponses" : "AA responses",
+	"aaAdress" : "AA address",
+	"from" : "From"
 }

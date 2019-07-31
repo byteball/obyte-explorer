@@ -725,11 +725,20 @@ socket.on('prev', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
-function generateAaResponseInfo(aa_response){
-	return '<div><ul><li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
-	(aa_response.response ? ('<li>'+ $('#response').text() +' ' + JSON.stringify(JSON.parse(aa_response.response), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ')+ '</li>') : "") +
-	(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +' <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
-	'</ul></div>';
+function generateAaResponsesInfo(aa_responses){
+	var html = '', blockId =0 ;
+	aa_responses.forEach(function(aa_response){
+		html += '<div class="message">';
+		html += '<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'aa_response_' + blockId + '\')">'+ $('#from').text()+ ' ' + aa_response.aa_address + '</div></div>';
+		html += '<div class="messagesInfo" id="aa_response_' + (blockId) + '">';
+		html += '<div><ul><li>'+ $('#aaAdress').text() + ': <a href="#' + aa_response.aa_address + '">' + aa_response.aa_address + '</a></li>';
+		html += '<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + JSON.stringify(JSON.parse(aa_response.response), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ')+ '</li>') : "") +
+		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
+		'</ul></div></div>';
+		blockId++;
+	});
+	return html;
 }
 
 function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions) {
@@ -901,11 +910,11 @@ socket.on('info', function(data) {
 		} else {
 			$('#divTitleMessage,#divFees').show();
 		}
-		if (data.aa_response) {
-			$('#aaResponse').html(generateAaResponseInfo(data.aa_response));
-			$('#divTitleAaResponse,#aaResponse').show();
+		if (data.arrAaResponses) {
+			$('#aaResponses').html(generateAaResponsesInfo(data.arrAaResponses));
+			$('#divTitleAaResponse,#aaResponses').show();
 		} else {
-			$('#divTitleAaResponse,#aaResponse').hide();
+			$('#divTitleAaResponse,#aaResponses').hide();
 		}
 		if (data.trigger_unit) {
 			$('#triggerUnit').html('<div><a href="#' + data.trigger_unit + '">' + data.trigger_unit + '</a></div>');

@@ -255,9 +255,9 @@ function getUnitSequence(unit, cb) {
 	});
 }
 
-function getAaResponse(unit, cb) {
-	db.query('SELECT response,bounced,response_unit FROM aa_responses WHERE trigger_unit = ?', [unit], function(rows) {
-		cb(rows[0] ? rows[0] : null);
+function getAaResponses(unit, cb) {
+	db.query('SELECT aa_address,response,bounced,response_unit FROM aa_responses WHERE trigger_unit = ?', [unit], function(rows) {
+		cb(rows[0] ? rows : null);
 	});
 }
 
@@ -277,7 +277,7 @@ function getInfoOnUnit(unit, cb) {
 							getUnitCommissions(unit, function(assocCommissions) {
 								setDefinitionInAuthors(unit, objJoint, function(objJoint) {
 									getUnitSequence(unit, function(sequence) {
-										getAaResponse(unit, function(aa_response){
+										getAaResponses(unit, function(arrAaResponses){
 											getTriggerUnit(unit, function(trigger_unit){
 												var objInfo = {
 													unit: unit,
@@ -298,7 +298,7 @@ function getInfoOnUnit(unit, cb) {
 													outputsUnit: unitOutputs,
 													date: moment(objJoint.unit.timestamp * 1000).format(),
 													assocCommissions: assocCommissions,
-													aa_response: aa_response,
+													arrAaResponses: arrAaResponses,
 													trigger_unit: trigger_unit
 												};
 												if (objJoint.unit.witnesses) {
