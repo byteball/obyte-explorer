@@ -304,7 +304,6 @@ function getStateVars(address, handle){
 	var options = {};
 	options.gte = "st\n" + address + "\n";
 	options.lte = "st\n" + address + "\n\uFFFF";
-	options.limit = 100;
 
 	var objStateVars = {}
 	var handleData = function (data){

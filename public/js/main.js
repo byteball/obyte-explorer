@@ -1088,15 +1088,34 @@ var addressInfoContent = {
 	},
 	setStateVars: function (data) {
 		if (data.objStateVars) {
+			var max_displayed = 30;
 			$('#stateVarsTitleInAddress').show();
-			var html = "<ul>";
-			for (var key in data.objStateVars){
-				html+="<li>" + key + ": '" + data.objStateVars[key] +"'";
+			if (Object.keys(data.objStateVars).length > max_displayed)
+				$('#stateVarsFilterInputDiv').show();
+			else
+				$('#stateVarsFilterInputDiv').hide();
+
+			$('#stateVarsFilterInput').on('input',function(e){
+				filterAndRefresh()
+			});
+
+			filterAndRefresh();
+
+			function filterAndRefresh(){
+				var html = "<ul>", count = 0;
+				for (var key in data.objStateVars){
+					if (count == max_displayed)
+						break;
+					if (!$('#stateVarsFilterInput').val() || key.indexOf($('#stateVarsFilterInput').val())> -1)
+						html+="<li>" + key + ": '" + data.objStateVars[key] +"'";
+					count++;
+				}
+				html+="</ul>";
+				$('#stateVars').html(html);
 			}
-			html+="</ul>";
-			$('#stateVars').html(html);
+
 		} else {
-			$('#stateVars').hide();
+			$('#stateVarsDiv').hide();
 			if (!$('#stateVarsTitleInAddress').hasClass('hideTitle')) {
 				$('#stateVarsTitleInAddress').addClass('hideTitle');
 			}
@@ -1106,9 +1125,9 @@ var addressInfoContent = {
 	setAaResponses: function (data) {
 		if (data.arrAaResponses) {
 			$('#aaResponsesTitleInAddress').show();
-			$('#aaResponses').html(generateAaResponsesList(data.arrAaResponses));
+			$('#lastAaResponses').html(generateAaResponsesList(data.arrAaResponses));
 		} else {
-			$('#aaResponses').hide();
+			$('#lastAaResponses').hide();
 			if (!$('#aaResponsesTitleInAddress').hasClass('hideTitle')) {
 				$('#aaResponsesTitleInAddress').addClass('hideTitle');
 			}

@@ -60,5 +60,6 @@
 	"notBounced" : "Not bounced",
 	"aaResponses" : "AA responses",
 	"aaAdress" : "AA address",
-	"from" : "From"
+	"from" : "From",
+	"tooManyVars" : "All state vars can't be displayed, please filter."
 }

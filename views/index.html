@@ -145,16 +145,22 @@
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="definition" style="display: none"></div>
-		<div class="infoTitle hideTitle" id="stateVarsTitleInAddress" onclick="showHideBlock(event, 'stateVars')" style="display: none">
+		<div class="infoTitle hideTitle" id="stateVarsTitleInAddress" onclick="showHideBlock(event, 'stateVarsDiv')" style="display: none">
 			<%= i18n.__('labelStateVars') %>
 			<div class="infoTitleImg"></div>
 		</div>
-		<div id="stateVars" style="display: none"></div>
-		<div class="infoTitle hideTitle" id="aaResponsesTitleInAddress" onclick="showHideBlock(event, 'aaResponses')" style="display: none">
+		<div id="stateVarsDiv" style="display: none">
+			<div id="stateVarsFilterInputDiv" style="display: none;padding-left: 10px;">
+				<form><input id="stateVarsFilterInput"><span style="padding-left: 5px;font-size: 10px;"><%= i18n.__('tooManyVars') %></span></form>
+			</div>
+			<div id="stateVars" ></div>
+		</div>
+		<div class="infoTitle hideTitle" id="aaResponsesTitleInAddress" onclick="showHideBlock(event, 'lastAaResponses')" style="display: none">
 				<%= i18n.__('labelAaResponses') %>
 				<div class="infoTitleImg"></div>
 			</div>
-			<div id="aaResponses" style="display: none"></div>
+			<div id="lastAaResponses" style="display: none">
+			</div>
 		<div>
 			<div>
 				<div id="balance" style="padding-top: 10px"></div>
