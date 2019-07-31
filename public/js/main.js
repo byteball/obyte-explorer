@@ -1106,9 +1106,10 @@ var addressInfoContent = {
 				for (var key in data.objStateVars){
 					if (count == max_displayed)
 						break;
-					if (!$('#stateVarsFilterInput').val() || key.indexOf($('#stateVarsFilterInput').val())> -1)
+					if (!$('#stateVarsFilterInput').val() || key.indexOf($('#stateVarsFilterInput').val())> -1){
 						html+="<li>" + key + ": '" + data.objStateVars[key] +"'";
-					count++;
+						count++;
+					}
 				}
 				html+="</ul>";
 				$('#stateVars').html(html);
