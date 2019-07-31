@@ -725,6 +725,22 @@ socket.on('prev', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
+function generateAaResponsesInfo(aa_responses){
+	var html = '', blockId =0 ;
+	aa_responses.forEach(function(aa_response){
+		html += '<div class="message">';
+		html += '<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'aa_response_' + blockId + '\')">'+ $('#from').text()+ ' ' + aa_response.aa_address + '</div></div>';
+		html += '<div class="messagesInfo" id="aa_response_' + (blockId) + '">';
+		html += '<div><ul><li>'+ $('#aaAdress').text() + ': <a href="#' + aa_response.aa_address + '">' + aa_response.aa_address + '</a></li>';
+		html += '<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + JSON.stringify(JSON.parse(aa_response.response), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ')+ '</li>') : "") +
+		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
+		'</ul></div></div>';
+		blockId++;
+	});
+	return html;
+}
+
 function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions) {
 	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
 	messages.forEach(function(message) {
@@ -894,6 +910,18 @@ socket.on('info', function(data) {
 		} else {
 			$('#divTitleMessage,#divFees').show();
 		}
+		if (data.arrAaResponses) {
+			$('#aaResponses').html(generateAaResponsesInfo(data.arrAaResponses));
+			$('#divTitleAaResponse,#aaResponses').show();
+		} else {
+			$('#divTitleAaResponse,#aaResponses').hide();
+		}
+		if (data.trigger_unit) {
+			$('#triggerUnit').html('<div><a href="#' + data.trigger_unit + '">' + data.trigger_unit + '</a></div>');
+			$('#divTitleTriggerUnit,#triggerUnit').show();
+		} else {
+			$('#divTitleTriggerUnit,#triggerUnit').hide();
+		}
 		adaptiveShowInfo();
 		formatAllNumbers();
 	}
@@ -925,6 +953,28 @@ socket.on('new', function(data) {
 	bWaitingForNew = false;
 	setChangesStableUnits(data.arrStableUnits);
 });
+
+function generateAaResponsesList(arrAaResponses){
+
+	var listAaResponses = '';
+	arrAaResponses.forEach(function(aa_response){
+		listAaResponses+= '<tr>' +
+		'<th class="transactionUnit" colspan="2" align="left">' +
+		'<div>'+ $('#triggerUnitID').text() +': <a href="#' + aa_response.trigger_unit + '">' + aa_response.trigger_unit + '</a></div>' +
+		'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(aa_response.creation_date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
+		'</tr>' +
+		'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr><tr><td colspan="3"><div>'+
+		'<ul>' +
+		'<li>'+ $('#triggerAddress').text() +': <a href="#' + aa_response.trigger_address + '">' + aa_response.trigger_address + '</a></li>' +
+		'<li>MCI : ' + aa_response.mci + '</li>' +
+		'<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
+		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
+		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + JSON.stringify(JSON.parse(aa_response.response), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ')+ '</li>') : "") +
+		'</ul></div></td></tr>';
+	})
+	listAaResponses += '<tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
+ 	return	listAaResponses;
+}
 
 function generateTransactionsList(objTransactions, address, filter) {
 	filter = filter || {};
@@ -1036,6 +1086,55 @@ var addressInfoContent = {
 			$('#definitionTitleInAddress').hide();
 		}
 	},
+	setStateVars: function (data) {
+		if (data.objStateVars) {
+			var max_displayed = 30;
+			$('#stateVarsTitleInAddress').show();
+			if (Object.keys(data.objStateVars).length > max_displayed)
+				$('#stateVarsFilterInputDiv').show();
+			else
+				$('#stateVarsFilterInputDiv').hide();
+
+			$('#stateVarsFilterInput').on('input',function(e){
+				filterAndRefresh()
+			});
+
+			filterAndRefresh();
+
+			function filterAndRefresh(){
+				var html = "<ul>", count = 0;
+				for (var key in data.objStateVars){
+					if (count == max_displayed)
+						break;
+					if (!$('#stateVarsFilterInput').val() || key.indexOf($('#stateVarsFilterInput').val())> -1){
+						html+="<li>" + key + ": '" + data.objStateVars[key] +"'";
+						count++;
+					}
+				}
+				html+="</ul>";
+				$('#stateVars').html(html);
+			}
+
+		} else {
+			$('#stateVarsDiv').hide();
+			if (!$('#stateVarsTitleInAddress').hasClass('hideTitle')) {
+				$('#stateVarsTitleInAddress').addClass('hideTitle');
+			}
+			$('#stateVarsTitleInAddress').hide();
+		}
+	},
+	setAaResponses: function (data) {
+		if (data.arrAaResponses) {
+			$('#aaResponsesTitleInAddress').show();
+			$('#lastAaResponses').html(generateAaResponsesList(data.arrAaResponses));
+		} else {
+			$('#lastAaResponses').hide();
+			if (!$('#aaResponsesTitleInAddress').hasClass('hideTitle')) {
+				$('#aaResponsesTitleInAddress').addClass('hideTitle');
+			}
+			$('#aaResponsesTitleInAddress').hide();
+		}
+	},
 	setUnspent: function (data) {
 		var currAssetKey = this.currAssetKey;
 		var listUnspent = '';
@@ -1103,6 +1202,8 @@ var addressInfoContent = {
 		this.setAddress(data);
 		this.setBalance(data);
 		this.setDefinition(data);
+		this.setStateVars(data);
+		this.setAaResponses(data);
 		this.setAssets(data);
 		this.setAdditionalData(data);
 		this.setUnspent(data);

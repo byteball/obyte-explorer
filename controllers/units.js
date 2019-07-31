@@ -255,6 +255,18 @@ function getUnitSequence(unit, cb) {
 	});
 }
 
+function getAaResponses(unit, cb) {
+	db.query('SELECT aa_address,response,bounced,response_unit FROM aa_responses WHERE trigger_unit = ?', [unit], function(rows) {
+		cb(rows[0] ? rows : null);
+	});
+}
+
+function getTriggerUnit(unit, cb) {
+	db.query('SELECT trigger_unit FROM aa_responses WHERE response_unit = ?', [unit], function(rows) {
+		cb(rows[0] ? rows[0].trigger_unit : null);
+	});
+}
+
 function getInfoOnUnit(unit, cb) {
 	storage.readUnitProps(db, unit, function(unitProps) {
 		storage.readJoint(db, unit, {
@@ -265,36 +277,42 @@ function getInfoOnUnit(unit, cb) {
 							getUnitCommissions(unit, function(assocCommissions) {
 								setDefinitionInAuthors(unit, objJoint, function(objJoint) {
 									getUnitSequence(unit, function(sequence) {
-										var objInfo = {
-											unit: unit,
-											sequence: sequence,
-											child: objParentsAndChildren.children,
-											parents: objParentsAndChildren.parents,
-											authors: objJoint.unit.authors,
-											headers_commission: objJoint.unit.headers_commission,
-											payload_commission: objJoint.unit.payload_commission,
-											main_chain_index: unitProps.main_chain_index,
-											latest_included_mc_index: unitProps.latest_included_mc_index,
-											level: unitProps.level,
-											witnessed_level: unitProps.witnessed_level,
-											is_stable: unitProps.is_stable,
-											last_ball_unit: objJoint.unit.last_ball_unit,
-											messages: objJoint.unit.messages,
-											transfersInfo: transfersInfo,
-											outputsUnit: unitOutputs,
-											date: moment(objJoint.unit.timestamp * 1000).format(),
-											assocCommissions: assocCommissions
-										};
-										if (objJoint.unit.witnesses) {
-											objInfo.witnesses = objJoint.unit.witnesses;
-											cb(objInfo);
-										}
-										else {
-											storage.readWitnesses(db, unit, function(arrWitnesses) {
-												objInfo.witnesses = arrWitnesses;
-												cb(objInfo);
+										getAaResponses(unit, function(arrAaResponses){
+											getTriggerUnit(unit, function(trigger_unit){
+												var objInfo = {
+													unit: unit,
+													sequence: sequence,
+													child: objParentsAndChildren.children,
+													parents: objParentsAndChildren.parents,
+													authors: objJoint.unit.authors,
+													headers_commission: objJoint.unit.headers_commission,
+													payload_commission: objJoint.unit.payload_commission,
+													main_chain_index: unitProps.main_chain_index,
+													latest_included_mc_index: unitProps.latest_included_mc_index,
+													level: unitProps.level,
+													witnessed_level: unitProps.witnessed_level,
+													is_stable: unitProps.is_stable,
+													last_ball_unit: objJoint.unit.last_ball_unit,
+													messages: objJoint.unit.messages,
+													transfersInfo: transfersInfo,
+													outputsUnit: unitOutputs,
+													date: moment(objJoint.unit.timestamp * 1000).format(),
+													assocCommissions: assocCommissions,
+													arrAaResponses: arrAaResponses,
+													trigger_unit: trigger_unit
+												};
+												if (objJoint.unit.witnesses) {
+													objInfo.witnesses = objJoint.unit.witnesses;
+													cb(objInfo);
+												}
+												else {
+													storage.readWitnesses(db, unit, function(arrWitnesses) {
+														objInfo.witnesses = arrWitnesses;
+														cb(objInfo);
+													});
+												}
 											});
-										}
+										});
 									});
 								});
 							});

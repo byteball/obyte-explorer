@@ -6,6 +6,8 @@ var constants = require('ocore/constants.js');
 var moment = require('moment');
 var async = require('async');
 var BIGINT = 9223372036854775807;
+var kvstore = require('ocore/kvstore.js');
+var conf = require('ocore/conf.js');
 
 function getAmountForInfoAddress(objTransactions, cb) {
 	var arrTransactionsUnits = [], key;
@@ -258,7 +260,21 @@ function getAddressInfo(address, filter, cb) {
 					db.query("SELECT definition FROM aa_addresses WHERE address=?", [address], function (rows) {
 						if (rows.length === 0)
 							return findRegularDefinition();
-						cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID);
+						async.parallel([
+							function(asyncCb){
+								getStateVars(address, function(objStateVars){
+									return asyncCb(null, objStateVars)
+								});
+							},
+							function(asyncCb){
+								getAaResponses(address, function(arrAaResponses){
+									return asyncCb(null, arrAaResponses)
+								});
+							}], 
+							function(error, arrResults){
+								cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, arrResults[0], arrResults[1]);
+							}
+						);
 					});
 				}
 				else
@@ -284,6 +300,32 @@ function getAddressInfo(address, filter, cb) {
 	});
 }
 
+function getStateVars(address, handle){
+	var options = {};
+	options.gte = "st\n" + address + "\n";
+	options.lte = "st\n" + address + "\n\uFFFF";
+
+	var objStateVars = {}
+	var handleData = function (data){
+		objStateVars[data.key.slice(36)] = data.value;
+	}
+
+	var stream = kvstore.createReadStream(options);
+	stream.on('data', handleData)
+	.on('end', function(){
+		handle(Object.keys(objStateVars).length > 0 ? objStateVars : null);
+	})
+	.on('error', function(error){
+		throw Error('error from data stream: '+error);
+	});
+}
+
+function getAaResponses(address, handle){
+	db.query("SELECT mci,trigger_address,trigger_unit,bounced,response_unit,response,creation_date FROM aa_responses WHERE aa_address = ?\n\
+	ORDER BY aa_response_id DESC LIMIT " + conf.aaResponsesListed, [address], function (rows) {
+		handle(rows.length > 0 ? rows : null);
+	});
+}
 
 exports.getAddressInfo = getAddressInfo;
 exports.getAddressTransactions = getAddressTransactions;

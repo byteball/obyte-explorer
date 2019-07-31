@@ -43,10 +43,19 @@
 	<div id="labelHeaders"><%= i18n.__('labelHeaders') %></div>
 	<div id="labelPayload"><%= i18n.__('labelPayload') %></div>
 	<div id="labelDefinition"><%= i18n.__('labelDefinition') %></div>
+	<div id="labelStateVars"><%= i18n.__('labelStateVars') %></div>
 	<div id="labelAll"><%= i18n.__('labelAll') %></div>
 	<div id="unitID"><%= i18n.__('unitID') %></div>
+	<div id="triggerUnitID"><%= i18n.__('triggerUnitID') %></div>
+	<div id="triggerAddress"><%= i18n.__('triggerAddress') %></div>
+	<div id="bounced"><%= i18n.__('bounced') %></div>
+	<div id="notBounced"><%= i18n.__('notBounced') %></div>
+	<div id="responseUnit"><%= i18n.__('responseUnit') %></div>
+	<div id="response"><%= i18n.__('response') %></div>
 	<div id="statusNotStable"><%= i18n.__('statusNotStable') %></div>
 	<div id="statusFinal"><%= i18n.__('statusFinal') %></div>
+	<div id="aaAdress"><%= i18n.__('aaAdress') %></div>
+	<div id="from"><%= i18n.__('from') %></div>
 </div>
 <div id="infoMessage" onclick="hideInfoMessage()"></div>
 <div id="cy"></div>
@@ -85,10 +94,22 @@
 			<div id="parents"></div>
 		</div>
 		<div>
+			<div class="infoTitle" id="divTitleTriggerUnit" onclick="showHideBlock(event, 'triggerUnit')"><%= i18n.__('triggerUnitID') %>
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="triggerUnit"></div>
+		</div>
+		<div>
 			<div class="infoTitle" id="divTitleMessage" onclick="showHideBlock(event, 'messages')"><%= i18n.__('messages') %>
 				<div class="infoTitleImg"></div>
 			</div>
 			<div id="messages"></div>
+		</div>
+		<div>
+			<div class="infoTitle" id="divTitleAaResponse" onclick="showHideBlock(event, 'aaResponses')"><%= i18n.__('aaResponses') %>
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="aaResponses"></div>
 		</div>
 		<div>
 			<div class="infoTitle hideTitle" id="witnessesTitle" onclick="showHideBlock(event, 'witnesses')">
@@ -124,14 +145,31 @@
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="definition" style="display: none"></div>
-		<div>
-			<div id="balance"></div>
+		<div class="infoTitle hideTitle" id="stateVarsTitleInAddress" onclick="showHideBlock(event, 'stateVarsDiv')" style="display: none">
+			<%= i18n.__('labelStateVars') %>
+			<div class="infoTitleImg"></div>
 		</div>
-		<label id="addressAssets" class="address-assets" style="display: none; padding-top: 10px">
-			<%= i18n.__('transactionsInAssets') %>
-			<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
-		</label>
-	</div>
+		<div id="stateVarsDiv" style="display: none">
+			<div id="stateVarsFilterInputDiv" style="display: none;padding-left: 10px;">
+				<form><input id="stateVarsFilterInput"><span style="padding-left: 5px;font-size: 10px;"><%= i18n.__('tooManyVars') %></span></form>
+			</div>
+			<div id="stateVars" ></div>
+		</div>
+		<div class="infoTitle hideTitle" id="aaResponsesTitleInAddress" onclick="showHideBlock(event, 'lastAaResponses')" style="display: none">
+				<%= i18n.__('labelAaResponses') %>
+				<div class="infoTitleImg"></div>
+			</div>
+			<div id="lastAaResponses" style="display: none">
+			</div>
+		<div>
+			<div>
+				<div id="balance" style="padding-top: 10px"></div>
+			</div>
+			<label id="addressAssets" class="address-assets" style="display: none; padding-top: 10px">
+				<%= i18n.__('transactionsInAssets') %>
+				<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
+			</label>
+		</div>
 	<div class="row" id="blockListUnspent" style="margin-top: 50px">
 		<div class="infoTitle" onclick="showHideBlock(event, 'listUnspent')">
 			<%= i18n.__('unspent') %>
@@ -168,6 +206,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/cytoscape.min.js"></script>
 <script src="/js/dagre.min.js"></script>
-<script src="/js/main.js?v17"></script>
+<script src="/js/main.js?v18"></script>
 </body>
 </html>
