@@ -741,7 +741,7 @@ function generateAaResponsesInfo(aa_responses){
 	return html;
 }
 
-function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions) {
+function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable) {
 	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
 	messages.forEach(function(message) {
 		if (message.payload) {
@@ -835,6 +835,16 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 				case 'text':
 					messagesOut += '<pre class="payload">' + htmlEscape(message.payload) + '</pre>';
 					break;
+				case 'definition':
+					messagesOut += '<div><label>address:</label></div>';
+					messagesOut += '<div class="payload">';
+					messagesOut += is_stable ? '<a href="#' + message.payload.address + '">' + message.payload.address + '</a>' : message.payload.address;
+					messagesOut += '</div>';
+					messagesOut += '<div><label>definition:</label></div>';
+					messagesOut += '<div class="payload">';
+					messagesOut +=  htmlEscape(JSON.stringify(message.payload.definition, null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   '));
+					messagesOut += '</div>';
+					break;
 				default:
 					for (var key_payload in message.payload) {
 						if (message.app == 'asset' && key_payload == 'denominations') {
@@ -900,7 +910,7 @@ socket.on('info', function(data) {
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
 		$('#is_stable').html(data.is_stable ? $('#statusFinal').text() : $('#statusNotStable').text());
 		$('#witnesses').html(witnessesOut);
-		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions));
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
 		if ($('#listInfo').css('display') === 'none') {
 			$('#defaultInfo').hide();
 			$('#listInfo').show();
