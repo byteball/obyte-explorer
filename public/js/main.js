@@ -725,6 +725,24 @@ socket.on('prev', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
+socket.on('deleted', function(unit) { // happens when uncovered non serial units are deleted
+	if (!_cy) return;
+	var el = _cy.getElementById(unit);
+	if (activeNode == el.id())
+		activeNode = null;
+	nodes = nodes.filter(function(node){
+		return node.data.unit != unit;
+	});
+	for (var k in edges){
+	 if(k.indexOf(unit) > -1)
+		delete edges[k]
+	}
+	_cy.remove(el);
+	$('#defaultInfo').show();
+	$('#listInfo').hide();
+	showInfoMessage($('#infoMessageUnitDeleted').text());
+});
+
 function generateAaResponsesInfo(aa_responses){
 	var html = '', blockId =0 ;
 	aa_responses.forEach(function(aa_response){

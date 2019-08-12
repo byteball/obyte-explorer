@@ -117,6 +117,8 @@ function info(data) {
 	units.getInfoOnUnit(data.unit, function(objInfo) {
 		if (objInfo) {
 			ws.emit('info', objInfo);
+		} else {
+			ws.emit('deleted', data.unit);
 		}
 	});
 }

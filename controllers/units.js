@@ -268,7 +268,11 @@ function getTriggerUnit(unit, cb) {
 }
 
 function getInfoOnUnit(unit, cb) {
-	storage.readUnitProps(db, unit, function(unitProps) {
+	db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level FROM units WHERE unit = ?', [unit], function(unitProps) {
+		if (!unitProps.length)
+			cb(null);
+		else
+			unitProps = unitProps[0];
 		storage.readJoint(db, unit, {
 			ifFound: function(objJoint) {
 				getParentsAndChildren(unit, function(objParentsAndChildren) {
