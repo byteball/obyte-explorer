@@ -618,6 +618,10 @@ function goToTop() {
 	$('#listInfo').hide();
 }
 
+function prettifyJson(str) {
+	return str.replace(/\\n/g, '\n').replace(/\\t/g, '   ').replace(/\\"/, '"').replace(/\\\\/, "\\");
+}
+
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
@@ -751,7 +755,7 @@ function generateAaResponsesInfo(aa_responses){
 		html += '<div class="messagesInfo" id="aa_response_' + (blockId) + '">';
 		html += '<div><ul><li>'+ $('#aaAdress').text() + ': <a href="#' + aa_response.aa_address + '">' + aa_response.aa_address + '</a></li>';
 		html += '<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
-		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + JSON.stringify(JSON.parse(aa_response.response), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ')+ '</li>') : "") +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + prettifyJson(JSON.stringify(JSON.parse(aa_response.response), null, '   '))+ '</li>') : "") +
 		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
 		'</ul></div></div>';
 		blockId++;
@@ -860,7 +864,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					messagesOut += '</div>';
 					messagesOut += '<div><label>definition:</label></div>';
 					messagesOut += '<div class="payload">';
-					messagesOut +=  htmlEscape(JSON.stringify(message.payload.definition, null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   '));
+					messagesOut +=  htmlEscape(prettifyJson(JSON.stringify(message.payload.definition, null, '   ')));
 					messagesOut += '</div>';
 					break;
 				default:
@@ -874,7 +878,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						else if (typeof message.payload[key_payload] === "object") {
 							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
 							messagesOut += '<div class="payload">';
-							messagesOut += htmlEscape(JSON.stringify(message.payload[key_payload], null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   '));
+							messagesOut += htmlEscape(prettifyJson(JSON.stringify(message.payload[key_payload], null, '   ')));
 							messagesOut += '</div>';
 						} else {
 							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ' + htmlEscape(message.payload[key_payload]) + '</div>';
@@ -906,7 +910,7 @@ socket.on('info', function(data) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
 				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">'+ $('#labelDefinition').text() +'<div class="infoTitleImg"></div></span>' +
-					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ') + '</pre></div>';
+					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + prettifyJson(JSON.stringify(JSON.parse(author.definition), null, '   ')) + '</pre></div>';
 
 			}
 			authorsOut += '</div>';
@@ -997,7 +1001,7 @@ function generateAaResponsesList(arrAaResponses){
 		'<li>MCI : ' + aa_response.mci + '</li>' +
 		'<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
 		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
-		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + JSON.stringify(JSON.parse(aa_response.response), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ')+ '</li>') : "") +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + prettifyJson(JSON.stringify(JSON.parse(aa_response.response), null, '   '))+ '</li>') : "") +
 		'</ul></div></td></tr>';
 	})
 	listAaResponses += '<tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
@@ -1105,7 +1109,7 @@ var addressInfoContent = {
 	setDefinition: function (data) {
 		if (data.definition) {
 			$('#definitionTitleInAddress').show();
-			$('#definition').html('<pre>' + JSON.stringify(JSON.parse(data.definition), null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ') + '</pre>');
+			$('#definition').html('<pre>' + prettifyJson(JSON.stringify(JSON.parse(data.definition), null, '   ')) + '</pre>');
 		} else {
 			$('#definition').hide();
 			if (!$('#definitionTitleInAddress').hasClass('hideTitle')) {
