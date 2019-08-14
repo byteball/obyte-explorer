@@ -619,7 +619,7 @@ function goToTop() {
 }
 
 function prettifyJson(str) {
-	return str.replace(/\\n/g, '\n').replace(/\\t/g, '   ').replace(/\\"/, '"').replace(/\\\\/, "\\");
+	return str.replace(/\\n/g, '\n').replace(/\\t/g, '   ').replace(/\\"/g, '"').replace(/\\\\/g, "\\");
 }
 
 //events
