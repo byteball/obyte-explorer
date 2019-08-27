@@ -1130,8 +1130,9 @@ var addressInfoContent = {
 			$('#stateVarsFilterInput').on('input',function(e){
 				filterAndRefresh()
 			});
-
+			
 			filterAndRefresh();
+			$('#stateVarsstorageSize').html($('#storageSize').text() + ": " + data.storage_size + " bytes");
 
 			function filterAndRefresh(){
 				var html = "<ul>", count = 0;

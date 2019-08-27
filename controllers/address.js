@@ -257,7 +257,7 @@ function getAddressInfo(address, filter, cb) {
 				}
 				var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
 				if (isFinite(constants.formulaUpgradeMci)) {
-					db.query("SELECT definition FROM aa_addresses WHERE address=?", [address], function (rows) {
+					db.query("SELECT definition,storage_size FROM aa_addresses WHERE address=?", [address], function (rows) {
 						if (rows.length === 0)
 							return findRegularDefinition();
 						async.parallel([
@@ -272,7 +272,7 @@ function getAddressInfo(address, filter, cb) {
 								});
 							}], 
 							function(error, arrResults){
-								cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, arrResults[0], arrResults[1]);
+								cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, rows[0].storage_size, arrResults[0], arrResults[1]);
 							}
 						);
 					});
