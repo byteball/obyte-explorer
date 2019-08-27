@@ -62,6 +62,6 @@
 	"aaResponses" : "AA responses",
 	"aaAdress" : "AA address",
 	"from" : "From",
-	"tooManyVars" : "All state vars can't be displayed, please filter."
-
+	"tooManyVars" : "All state vars can't be displayed, please filter.",
+	"storageSize" : "Storage size"
 }

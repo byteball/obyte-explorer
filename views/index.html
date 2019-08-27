@@ -57,6 +57,7 @@
 	<div id="statusFinal"><%= i18n.__('statusFinal') %></div>
 	<div id="aaAdress"><%= i18n.__('aaAdress') %></div>
 	<div id="from"><%= i18n.__('from') %></div>
+	<div id="storageSize"><%= i18n.__('storageSize') %></div>
 </div>
 <div id="infoMessage" onclick="hideInfoMessage()"></div>
 <div id="cy"></div>
@@ -150,11 +151,12 @@
 			<%= i18n.__('labelStateVars') %>
 			<div class="infoTitleImg"></div>
 		</div>
-		<div id="stateVarsDiv" style="display: none">
+		<div id="stateVarsDiv" style="display: none; padding-bottom: 5px;">
 			<div id="stateVarsFilterInputDiv" style="display: none;padding-left: 10px;">
 				<form><input id="stateVarsFilterInput"><span style="padding-left: 5px;font-size: 10px;"><%= i18n.__('tooManyVars') %></span></form>
 			</div>
 			<div id="stateVars" ></div>
+			<div id="stateVarsstorageSize" ></div>
 		</div>
 		<div class="infoTitle hideTitle" id="aaResponsesTitleInAddress" onclick="showHideBlock(event, 'lastAaResponses')" style="display: none">
 				<%= i18n.__('labelAaResponses') %>
@@ -207,6 +209,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/cytoscape.min.js"></script>
 <script src="/js/dagre.min.js"></script>
-<script src="/js/main.js?v20"></script>
+<script src="/js/main.js?v21"></script>
 </body>
 </html>
