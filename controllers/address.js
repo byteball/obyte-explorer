@@ -6,7 +6,7 @@ var constants = require('ocore/constants.js');
 var moment = require('moment');
 var async = require('async');
 var BIGINT = 9223372036854775807;
-var kvstore = require('ocore/kvstore.js');
+var storage = require('ocore/storage.js');
 var conf = require('ocore/conf.js');
 
 function getAmountForInfoAddress(objTransactions, cb) {
@@ -262,8 +262,8 @@ function getAddressInfo(address, filter, cb) {
 							return findRegularDefinition();
 						async.parallel([
 							function(asyncCb){
-								getStateVars(address, function(objStateVars){
-									return asyncCb(null, objStateVars)
+								storage.readAAStateVars(address, function (objStateVars) {
+									return asyncCb(null, Object.keys(objStateVars).length > 0 ? objStateVars : null)
 								});
 							},
 							function(asyncCb){
@@ -297,26 +297,6 @@ function getAddressInfo(address, filter, cb) {
 				}
 			}
 		);
-	});
-}
-
-function getStateVars(address, handle){
-	var options = {};
-	options.gte = "st\n" + address + "\n";
-	options.lte = "st\n" + address + "\n\uFFFF";
-
-	var objStateVars = {}
-	var handleData = function (data){
-		objStateVars[data.key.slice(36)] = data.value;
-	}
-
-	var stream = kvstore.createReadStream(options);
-	stream.on('data', handleData)
-	.on('end', function(){
-		handle(Object.keys(objStateVars).length > 0 ? objStateVars : null);
-	})
-	.on('error', function(error){
-		throw Error('error from data stream: '+error);
 	});
 }
 
