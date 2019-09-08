@@ -618,8 +618,8 @@ function goToTop() {
 	$('#listInfo').hide();
 }
 
-function prettifyJson(str) {
-	return str.replace(/\\n/g, '\n').replace(/\\t/g, '   ').replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+function prettifyJson(json_object) {
+	return htmlEscape(JSON.stringify(json_object, null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ').replace(/\\"/g, '"').replace(/\\\\/g, "\\"));
 }
 
 //events
@@ -755,7 +755,7 @@ function generateAaResponsesInfo(aa_responses){
 		html += '<div class="messagesInfo" id="aa_response_' + (blockId) + '">';
 		html += '<div><ul><li>'+ $('#aaAdress').text() + ': <a href="#' + aa_response.aa_address + '">' + aa_response.aa_address + '</a></li>';
 		html += '<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
-		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + prettifyJson(JSON.stringify(JSON.parse(aa_response.response), null, '   '))+ '</li>') : "") +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + prettifyJson(JSON.parse(aa_response.response)) + '</li>') : "") +
 		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
 		'</ul></div></div>';
 		blockId++;
@@ -864,7 +864,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					messagesOut += '</div>';
 					messagesOut += '<div><label>definition:</label></div>';
 					messagesOut += '<div class="payload">';
-					messagesOut +=  htmlEscape(prettifyJson(JSON.stringify(message.payload.definition, null, '   ')));
+					messagesOut +=  prettifyJson(message.payload.definition);
 					messagesOut += '</div>';
 					break;
 				default:
@@ -878,7 +878,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						else if (typeof message.payload[key_payload] === "object") {
 							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
 							messagesOut += '<div class="payload">';
-							messagesOut += htmlEscape(prettifyJson(JSON.stringify(message.payload[key_payload], null, '   ')));
+							messagesOut += prettifyJson(message.payload[key_payload]);
 							messagesOut += '</div>';
 						} else {
 							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ' + htmlEscape(message.payload[key_payload]) + '</div>';
@@ -910,7 +910,7 @@ socket.on('info', function(data) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
 				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">'+ $('#labelDefinition').text() +'<div class="infoTitleImg"></div></span>' +
-					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + prettifyJson(JSON.stringify(JSON.parse(author.definition), null, '   ')) + '</pre></div>';
+					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + prettifyJson(JSON.parse(author.definition)) + '</pre></div>';
 
 			}
 			authorsOut += '</div>';
@@ -1001,7 +1001,7 @@ function generateAaResponsesList(arrAaResponses){
 		'<li>MCI : ' + aa_response.mci + '</li>' +
 		'<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
 		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
-		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + prettifyJson(JSON.stringify(JSON.parse(aa_response.response), null, '   '))+ '</li>') : "") +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + prettifyJson(JSON.parse(aa_response.response)) + '</li>') : "") +
 		'</ul></div></td></tr>';
 	})
 	listAaResponses += '<tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
@@ -1109,7 +1109,7 @@ var addressInfoContent = {
 	setDefinition: function (data) {
 		if (data.definition) {
 			$('#definitionTitleInAddress').show();
-			$('#definition').html('<pre>' + prettifyJson(JSON.stringify(JSON.parse(data.definition), null, '   ')) + '</pre>');
+			$('#definition').html('<pre>' + prettifyJson(JSON.parse(data.definition)) + '</pre>');
 		} else {
 			$('#definition').hide();
 			if (!$('#definitionTitleInAddress').hasClass('hideTitle')) {
