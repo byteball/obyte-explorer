@@ -250,6 +250,10 @@ a {
 	text-decoration: none;
 }
 
+a[href^="#"], .thisAddress, #unit, .unit, .address {
+	font-family: monospace;
+}
+
 #info #authors > div, #info #children > div, #info #parents > div , #info #witnesses > div, #info #triggerUnit > div{
 	display: block;
 	padding: 5px;
