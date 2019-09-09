@@ -619,7 +619,7 @@ function goToTop() {
 }
 
 function prettifyJson(json_object) {
-	return htmlEscape(JSON.stringify(json_object, null, '   ').replace(/\\n/g, '\n').replace(/\\t/g, '   ').replace(/\\"/g, '"').replace(/\\\\/g, "\\"));
+	return htmlEscape(JSON.stringify(json_object, null, '    ').replace(/\\n/g, '\n').replace(/\\t/g, '    ').replace(/\\"/g, '"').replace(/\\\\/g, "\\"));
 }
 
 //events
@@ -755,7 +755,7 @@ function generateAaResponsesInfo(aa_responses){
 		html += '<div class="messagesInfo" id="aa_response_' + (blockId) + '">';
 		html += '<div><ul><li>'+ $('#aaAdress').text() + ': <a href="#' + aa_response.aa_address + '">' + aa_response.aa_address + '</a></li>';
 		html += '<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
-		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + prettifyJson(JSON.parse(aa_response.response)) + '</li>') : "") +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' <span class="payload">' + prettifyJson(JSON.parse(aa_response.response)) + '</span></li>') : "") +
 		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
 		'</ul></div></div>';
 		blockId++;
@@ -855,33 +855,35 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					}
 					break;
 				case 'text':
+					// <pre>  is used to display the text with fixed-width font (for example ASCII art)
 					messagesOut += '<pre class="payload">' + htmlEscape(message.payload) + '</pre>';
 					break;
 				case 'definition':
-					messagesOut += '<div><label>address:</label></div>';
-					messagesOut += '<div class="payload">';
+					messagesOut += '<div><label class="address">address:</label> ';
+					messagesOut += '<span class="address">';
 					messagesOut += is_stable ? '<a href="#' + message.payload.address + '">' + message.payload.address + '</a>' : message.payload.address;
+					messagesOut += '</span>';
 					messagesOut += '</div>';
-					messagesOut += '<div><label>definition:</label></div>';
-					messagesOut += '<div class="payload">';
+					messagesOut += '<div><label>definition:</label> ';
+					messagesOut += '<span class="payload">';
 					messagesOut +=  prettifyJson(message.payload.definition);
+					messagesOut += '</span>';
 					messagesOut += '</div>';
 					break;
 				default:
 					for (var key_payload in message.payload) {
-						if (message.app == 'asset' && key_payload == 'denominations') {
-							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
-							messagesOut += '<div class="payload">';
-							messagesOut += JSON.stringify(message.payload[key_payload]);
-							messagesOut += '</div>';
-						}
-						else if (typeof message.payload[key_payload] === "object") {
-							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
-							messagesOut += '<div class="payload">';
+						if (typeof message.payload[key_payload] === "object") {
+							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ';
+							messagesOut += '<span>';
 							messagesOut += prettifyJson(message.payload[key_payload]);
+							messagesOut += '</span>';
 							messagesOut += '</div>';
 						} else {
-							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ' + htmlEscape(message.payload[key_payload]) + '</div>';
+							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ';
+							messagesOut += '<span>';
+							messagesOut += htmlEscape(message.payload[key_payload]);
+							messagesOut += '</span>';
+							messagesOut += '</div>';
 						}
 					}
 					break;
@@ -910,7 +912,7 @@ socket.on('info', function(data) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
 				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">'+ $('#labelDefinition').text() +'<div class="infoTitleImg"></div></span>' +
-					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + prettifyJson(JSON.parse(author.definition)) + '</pre></div>';
+					'<div id="definition' + (incAuthors++) + '" class="payload" style="display: none">' + prettifyJson(JSON.parse(author.definition)) + '</div>';
 
 			}
 			authorsOut += '</div>';
@@ -1001,7 +1003,7 @@ function generateAaResponsesList(arrAaResponses){
 		'<li>MCI : ' + aa_response.mci + '</li>' +
 		'<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
 		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
-		(aa_response.response ? ('<li>'+ $('#response').text() +' ' + prettifyJson(JSON.parse(aa_response.response)) + '</li>') : "") +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' <span class="payload">' + prettifyJson(JSON.parse(aa_response.response)) + '</span></li>') : "") +
 		'</ul></div></td></tr>';
 	})
 	listAaResponses += '<tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
@@ -1031,7 +1033,7 @@ function generateTransactionsList(objTransactions, address, filter) {
 			if (objFrom.issue) {
 				listTransactions += '<div class="transactionUnitListAddress">' +
 					'<div>' + addressOut + '</div>' +
-					'<div>Issue <span class="numberFormat">' + objFrom.amount + '</span> ' + transaction.asset + '</div>' +
+					'<div>Issue <span class="numberFormat">' + objFrom.amount + '</span> <span class="unit">' + transaction.asset + '</span></div>' +
 					'<div>serial number: ' + objFrom.serial_number + '</div></div>';
 			} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
 				var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
@@ -1054,7 +1056,7 @@ function generateTransactionsList(objTransactions, address, filter) {
 			addressOut = _addressTo.address == address ? '<span class="thisAddress">' + _addressTo.address + '</span>' : '<a href="#' + _addressTo.address + '">' + _addressTo.address + '</a>';
 
 			listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
-				'<div>(<span class="numberFormat">' + _addressTo.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ', ' +
+				'<div>(<span class="numberFormat">' + _addressTo.amount + '</span> <span class="unit">' + (transaction.asset == null ? 'bytes' : transaction.asset) + '</span>, ' +
 				(_addressTo.spent === 0 ? 'not spent' : 'spent in ' + '<a href="#' + _addressTo.spent + '">' + _addressTo.spent + '</a>') +
 				')</div></div>';
 		}
@@ -1109,7 +1111,7 @@ var addressInfoContent = {
 	setDefinition: function (data) {
 		if (data.definition) {
 			$('#definitionTitleInAddress').show();
-			$('#definition').html('<pre>' + prettifyJson(JSON.parse(data.definition)) + '</pre>');
+			$('#definition').html('<div class="payload">' + prettifyJson(JSON.parse(data.definition)) + '</div>');
 		} else {
 			$('#definition').hide();
 			if (!$('#definitionTitleInAddress').hasClass('hideTitle')) {
