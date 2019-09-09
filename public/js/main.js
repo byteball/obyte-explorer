@@ -859,7 +859,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					messagesOut += '<pre class="payload">' + htmlEscape(message.payload) + '</pre>';
 					break;
 				case 'definition':
-					messagesOut += '<div><label class="address">address:</label> ';
+					messagesOut += '<div><label>address:</label> ';
 					messagesOut += '<span class="address">';
 					messagesOut += is_stable ? '<a href="#' + message.payload.address + '">' + message.payload.address + '</a>' : message.payload.address;
 					messagesOut += '</span>';
