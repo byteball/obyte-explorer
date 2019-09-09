@@ -251,7 +251,7 @@ a {
 }
 
 a[href^="#"], .thisAddress, #unit, .unit, .address {
-	font-family: monospace;
+	font-family:SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace;
 }
 
 #info #authors > div, #info #children > div, #info #parents > div , #info #witnesses > div, #info #triggerUnit > div{
