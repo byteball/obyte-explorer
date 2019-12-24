@@ -147,7 +147,7 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 				"WHERE units.unit IN (?) AND outputs.unit = inputs.unit",
 				getStrSqlFilterAssetForTransactions(strFilterAsset),
 				"AND units.unit = inputs.unit",
-				"ORDER BY units.main_chain_index DESC"
+				"ORDER BY units.main_chain_index DESC,units.ROWID DESC"
 			];
 
 			db.query(
@@ -304,7 +304,8 @@ function getAddressInfo(address, filter, cb) {
 }
 
 function getAaResponses(address, handle){
-	db.query("SELECT mci,trigger_address,trigger_unit,bounced,response_unit,response,"+ db.getUnixTimestamp("aa_responses.creation_date")+" AS timestamp FROM aa_responses WHERE aa_address = ?\n\
+	db.query("SELECT mci,trigger_address,trigger_unit,bounced,response_unit,response,timestamp \n\
+	FROM aa_responses INNER JOIN units ON aa_responses.trigger_unit=units.unit WHERE aa_address = ?\n\
 	ORDER BY aa_response_id DESC LIMIT " + conf.aaResponsesListed, [address], function (rows) {
 		handle(rows.length > 0 ? rows : null);
 	});
