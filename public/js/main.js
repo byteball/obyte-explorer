@@ -925,7 +925,7 @@ socket.on('info', function(data) {
 		$('#children').html(childOut);
 		$('#parents').html(parentOut);
 		$('#authors').html(authorsOut);
-		$('#received').html(moment(data.date).format('DD.MM.YYYY HH:mm:ss'));
+		$('#received').html(moment.unix(data.timestamp).format('DD.MM.YYYY HH:mm:ss'));
 		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
@@ -995,7 +995,7 @@ function generateAaResponsesList(arrAaResponses){
 		listAaResponses+= '<tr>' +
 		'<th class="transactionUnit" colspan="2" align="left">' +
 		'<div>'+ $('#triggerUnitID').text() +': <a href="#' + aa_response.trigger_unit + '">' + aa_response.trigger_unit + '</a></div>' +
-		'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(aa_response.creation_date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
+		'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment.unix(aa_response.timestamp).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
 		'</tr>' +
 		'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr><tr><td colspan="3"><div>'+
 		'<ul>' +
@@ -1024,7 +1024,7 @@ function generateTransactionsList(objTransactions, address, filter) {
 		listTransactions += '<tr>' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
 			'<div>'+ $('#unitID').text() +' <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
-			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(transaction.date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
+			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment.unix(transaction.timestamp).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
 			'</tr>' +
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
 			'<tr><td>';
