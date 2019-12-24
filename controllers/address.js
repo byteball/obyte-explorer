@@ -157,7 +157,7 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 							key = row.unit + '_' + row.asset;
 							if (!objTransactions[key]) objTransactions[key] = {
 								unit: row.unit,
-								date: moment(row.timestamp * 1000).format(),
+								timestamp: row.timestamp,
 								from: [],
 								to: {},
 								spent: false,
@@ -301,7 +301,7 @@ function getAddressInfo(address, filter, cb) {
 }
 
 function getAaResponses(address, handle){
-	db.query("SELECT mci,trigger_address,trigger_unit,bounced,response_unit,response,creation_date FROM aa_responses WHERE aa_address = ?\n\
+	db.query("SELECT mci,trigger_address,trigger_unit,bounced,response_unit,response,"+ db.getUnixTimestamp("aa_responses.creation_date")+" AS timestamp FROM aa_responses WHERE aa_address = ?\n\
 	ORDER BY aa_response_id DESC LIMIT " + conf.aaResponsesListed, [address], function (rows) {
 		handle(rows.length > 0 ? rows : null);
 	});

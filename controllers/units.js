@@ -300,7 +300,7 @@ function getInfoOnUnit(unit, cb) {
 													messages: objJoint.unit.messages,
 													transfersInfo: transfersInfo,
 													outputsUnit: unitOutputs,
-													date: moment(objJoint.unit.timestamp * 1000).format(),
+													timestamp: objJoint.unit.timestamp,
 													assocCommissions: assocCommissions,
 													arrAaResponses: arrAaResponses,
 													trigger_unit: trigger_unit
