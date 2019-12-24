@@ -139,8 +139,11 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 			var strFilterAsset = filter.asset;
 
 			var arrQuerySql = [
-				"SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type, "+ db.getUnixTimestamp("units.creation_date")+" AS timestamp",
-				"FROM inputs, outputs, units",
+				"SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type,\n\
+				CASE timestamp \n\
+					WHEN 0 THEN "+ db.getUnixTimestamp("units.creation_date")+" ELSE timestamp \n\
+				END timestamp \n\
+				FROM inputs, outputs, units",
 				"WHERE units.unit IN (?) AND outputs.unit = inputs.unit",
 				getStrSqlFilterAssetForTransactions(strFilterAsset),
 				"AND units.unit = inputs.unit",
