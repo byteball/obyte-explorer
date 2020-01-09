@@ -3,8 +3,8 @@
 
 var db = require('ocore/db.js');
 var storage = require('ocore/storage.js');
-var moment = require('moment');
 var async = require('async');
+var constants = require("ocore/constants.js");
 
 function getLastUnits(cb) {
 	var nodes = [];
@@ -267,6 +267,75 @@ function getTriggerUnit(unit, cb) {
 	});
 }
 
+function getConfirmationDelays(objJoint){
+	return new Promise((resolve)=>{
+		db.query("SELECT unit FROM units WHERE is_on_main_chain=1 AND main_chain_index=?",[objJoint.unit.main_chain_index], function(rows){
+		goUpMainChainToDetermineConfirmationTimes(objJoint.unit.main_chain_index, null,  [], null, rows[0].unit,
+			function(fullConfirmationTime, lightConfirmationTime) {
+				var full_node_confirmation_delay = fullConfirmationTime ? fullConfirmationTime - objJoint.unit.timestamp : null;
+				var light_node_confirmation_delay = lightConfirmationTime ? lightConfirmationTime - objJoint.unit.timestamp : null;
+				return resolve({full_node_confirmation_delay, light_node_confirmation_delay});
+			});
+		});
+	});
+}
+
+
+function getWitnessesForUnit(unit){
+	return new Promise((resolve)=>{
+		storage.readJoint(db, unit, {
+			ifFound: function(objMcJoint){
+				if (objMcJoint.unit.witnesses) {
+					resolve(objMcJoint.unit.witnesses);
+				} else {
+					storage.readWitnesses(db, objMcJoint.unit.unit, function(arrWitnesses){
+						resolve(arrWitnesses);
+					});
+				}
+			}
+		});
+	});
+}
+
+function goUpMainChainToDetermineConfirmationTimes(start_mci, arrWitnesses, arrFoundWitnesses, fullConfirmationTime, parent, handle){
+	db.query("SELECT unit,\n\
+	CASE timestamp \n\
+		WHEN 0 THEN "+ db.getUnixTimestamp("units.creation_date")+" ELSE timestamp \n\
+	END timestamp, \n\
+	unit_authors.address,main_chain_index FROM units \n\
+	CROSS JOIN unit_authors USING(unit) WHERE best_parent_unit=? AND is_on_main_chain=1", [parent], 
+	function(rows){
+		async.each(rows, 
+			function(row, cb) {
+				if (row.main_chain_index){
+					storage.findLastBallMciOfMci(db, row.main_chain_index, async function(last_ball_mci){
+						if (start_mci <= (last_ball_mci + 1)) {
+							if (!fullConfirmationTime)
+								fullConfirmationTime = rows[0].timestamp;
+							if (!arrWitnesses)
+								arrWitnesses = await getWitnessesForUnit(rows[0].unit);
+							if (arrWitnesses.indexOf(row.address) >= 0 && arrFoundWitnesses.indexOf(row.address) === -1)
+								arrFoundWitnesses.push(row.address);
+						}
+						return cb();
+					});
+				} else {
+					return cb();
+				}
+			},
+			function(){
+				if (!rows[0])
+					return handle(fullConfirmationTime)
+				if (arrFoundWitnesses.length >= constants.MAJORITY_OF_WITNESSES){
+					return handle(fullConfirmationTime, rows[0].timestamp);
+				}
+				else
+					goUpMainChainToDetermineConfirmationTimes(start_mci, arrWitnesses, arrFoundWitnesses, fullConfirmationTime, rows[0].unit, handle);
+			}
+		);
+	});
+}
+
 function getInfoOnUnit(unit, cb) {
 	db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable FROM units WHERE unit = ?', [unit], function(unitProps) {
 		if (!unitProps.length)
@@ -282,7 +351,7 @@ function getInfoOnUnit(unit, cb) {
 								setDefinitionInAuthors(unit, objJoint, function(objJoint) {
 									getUnitSequence(unit, function(sequence) {
 										getAaResponses(unit, function(arrAaResponses){
-											getTriggerUnit(unit, function(trigger_unit){
+											getTriggerUnit(unit, async function(trigger_unit){
 												var objInfo = {
 													unit: unit,
 													sequence: sequence,
@@ -305,6 +374,11 @@ function getInfoOnUnit(unit, cb) {
 													arrAaResponses: arrAaResponses,
 													trigger_unit: trigger_unit
 												};
+												if (unitProps.is_stable){ 
+													var {full_node_confirmation_delay, light_node_confirmation_delay} = await getConfirmationDelays(objJoint);
+													objInfo.light_node_confirmation_delay = light_node_confirmation_delay;
+													objInfo.full_node_confirmation_delay = full_node_confirmation_delay;
+												}
 												if (objJoint.unit.witnesses) {
 													objInfo.witnesses = objJoint.unit.witnesses;
 													cb(objInfo);

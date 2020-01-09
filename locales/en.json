@@ -5,6 +5,8 @@
 	"closeButton": "Close",
 	"unitID": "Unit ID:",
 	"received": "Received:",
+	"confDelayFull" :"Confirmation delay (full node):",
+	"confDelayLight" :"Confirmation delay (light node):",
 	"authors": "Authors",
 	"children": "Children",
 	"parents": "Parents",
