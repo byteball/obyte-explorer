@@ -78,6 +78,11 @@
 			<div style="padding-left: 5px"><%= i18n.__('received') %> <span id="received"></span></div>
 		</div>
 		<div>
+		<div style="padding-left: 5px" id="confDelayFullDiv"><%= i18n.__('confDelayFull') %> <span id="confDelayFull"></span></div>
+		</div>
+		<div style="padding-left: 5px" id="confDelayLightDiv"><%= i18n.__('confDelayLight') %> <span id="confDelayLight"></span></div>
+		</div>
+		<div>
 			<div class="infoTitle" onclick="showHideBlock(event, 'authors')"><%= i18n.__('authors') %>
 				<div class="infoTitleImg"></div>
 			</div>
@@ -206,9 +211,10 @@
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment-duration-format/2.3.2/moment-duration-format.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/cytoscape.min.js"></script>
 <script src="/js/dagre.min.js"></script>
-<script src="/js/main.js?v24"></script>
+<script src="/js/main.js?v25"></script>
 </body>
 </html>

@@ -926,6 +926,17 @@ socket.on('info', function(data) {
 		$('#parents').html(parentOut);
 		$('#authors').html(authorsOut);
 		$('#received').html(moment.unix(data.timestamp).format('DD.MM.YYYY HH:mm:ss'));
+		if (data.full_node_confirmation_delay){
+			$('#confDelayFull').html(moment.duration(data.full_node_confirmation_delay , "seconds").format("h[h] m[m] s[s]"));
+			$('#confDelayFullDiv').show();
+		} else
+			$('#confDelayFullDiv').hide();
+		if (data.light_node_confirmation_delay){
+			$('#confDelayLight').html(moment.duration(data.light_node_confirmation_delay , "seconds").format("h[h] m[m] s[s]"));
+			$('#confDelayLightDiv').show();
+		} else
+			$('#confDelayLightDiv').hide();
+		
 		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
