@@ -269,8 +269,9 @@ function getTriggerUnit(unit, cb) {
 
 function getConfirmationDelays(objJoint){
 	return new Promise((resolve)=>{
-		db.query("SELECT unit FROM units WHERE is_on_main_chain=1 AND main_chain_index=?",[objJoint.unit.main_chain_index], function(rows){
-		goUpMainChainToDetermineConfirmationTimes(objJoint.unit.main_chain_index, null,  [], null, rows[0].unit,
+		db.query("SELECT unit FROM units WHERE is_on_main_chain=1 AND main_chain_index=?",[objJoint.unit.main_chain_index], 
+		function(rows){
+			goDownMainChainToDetermineConfirmationTimes(rows[0].unit, null,  [], null, 
 			function(fullConfirmationTime, lightConfirmationTime) {
 				var full_node_confirmation_delay = fullConfirmationTime ? fullConfirmationTime - objJoint.unit.timestamp : null;
 				var light_node_confirmation_delay = lightConfirmationTime ? lightConfirmationTime - objJoint.unit.timestamp : null;
@@ -283,45 +284,70 @@ function getConfirmationDelays(objJoint){
 
 function getWitnessesForUnit(unit){
 	return new Promise((resolve)=>{
-		storage.readJoint(db, unit, {
-			ifFound: function(objMcJoint){
-				if (objMcJoint.unit.witnesses) {
-					resolve(objMcJoint.unit.witnesses);
-				} else {
-					storage.readWitnesses(db, objMcJoint.unit.unit, function(arrWitnesses){
-						resolve(arrWitnesses);
-					});
-				}
-			}
+		storage.readWitnesses(db, unit, function(arrWitnesses){
+			resolve(arrWitnesses);
 		});
 	});
 }
 
-function goUpMainChainToDetermineConfirmationTimes(start_mci, arrWitnesses, arrFoundWitnesses, fullConfirmationTime, parent, handle){
+function findUnitWhereUnitBecameStable(unit){
+	return new Promise((resolve)=>{
+		db.query("SELECT unit, main_chain_index,\n\
+		CASE timestamp \n\
+			WHEN 0 THEN "+ db.getUnixTimestamp("units.creation_date")+" ELSE timestamp \n\
+		END timestamp \n\
+		FROM units WHERE last_ball_unit=? ORDER BY main_chain_index DESC LIMIT 1",[unit], async function(rows){
+			if (rows[0])
+				return resolve(rows[0]);
+			else {
+				var next_mc_unit= await goDownMainChain(unit);
+				if (next_mc_unit)
+					return findUnitWhereUnitBecameStable(next_mc_unit.unit).then(resolve);
+				else
+					return resolve(false);
+			}
+		});
+	})
+}
+
+function goDownMainChain(unit){
+	return new Promise((resolve)=>{
+		db.query("SELECT unit,\n\
+			CASE timestamp \n\
+				WHEN 0 THEN "+ db.getUnixTimestamp("units.creation_date")+" ELSE timestamp \n\
+			END timestamp FROM units \n\
+		WHERE best_parent_unit=? AND is_on_main_chain=1",[unit],
+		function(rows){
+			return resolve(rows[0] ? { unit: rows[0].unit, timestamp: rows[0].timestamp } : null);
+		});
+	});
+}
+
+async function goDownMainChainToDetermineConfirmationTimes(parent, arrWitnesses, arrFoundWitnesses, fullConfirmationTime, handle){
+
+	if (!fullConfirmationTime){
+		var objStabilizingUnit = await findUnitWhereUnitBecameStable(parent);
+		if (!objStabilizingUnit)
+			return handle();
+		fullConfirmationTime = objStabilizingUnit.timestamp;
+		arrWitnesses = await getWitnessesForUnit(objStabilizingUnit.unit);
+		parent = objStabilizingUnit.unit;
+	}
+
 	db.query("SELECT unit,\n\
 	CASE timestamp \n\
 		WHEN 0 THEN "+ db.getUnixTimestamp("units.creation_date")+" ELSE timestamp \n\
 	END timestamp, \n\
 	unit_authors.address,main_chain_index FROM units \n\
-	CROSS JOIN unit_authors USING(unit) WHERE best_parent_unit=? AND is_on_main_chain=1", [parent], 
+	CROSS JOIN unit_authors USING(unit) WHERE best_parent_unit=? AND is_on_main_chain=1", [parent],
 	function(rows){
 		async.each(rows, 
 			function(row, cb) {
 				if (row.main_chain_index){
-					storage.findLastBallMciOfMci(db, row.main_chain_index, async function(last_ball_mci){
-						if (start_mci <= (last_ball_mci + 1)) {
-							if (!fullConfirmationTime)
-								fullConfirmationTime = rows[0].timestamp;
-							if (!arrWitnesses)
-								arrWitnesses = await getWitnessesForUnit(rows[0].unit);
-							if (arrWitnesses.indexOf(row.address) >= 0 && arrFoundWitnesses.indexOf(row.address) === -1)
-								arrFoundWitnesses.push(row.address);
-						}
-						return cb();
-					});
-				} else {
-					return cb();
+					if (arrWitnesses.indexOf(row.address) >= 0 && arrFoundWitnesses.indexOf(row.address) === -1)
+						arrFoundWitnesses.push(row.address);
 				}
+				return cb();
 			},
 			function(){
 				if (!rows[0])
@@ -330,7 +356,7 @@ function goUpMainChainToDetermineConfirmationTimes(start_mci, arrWitnesses, arrF
 					return handle(fullConfirmationTime, rows[0].timestamp);
 				}
 				else
-					goUpMainChainToDetermineConfirmationTimes(start_mci, arrWitnesses, arrFoundWitnesses, fullConfirmationTime, rows[0].unit, handle);
+					goDownMainChainToDetermineConfirmationTimes(rows[0].unit, arrWitnesses, arrFoundWitnesses, fullConfirmationTime, handle);
 			}
 		);
 	});
