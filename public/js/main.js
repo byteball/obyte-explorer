@@ -726,10 +726,14 @@ socket.on('prev', function(data) {
 });
 
 function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions) {
-	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
+	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false, shownAssetPayments = [];
 	messages.forEach(function(message) {
 		if (message.payload) {
 			asset = message.payload.asset || 'null';
+			if (asset !== 'null' && shownAssetPayments[asset]) {
+				return; // skip because already shows everything with outputsUnit[asset].forEach()
+			}
+			shownAssetPayments[asset] = true;
 			messagesOut +=
 				'<div class="message">' +
 				'<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'message_' + blockId + '\')">';
