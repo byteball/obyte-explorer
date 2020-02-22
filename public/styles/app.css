@@ -250,7 +250,11 @@ a {
 	text-decoration: none;
 }
 
-#info #authors > div, #info #children > div, #info #parents > div , #info #witnesses > div{
+a[href^="#"], .thisAddress, #unit, .unit, .address {
+	font-family:SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace;
+}
+
+#info #authors > div, #info #children > div, #info #parents > div , #info #witnesses > div, #info #triggerUnit > div{
 	display: block;
 	padding: 5px;
 }
