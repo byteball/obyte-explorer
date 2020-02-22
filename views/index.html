@@ -15,7 +15,9 @@
 	</div>
 	<div id="menuLeft">
 		<a href="https://obyte.org/" id="menuLeftImg"><img src="/img/obyte-tight-h64.png"></a>
-		<!--div id="menuLeftTitle"><a href="https://obyte.org/">Byteball</a></div-->
+		<!--
+		<div id="menuLeftTitle"><a href="https://obyte.org/">Byteball</a></div>
+		-->
 		<div id="menuInput">
 			<form action="javascript:searchForm($('#inputSearch').val().trim())" method="post">
 				<input type="text" id="inputSearch" placeholder="<%= i18n.__('searchUnitOrAddress') %>">
@@ -165,20 +167,18 @@
 			<div id="stateVarsstorageSize" ></div>
 		</div>
 		<div class="infoTitle hideTitle" id="aaResponsesTitleInAddress" onclick="showHideBlock(event, 'lastAaResponses')" style="display: none">
-				<%= i18n.__('labelAaResponses') %>
-				<div class="infoTitleImg"></div>
-			</div>
-			<div id="lastAaResponses" style="display: none">
-			</div>
-		<div>
-			<div>
-				<div id="balance" style="padding-top: 10px"></div>
-			</div>
-			<label id="addressAssets" class="address-assets" style="display: none; padding-top: 10px">
-				<%= i18n.__('transactionsInAssets') %>
-				<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
-			</label>
+			<%= i18n.__('labelAaResponses') %>
+			<div class="infoTitleImg"></div>
 		</div>
+		<div id="lastAaResponses" style="display: none"></div>
+		<div>
+			<div id="balance" style="padding-top: 10px"></div>
+		</div>
+		<label id="addressAssets" class="address-assets" style="display: none; padding-top: 10px">
+			<%= i18n.__('transactionsInAssets') %>
+			<select id="filterAddressAssets" class="filter-address-assets" onchange="changeAsset(this)"></select>
+		</label>
+	</div>
 	<div class="row" id="blockListUnspent" style="margin-top: 50px">
 		<div class="infoTitle" onclick="showHideBlock(event, 'listUnspent')">
 			<%= i18n.__('unspent') %>

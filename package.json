@@ -3,7 +3,7 @@
   "description": "Obyte explorer",
   "author": "Obyte",
   "version": "0.1.0",
-  "main": "start.js",
+  "main": "explorer.js",
   "keywords": [
     "explorer",
     "obyte",
