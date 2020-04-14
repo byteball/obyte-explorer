@@ -284,16 +284,11 @@ function getAddressInfo(address, filter, cb) {
 					findRegularDefinition();
 				
 				function findRegularDefinition() {
-					db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function (rowsUnitAuthors) {
-						if (rowsUnitAuthors.length) {
-							db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowsUnitAuthors[0].definition_chash], function (rowsDefinitions) {
-								if (rowsDefinitions) {
-									cb(objTransactions, unspent, objBalance, end, rowsDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
-								} else {
-									cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
-								}
-							});
-						} else {
+					storage.readDefinitionByAddress(db, address, 2147483647, {
+						ifFound: function (definition) {
+							cb(objTransactions, unspent, objBalance, end, JSON.stringify(definition), newLastInputsROWID, newLastOutputsROWID);
+						},
+						ifDefinitionNotFound: function () {
 							cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
 						}
 					});
