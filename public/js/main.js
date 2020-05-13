@@ -622,6 +622,16 @@ function prettifyJson(json_object) {
 	return htmlEscape(JSON.stringify(json_object, null, '    ').replace(/\\n/g, '\n').replace(/\\t/g, '    ').replace(/\\"/g, '"').replace(/\\\\/g, "\\"));
 }
 
+function addLinksToAddressesAndUnits(text){
+	return text
+	.replace(/&quot;([A-Z0-9]{32})&quot;/g, function (match, p1) {
+		return '&quot;<a href="/#' + p1 + '">' + p1 + '</a>&quot;';
+	})
+	.replace(/&quot;([a-zA-Z0-9+\/=]{44})&quot;/g, function (match, p1) {
+		return '&quot;<a href="/#' + p1 + '">' + p1 + '</a>&quot;';
+	});
+}
+
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
@@ -1122,7 +1132,7 @@ var addressInfoContent = {
 	setDefinition: function (data) {
 		if (data.definition) {
 			$('#definitionTitleInAddress').show();
-			$('#definition').html('<div class="payload">' + prettifyJson(JSON.parse(data.definition)) + '</div>');
+			$('#definition').html('<div class="payload">' + addLinksToAddressesAndUnits(prettifyJson(JSON.parse(data.definition))) + '</div>');
 		} else {
 			$('#definition').hide();
 			if (!$('#definitionTitleInAddress').hasClass('hideTitle')) {
