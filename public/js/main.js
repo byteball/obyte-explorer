@@ -618,6 +618,17 @@ function goToTop() {
 	$('#listInfo').hide();
 }
 
+function prettifyJson(json_object) {
+	return htmlEscape(JSON.stringify(json_object, null, '    ').replace(/\\n/g, '\n').replace(/\\t/g, '    ').replace(/\\"/g, '"').replace(/\\\\/g, "\\"));
+}
+
+function addLinksToAddresses(text){
+	return text
+	.replace(/&quot;([A-Z0-9]{32})&quot;/g, function (match, p1) {
+		return '&quot;<a href="/#' + p1 + '">' + p1 + '</a>&quot;';
+	})
+}
+
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
@@ -725,7 +736,41 @@ socket.on('prev', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
-function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions) {
+socket.on('deleted', function(unit) { // happens when uncovered non serial units are deleted
+	if (!_cy) return;
+	var el = _cy.getElementById(unit);
+	if (activeNode == el.id())
+		activeNode = null;
+	nodes = nodes.filter(function(node){
+		return node.data.unit != unit;
+	});
+	for (var k in edges){
+	 if(k.indexOf(unit) > -1)
+		delete edges[k]
+	}
+	_cy.remove(el);
+	$('#defaultInfo').show();
+	$('#listInfo').hide();
+	showInfoMessage($('#infoMessageUnitDeleted').text());
+});
+
+function generateAaResponsesInfo(aa_responses){
+	var html = '', blockId =0 ;
+	aa_responses.forEach(function(aa_response){
+		html += '<div class="message">';
+		html += '<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'aa_response_' + blockId + '\')">'+ $('#from').text()+ ' ' + aa_response.aa_address + '</div></div>';
+		html += '<div class="messagesInfo" id="aa_response_' + (blockId) + '">';
+		html += '<div><ul><li>'+ $('#aaAdress').text() + ': <a href="#' + aa_response.aa_address + '">' + aa_response.aa_address + '</a></li>';
+		html += '<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
+		(aa_response.response ? ('<li>'+ $('#response').text() +' <span class="payload">' + prettifyJson(JSON.parse(aa_response.response)) + '</span></li>') : "") +
+		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
+		'</ul></div></div>';
+		blockId++;
+	});
+	return html;
+}
+
+function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable) {
 	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
 	messages.forEach(function(message) {
 		if (message.payload) {
@@ -817,23 +862,35 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					}
 					break;
 				case 'text':
+					// <pre>  is used to display the text with fixed-width font (for example ASCII art)
 					messagesOut += '<pre class="payload">' + htmlEscape(message.payload) + '</pre>';
+					break;
+				case 'definition':
+					messagesOut += '<div><label>address:</label> ';
+					messagesOut += '<span class="address">';
+					messagesOut += is_stable ? '<a href="#' + message.payload.address + '">' + message.payload.address + '</a>' : message.payload.address;
+					messagesOut += '</span>';
+					messagesOut += '</div>';
+					messagesOut += '<div><label>definition:</label> ';
+					messagesOut += '<span class="payload">';
+					messagesOut +=  prettifyJson(message.payload.definition);
+					messagesOut += '</span>';
+					messagesOut += '</div>';
 					break;
 				default:
 					for (var key_payload in message.payload) {
-						if (message.app == 'asset' && key_payload == 'denominations') {
-							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
-							messagesOut += '<div class="payload">';
-							messagesOut += JSON.stringify(message.payload[key_payload]);
-							messagesOut += '</div>';
-						}
-						else if (typeof message.payload[key_payload] === "object") {
-							messagesOut += '<div><label>' + htmlEscape(key_payload) + ':</label></div>';
-							messagesOut += '<div class="payload">';
-							messagesOut += htmlEscape(JSON.stringify(message.payload[key_payload]));
+						if (typeof message.payload[key_payload] === "object") {
+							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ';
+							messagesOut += '<span>';
+							messagesOut += prettifyJson(message.payload[key_payload]);
+							messagesOut += '</span>';
 							messagesOut += '</div>';
 						} else {
-							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ' + htmlEscape(message.payload[key_payload]) + '</div>';
+							messagesOut += '<div class="payload"><label>' + htmlEscape(key_payload) + ':</label> ';
+							messagesOut += '<span>';
+							messagesOut += htmlEscape(message.payload[key_payload]);
+							messagesOut += '</span>';
+							messagesOut += '</div>';
 						}
 					}
 					break;
@@ -862,7 +919,7 @@ socket.on('info', function(data) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
 				authorsOut += '<span class="infoTitle hideTitle" class="definitionTitle" onclick="showHideBlock(event, \'definition' + incAuthors + '\')">'+ $('#labelDefinition').text() +'<div class="infoTitleImg"></div></span>' +
-					'<div id="definition' + (incAuthors++) + '" style="display: none"><pre>' + JSON.stringify(JSON.parse(author.definition), null, '   ') + '</pre></div>';
+					'<div id="definition' + (incAuthors++) + '" class="payload" style="display: none">' + prettifyJson(JSON.parse(author.definition)) + '</div>';
 
 			}
 			authorsOut += '</div>';
@@ -875,7 +932,18 @@ socket.on('info', function(data) {
 		$('#children').html(childOut);
 		$('#parents').html(parentOut);
 		$('#authors').html(authorsOut);
-		$('#received').html(moment(data.date).format('DD.MM.YYYY HH:mm:ss'));
+		$('#received').html(moment.unix(data.timestamp).format('DD.MM.YYYY HH:mm:ss'));
+		if (data.full_node_confirmation_delay){
+			$('#confDelayFull').html(moment.duration(data.full_node_confirmation_delay , "seconds").format("h[h] m[m] s[s]"));
+			$('#confDelayFullDiv').show();
+		} else
+			$('#confDelayFullDiv').hide();
+		if (data.light_node_confirmation_delay){
+			$('#confDelayLight').html(moment.duration(data.light_node_confirmation_delay , "seconds").format("h[h] m[m] s[s]"));
+			$('#confDelayLightDiv').show();
+		} else
+			$('#confDelayLightDiv').hide();
+		
 		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
@@ -884,7 +952,7 @@ socket.on('info', function(data) {
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
 		$('#is_stable').html(data.is_stable ? $('#statusFinal').text() : $('#statusNotStable').text());
 		$('#witnesses').html(witnessesOut);
-		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions));
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
 		if ($('#listInfo').css('display') === 'none') {
 			$('#defaultInfo').hide();
 			$('#listInfo').show();
@@ -893,6 +961,18 @@ socket.on('info', function(data) {
 			$('#divTitleMessage,#divFees').hide();
 		} else {
 			$('#divTitleMessage,#divFees').show();
+		}
+		if (data.arrAaResponses) {
+			$('#aaResponses').html(generateAaResponsesInfo(data.arrAaResponses));
+			$('#divTitleAaResponse,#aaResponses').show();
+		} else {
+			$('#divTitleAaResponse,#aaResponses').hide();
+		}
+		if (data.trigger_unit) {
+			$('#triggerUnit').html('<div><a href="#' + data.trigger_unit + '">' + data.trigger_unit + '</a></div>');
+			$('#divTitleTriggerUnit,#triggerUnit').show();
+		} else {
+			$('#divTitleTriggerUnit,#triggerUnit').hide();
 		}
 		adaptiveShowInfo();
 		formatAllNumbers();
@@ -926,6 +1006,28 @@ socket.on('new', function(data) {
 	setChangesStableUnits(data.arrStableUnits);
 });
 
+function generateAaResponsesList(arrAaResponses){
+
+	var listAaResponses = '';
+	arrAaResponses.forEach(function(aa_response){
+		listAaResponses+= '<tr>' +
+		'<th class="transactionUnit" colspan="2" align="left">' +
+		'<div>'+ $('#triggerUnitID').text() +': <a href="#' + aa_response.trigger_unit + '">' + aa_response.trigger_unit + '</a></div>' +
+		'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment.unix(aa_response.timestamp).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
+		'</tr>' +
+		'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr><tr><td colspan="3"><div>'+
+		'<ul>' +
+		'<li>'+ $('#triggerAddress').text() +': <a href="#' + aa_response.trigger_address + '">' + aa_response.trigger_address + '</a></li>' +
+		'<li>MCI : ' + aa_response.mci + '</li>' +
+		'<li>'+(aa_response.bounced === 1 ? $('#bounced').text() : $('#notBounced').text()) + '</li>' +
+		(aa_response.response_unit ? ('<li>'+ $('#responseUnit').text() +': <a href="#' + aa_response.response_unit + '">' + aa_response.response_unit + '</a></li>') : "" )+
+		(aa_response.response ? ('<li>'+ $('#response').text() +' <span class="payload">' + prettifyJson(JSON.parse(aa_response.response)) + '</span></li>') : "") +
+		'</ul></div></td></tr>';
+	})
+	listAaResponses += '<tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
+ 	return	listAaResponses;
+}
+
 function generateTransactionsList(objTransactions, address, filter) {
 	filter = filter || {};
 	var transaction, addressOut, _addressTo, listTransactions = '';
@@ -940,20 +1042,20 @@ function generateTransactionsList(objTransactions, address, filter) {
 		listTransactions += '<tr>' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
 			'<div>'+ $('#unitID').text() +' <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
-			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment(transaction.date).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
+			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment.unix(transaction.timestamp).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
 			'</tr>' +
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
 			'<tr><td>';
 		transaction.from.forEach(function(objFrom) {
+			var addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 			if (objFrom.issue) {
 				listTransactions += '<div class="transactionUnitListAddress">' +
 					'<div>' + addressOut + '</div>' +
-					'<div>Issue <span class="numberFormat">' + objFrom.amount + '</span> ' + transaction.asset + '</div>' +
+					'<div>Issue <span class="numberFormat">' + objFrom.amount + '</span> <span class="unit">' + transaction.asset + '</span></div>' +
 					'<div>serial number: ' + objFrom.serial_number + '</div></div>';
 			} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
 				var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
 				if (commissionName) {
-					addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 					listTransactions += '<div class="transactionUnitListAddress">' +
 						'<div>' + addressOut + ' ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
 						' to mci ' + objFrom.to_mci + '.' +
@@ -962,7 +1064,6 @@ function generateTransactionsList(objTransactions, address, filter) {
 				}
 			}
 			else {
-				addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 				listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
 					'<div>(<span class="numberFormat">' + objFrom.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ')</div></div>';
 			}
@@ -973,7 +1074,7 @@ function generateTransactionsList(objTransactions, address, filter) {
 			addressOut = _addressTo.address == address ? '<span class="thisAddress">' + _addressTo.address + '</span>' : '<a href="#' + _addressTo.address + '">' + _addressTo.address + '</a>';
 
 			listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
-				'<div>(<span class="numberFormat">' + _addressTo.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ', ' +
+				'<div>(<span class="numberFormat">' + _addressTo.amount + '</span> <span class="unit">' + (transaction.asset == null ? 'bytes' : transaction.asset) + '</span>, ' +
 				(_addressTo.spent === 0 ? 'not spent' : 'spent in ' + '<a href="#' + _addressTo.spent + '">' + _addressTo.spent + '</a>') +
 				')</div></div>';
 		}
@@ -1028,13 +1129,63 @@ var addressInfoContent = {
 	setDefinition: function (data) {
 		if (data.definition) {
 			$('#definitionTitleInAddress').show();
-			$('#definition').html('<pre>' + JSON.stringify(JSON.parse(data.definition), null, '   ') + '</pre>');
+			$('#definition').html('<div class="payload">' + addLinksToAddresses(prettifyJson(JSON.parse(data.definition))) + '</div>');
 		} else {
 			$('#definition').hide();
 			if (!$('#definitionTitleInAddress').hasClass('hideTitle')) {
 				$('#definitionTitleInAddress').addClass('hideTitle');
 			}
 			$('#definitionTitleInAddress').hide();
+		}
+	},
+	setStateVars: function (data) {
+		if (data.objStateVars) {
+			var max_displayed = 30;
+			$('#stateVarsTitleInAddress').show();
+			if (Object.keys(data.objStateVars).length > max_displayed)
+				$('#stateVarsFilterInputDiv').show();
+			else
+				$('#stateVarsFilterInputDiv').hide();
+
+			$('#stateVarsFilterInput').on('input',function(e){
+				filterAndRefresh()
+			});
+			
+			filterAndRefresh();
+			$('#stateVarsstorageSize').html($('#storageSize').text() + ": " + data.storage_size + " bytes");
+
+			function filterAndRefresh(){
+				var html = "<ul>", count = 0;
+				for (var key in data.objStateVars){
+					if (count == max_displayed)
+						break;
+					if (!$('#stateVarsFilterInput').val() || key.indexOf($('#stateVarsFilterInput').val())> -1){
+						html+="<li>" + key + ": '" + data.objStateVars[key] +"'";
+						count++;
+					}
+				}
+				html+="</ul>";
+				$('#stateVars').html(html);
+			}
+
+		} else {
+			$('#stateVarsDiv').hide();
+			if (!$('#stateVarsTitleInAddress').hasClass('hideTitle')) {
+				$('#stateVarsTitleInAddress').addClass('hideTitle');
+			}
+			$('#stateVarsTitleInAddress').hide();
+		}
+	},
+	setAaResponses: function (data) {
+		if (data.arrAaResponses) {
+			$('#aaResponsesTitleInAddress').show();
+			$('#lastAaResponses').html(generateAaResponsesList(data.arrAaResponses));
+		} else {
+			$('#lastAaResponses').hide();
+			if (!$('#aaResponsesTitleInAddress').hasClass('hideTitle')) {
+				$('#aaResponsesTitleInAddress').addClass('hideTitle');
+			}
+			$('#aaResponsesTitleInAddress').hide();
 		}
 	},
 	setUnspent: function (data) {
@@ -1104,6 +1255,8 @@ var addressInfoContent = {
 		this.setAddress(data);
 		this.setBalance(data);
 		this.setDefinition(data);
+		this.setStateVars(data);
+		this.setAaResponses(data);
 		this.setAssets(data);
 		this.setAdditionalData(data);
 		this.setUnspent(data);

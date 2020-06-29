@@ -2,9 +2,12 @@
 'use strict';
 
 var db = require('ocore/db.js');
+var constants = require('ocore/constants.js');
 var moment = require('moment');
 var async = require('async');
 var BIGINT = 9223372036854775807;
+var storage = require('ocore/storage.js');
+var conf = require('ocore/conf.js');
 
 function getAmountForInfoAddress(objTransactions, cb) {
 	var arrTransactionsUnits = [], key;
@@ -106,7 +109,7 @@ function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROW
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID",
 		"FROM inputs, outputs, units",
 		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? " + getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5))",
-		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? " + getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5)))",
+		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? AND (is_spent=1 OR is_spent=0) " + getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5)))",
 		"AND inputs.unit = outputs.unit",
 		getStrSqlFilterAssetForTransactions(strFilterAsset),
 		"AND units.unit = inputs.unit",
@@ -136,12 +139,15 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 			var strFilterAsset = filter.asset;
 
 			var arrQuerySql = [
-				"SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type, "+ db.getUnixTimestamp("units.creation_date")+" AS timestamp",
-				"FROM inputs, outputs, units",
+				"SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type,\n\
+				CASE timestamp \n\
+					WHEN 0 THEN "+ db.getUnixTimestamp("units.creation_date")+" ELSE timestamp \n\
+				END timestamp \n\
+				FROM inputs, outputs, units",
 				"WHERE units.unit IN (?) AND outputs.unit = inputs.unit",
 				getStrSqlFilterAssetForTransactions(strFilterAsset),
 				"AND units.unit = inputs.unit",
-				"ORDER BY units.main_chain_index DESC"
+				"ORDER BY units.main_chain_index DESC,units.ROWID DESC"
 			];
 
 			db.query(
@@ -154,7 +160,7 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 							key = row.unit + '_' + row.asset;
 							if (!objTransactions[key]) objTransactions[key] = {
 								unit: row.unit,
-								date: moment(row.timestamp * 1000).format(),
+								timestamp: row.timestamp,
 								from: [],
 								to: {},
 								spent: false,
@@ -252,25 +258,53 @@ function getAddressInfo(address, filter, cb) {
 						}
 					});
 				}
-				db.query("SELECT * FROM unit_authors WHERE address = ? AND definition_chash IS NOT NULL ORDER BY ROWID DESC LIMIT 0,1", [address], function(rowsUnitAuthors) {
-					var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
-					if (rowsUnitAuthors.length) {
-						db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowsUnitAuthors[0].definition_chash], function(rowsDefinitions) {
-							if (rowsDefinitions) {
-								cb(objTransactions, unspent, objBalance, end, rowsDefinitions[0].definition, newLastInputsROWID, newLastOutputsROWID);
-							} else {
-								cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
+				var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
+				if (isFinite(constants.formulaUpgradeMci)) {
+					db.query("SELECT definition,storage_size FROM aa_addresses WHERE address=?", [address], function (rows) {
+						if (rows.length === 0)
+							return findRegularDefinition();
+						async.parallel([
+							function(asyncCb){
+								storage.readAAStateVars(address, function (objStateVars) {
+									return asyncCb(null, Object.keys(objStateVars).length > 0 ? objStateVars : null)
+								});
+							},
+							function(asyncCb){
+								getAaResponses(address, function(arrAaResponses){
+									return asyncCb(null, arrAaResponses)
+								});
+							}], 
+							function(error, arrResults){
+								cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, rows[0].storage_size, arrResults[0], arrResults[1]);
 							}
-						});
-					} else {
-						cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
-					}
-				});
+						);
+					});
+				}
+				else
+					findRegularDefinition();
+				
+				function findRegularDefinition() {
+					storage.readDefinitionByAddress(db, address, 2147483647, {
+						ifFound: function (definition) {
+							cb(objTransactions, unspent, objBalance, end, JSON.stringify(definition), newLastInputsROWID, newLastOutputsROWID);
+						},
+						ifDefinitionNotFound: function () {
+							cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
+						}
+					});
+				}
 			}
 		);
 	});
 }
 
+function getAaResponses(address, handle){
+	db.query("SELECT mci,trigger_address,trigger_unit,bounced,response_unit,response,timestamp \n\
+	FROM aa_responses INNER JOIN units ON aa_responses.trigger_unit=units.unit WHERE aa_address = ?\n\
+	ORDER BY aa_response_id DESC LIMIT " + conf.aaResponsesListed, [address], function (rows) {
+		handle(rows.length > 0 ? rows : null);
+	});
+}
 
 exports.getAddressInfo = getAddressInfo;
 exports.getAddressTransactions = getAddressTransactions;
