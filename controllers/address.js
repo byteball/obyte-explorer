@@ -267,7 +267,8 @@ function getAddressInfo(address, filter, cb) {
 							function(asyncCb){
 								storage.readAAStateVars(address, function (objStateVars) {
 									for (var key in objStateVars){
-										objStateVars[key] = JSON.stringify(objStateVars[key]);
+										if (typeof objStateVars[key] !== 'number')
+											objStateVars[key] = JSON.stringify(objStateVars[key]);
 									}
 									return asyncCb(null, Object.keys(objStateVars).length > 0 ? objStateVars : null)
 								});
