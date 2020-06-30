@@ -1160,7 +1160,7 @@ var addressInfoContent = {
 					if (count == max_displayed)
 						break;
 					if (!$('#stateVarsFilterInput').val() || key.indexOf($('#stateVarsFilterInput').val())> -1){
-						html+="<li>" + key + ": " + data.objStateVars[key];
+						html+="<li>" + htmlEscape(key) + ": " + htmlEscape(data.objStateVars[key]) + "</li>";
 						count++;
 					}
 				}
