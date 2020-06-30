@@ -266,6 +266,10 @@ function getAddressInfo(address, filter, cb) {
 						async.parallel([
 							function(asyncCb){
 								storage.readAAStateVars(address, function (objStateVars) {
+									for (var key in objStateVars){
+										if (typeof objStateVars[key] !== 'number')
+											objStateVars[key] = JSON.stringify(objStateVars[key]);
+									}
 									return asyncCb(null, Object.keys(objStateVars).length > 0 ? objStateVars : null)
 								});
 							},
