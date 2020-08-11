@@ -847,7 +847,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 									'<div class="inputInfo" id="message_' + (blockId++) + '">' +
 									'<div>Serial number: ' + input.serial_number + '</div>' +
 									'<div>Amount: <span>' +
-									`${input.amount} BYTE` +
+									`${input.amount} bytes` +
 									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(input.amount)} USD)` : '') +
 									'</span></div>' +
 									'</div>';
@@ -855,7 +855,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 							else if (input.output_index !== undefined) {
 								key = input.unit + '_' + input.output_index + '_' + (asset);
 								messagesOut += '<div><span>' +
-									`${transfersInfo[key].amount} BYTE` +
+									`${transfersInfo[key].amount} bytes` +
 									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(transfersInfo[key].amount)} USD)` : '') +
 									'</span> from ' +
 									'<a href="#' + transfersInfo[key].unit + '">' + transfersInfo[key].unit + '</a></div>';
@@ -877,14 +877,14 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 							messagesOut += '<div class="outputs_div">';
 							if (output.is_spent) {
 								messagesOut += '<div><span>' +
-									`${output.amount} BYTE` +
+									`${output.amount} bytes` +
 									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(output.amount)} USD)` : '') +
 									'</span> to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
 									'(spent in <a href="#' + output.spent + '">' + output.spent + '</a>)</div>';
 							}
 							else {
 								messagesOut += '<div><span>' +
-									`${output.amount} BYTE` +
+									`${output.amount} bytes` +
 									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(output.amount)} USD)` : '') +
 									'</span> to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
 							}
@@ -980,15 +980,13 @@ socket.on('info', function(data) {
 		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
 
 		$('#fees').html('<span>' +
-			`${parseInt(data.headers_commission) + parseInt(data.payload_commission)} BYTE` +
+			`${parseInt(data.headers_commission) + parseInt(data.payload_commission)} bytes` +
 			(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(parseInt(data.headers_commission) + parseInt(data.payload_commission))} USD)` : '') +
 			'</span> (<span>' +
-			`${parseInt(data.headers_commission)} BYTE` +
-			(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(parseInt(data.headers_commission))} USD)` : '') +
+			`${parseInt(data.headers_commission)} bytes` +
 			'</span> '+ $('#labelHeaders').text() +
 			', <span>' +
-			`${parseInt(data.payload_commission)} BYTE` +
-			(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(parseInt(data.payload_commission))} USD)` : '') +
+			`${parseInt(data.payload_commission)} bytes` +
 			'</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
