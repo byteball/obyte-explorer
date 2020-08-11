@@ -771,6 +771,25 @@ function generateAaResponsesInfo(aa_responses){
 	return html;
 }
 
+function getUsdAmount(byteAmount) {
+	if(!dataFeed['GBYTE_USD']) {
+		return null;
+	}
+
+	const usdAmount = byteAmount * Number(dataFeed['GBYTE_USD']) / 1000000000;
+	if(usdAmount >= 0.01) {
+		return usdAmount.toFixed(2);
+	}
+
+	let x = 0.001, d = 4;
+	while(usdAmount < x) {
+		x /= 10;
+		d++;
+	}
+
+	return usdAmount.toFixed(d);
+}
+
 function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable) {
 	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
 	messages.forEach(function(message) {
@@ -828,16 +847,16 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 									'<div class="inputInfo" id="message_' + (blockId++) + '">' +
 									'<div>Serial number: ' + input.serial_number + '</div>' +
 									'<div>Amount: <span>' +
-									`${input.amount} GBYTE` +
-									(dataFeed['GBYTE_USD'] ? ` (${input.amount * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+									`${input.amount} BYTE` +
+									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(input.amount)} USD)` : '') +
 									'</span></div>' +
 									'</div>';
 							}
 							else if (input.output_index !== undefined) {
 								key = input.unit + '_' + input.output_index + '_' + (asset);
 								messagesOut += '<div><span>' +
-									`${transfersInfo[key].amount} GBYTE` +
-									(dataFeed['GBYTE_USD'] ? ` (${transfersInfo[key].amount * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+									`${transfersInfo[key].amount} BYTE` +
+									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(transfersInfo[key].amount)} USD)` : '') +
 									'</span> from ' +
 									'<a href="#' + transfersInfo[key].unit + '">' + transfersInfo[key].unit + '</a></div>';
 							} else if (input.type === 'headers_commission' || input.type === 'witnessing') {
@@ -858,15 +877,15 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 							messagesOut += '<div class="outputs_div">';
 							if (output.is_spent) {
 								messagesOut += '<div><span>' +
-									`${output.amount} GBYTE` +
-									(dataFeed['GBYTE_USD'] ? ` (${output.amount * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+									`${output.amount} BYTE` +
+									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(output.amount)} USD)` : '') +
 									'</span> to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
 									'(spent in <a href="#' + output.spent + '">' + output.spent + '</a>)</div>';
 							}
 							else {
 								messagesOut += '<div><span>' +
-									`${output.amount} GBYTE` +
-									(dataFeed['GBYTE_USD'] ? ` (${output.amount * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+									`${output.amount} BYTE` +
+									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(output.amount)} USD)` : '') +
 									'</span> to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
 							}
 							messagesOut += '</div>';
@@ -961,15 +980,15 @@ socket.on('info', function(data) {
 		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
 
 		$('#fees').html('<span>' +
-			`${parseInt(data.headers_commission) + parseInt(data.payload_commission)} GBYTE` +
-			(dataFeed['GBYTE_USD'] ? ` (${(parseInt(data.headers_commission) + parseInt(data.payload_commission)) * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+			`${parseInt(data.headers_commission) + parseInt(data.payload_commission)} BYTE` +
+			(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(parseInt(data.headers_commission) + parseInt(data.payload_commission))} USD)` : '') +
 			'</span> (<span>' +
-			`${parseInt(data.headers_commission)} GBYTE` +
-			(dataFeed['GBYTE_USD'] ? ` (${parseInt(data.headers_commission) * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+			`${parseInt(data.headers_commission)} BYTE` +
+			(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(parseInt(data.headers_commission))} USD)` : '') +
 			'</span> '+ $('#labelHeaders').text() +
 			', <span>' +
-			`${parseInt(data.payload_commission)} GBYTE` +
-			(dataFeed['GBYTE_USD'] ? ` (${parseInt(data.payload_commission) * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+			`${parseInt(data.payload_commission)} BYTE` +
+			(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(parseInt(data.payload_commission))} USD)` : '') +
 			'</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
