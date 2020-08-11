@@ -24,6 +24,7 @@ function init(_nodes, _edges) {
 	notLastUnitDown = true;
 	activeNode = null;
 	waitGo = null;
+	dataFeed=[];
 	createCy();
 	generate(_nodes, _edges);
 	oldOffset = _cy.getElementById(nodes[0].data.unit).position().y + 66;
@@ -790,6 +791,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					break;
 				case 'data_feed':
 					messagesOut += $('#appTypeDataFeed').text();
+					dataFeed = message.payload;
 					break;
 				case 'profile':
 					messagesOut += $('#appTypeProfile').text();
@@ -825,12 +827,18 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 									'<div class="infoTitleInput" onclick="showHideBlock(event, \'message_' + blockId + '\')">Issue</div>' +
 									'<div class="inputInfo" id="message_' + (blockId++) + '">' +
 									'<div>Serial number: ' + input.serial_number + '</div>' +
-									'<div>Amount: <span class="numberFormat">' + input.amount + '</span></div>' +
+									'<div>Amount: <span>' +
+									`${input.amount} GBYTE` +
+									(dataFeed['GBYTE_USD'] ? ` (${input.amount * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+									'</span></div>' +
 									'</div>';
 							}
 							else if (input.output_index !== undefined) {
 								key = input.unit + '_' + input.output_index + '_' + (asset);
-								messagesOut += '<div><span class="numberFormat">' + transfersInfo[key].amount + '</span> from ' +
+								messagesOut += '<div><span>' +
+									`${transfersInfo[key].amount} GBYTE` +
+									(dataFeed['GBYTE_USD'] ? ` (${transfersInfo[key].amount * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+									'</span> from ' +
 									'<a href="#' + transfersInfo[key].unit + '">' + transfersInfo[key].unit + '</a></div>';
 							} else if (input.type === 'headers_commission' || input.type === 'witnessing') {
 								key = input.from_main_chain_index + '_' + input.to_main_chain_index;
@@ -849,11 +857,17 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						outputsUnit[asset].forEach(function(output) {
 							messagesOut += '<div class="outputs_div">';
 							if (output.is_spent) {
-								messagesOut += '<div><span class="numberFormat">' + output.amount + '</span> to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
+								messagesOut += '<div><span>' +
+									`${output.amount} GBYTE` +
+									(dataFeed['GBYTE_USD'] ? ` (${output.amount * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+									'</span> to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
 									'(spent in <a href="#' + output.spent + '">' + output.spent + '</a>)</div>';
 							}
 							else {
-								messagesOut += '<div><span class="numberFormat">' + output.amount + '</span> to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
+								messagesOut += '<div><span>' +
+									`${output.amount} GBYTE` +
+									(dataFeed['GBYTE_USD'] ? ` (${output.amount * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+									'</span> to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
 							}
 							messagesOut += '</div>';
 						});
@@ -943,8 +957,20 @@ socket.on('info', function(data) {
 			$('#confDelayLightDiv').show();
 		} else
 			$('#confDelayLightDiv').hide();
-		
-		$('#fees').html('<span class="numberFormat">' + (parseInt(data.headers_commission) + parseInt(data.payload_commission)) + '</span> (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
+
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
+
+		$('#fees').html('<span>' +
+			`${parseInt(data.headers_commission) + parseInt(data.payload_commission)} GBYTE` +
+			(dataFeed['GBYTE_USD'] ? ` (${(parseInt(data.headers_commission) + parseInt(data.payload_commission)) * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+			'</span> (<span>' +
+			`${parseInt(data.headers_commission)} GBYTE` +
+			(dataFeed['GBYTE_USD'] ? ` (${parseInt(data.headers_commission) * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+			'</span> '+ $('#labelHeaders').text() +
+			', <span>' +
+			`${parseInt(data.payload_commission)} GBYTE` +
+			(dataFeed['GBYTE_USD'] ? ` (${parseInt(data.payload_commission) * Number(dataFeed['GBYTE_USD'])} USD)` : '') +
+			'</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
 		$('#witnessed_level').html(data.witnessed_level);
@@ -952,7 +978,6 @@ socket.on('info', function(data) {
 		$('#latest_included_mc_index').html(data.latest_included_mc_index);
 		$('#is_stable').html(data.is_stable ? $('#statusFinal').text() : $('#statusNotStable').text());
 		$('#witnesses').html(witnessesOut);
-		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
 		if ($('#listInfo').css('display') === 'none') {
 			$('#defaultInfo').hide();
 			$('#listInfo').show();
@@ -1114,7 +1139,7 @@ var addressInfoContent = {
 	setAssets: function (data) {
 		var objBalance = data.objBalance;
 		var assetsOptions = '<option value="all" ' + (this.currAssetKey==='all' ? 'selected' : '') + '>'+ $('#labelAll').text() +'</option>';
-		
+
 		for (var assetKey in objBalance) {
 			assetsOptions += [
 				'<option value="' + assetKey + '" ' + (assetKey === this.currAssetKey ? 'selected' : '') + '>',
@@ -1150,7 +1175,7 @@ var addressInfoContent = {
 			$('#stateVarsFilterInput').on('input',function(e){
 				filterAndRefresh()
 			});
-			
+
 			filterAndRefresh();
 			$('#stateVarsstorageSize').html($('#storageSize').text() + ": " + data.storage_size + " bytes");
 
@@ -1504,7 +1529,7 @@ function updateUrlHashWithParams(params) {
 
 	var objResultParams = Object.assign({}, currHashParams, params);
 	var strResultParams = stringifyQueryParamsObjToStr(objResultParams);
-	
+
 	var resultUrl = currHash + (strResultParams.length ? ('?' + strResultParams) : '');
 
 	window.location.hash = resultUrl;
