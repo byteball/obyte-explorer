@@ -771,14 +771,14 @@ function generateAaResponsesInfo(aa_responses){
 	return html;
 }
 
-function getUsdAmount(byteAmount) {
+function getUsdText(byteAmount) {
 	if(!dataFeed['GBYTE_USD']) {
-		return null;
+		return '';
 	}
 
 	const usdAmount = byteAmount * Number(dataFeed['GBYTE_USD']) / 1000000000;
 	if(usdAmount >= 0.01) {
-		return usdAmount.toFixed(2);
+		return ` ≈ ${parseFloat(usdAmount.toFixed(2)).toLocaleString()} USD`;
 	}
 
 	let x = 0.001, d = 4;
@@ -787,7 +787,14 @@ function getUsdAmount(byteAmount) {
 		d++;
 	}
 
-	return usdAmount.toFixed(d);
+	return ` ≈ ${parseFloat(usdAmount.toFixed(d)).toLocaleString()} USD`;
+}
+
+function getFormattedText(amount, bytePayment) {
+		return '<span>' +
+			`${amount.toLocaleString()}` +
+			(bytePayment ? ` bytes${getUsdText(amount)}` : '') +
+			'</span>';
 }
 
 function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable) {
@@ -810,7 +817,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					break;
 				case 'data_feed':
 					messagesOut += $('#appTypeDataFeed').text();
-					dataFeed = message.payload;
+					dataFeed = [...dataFeed, ...message.payload];
 					break;
 				case 'profile':
 					messagesOut += $('#appTypeProfile').text();
@@ -846,24 +853,18 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 									'<div class="infoTitleInput" onclick="showHideBlock(event, \'message_' + blockId + '\')">Issue</div>' +
 									'<div class="inputInfo" id="message_' + (blockId++) + '">' +
 									'<div>Serial number: ' + input.serial_number + '</div>' +
-									'<div>Amount: <span>' +
-									`${input.amount} bytes` +
-									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(input.amount)} USD)` : '') +
-									'</span></div>' +
+									'<div>Amount: ' + getFormattedText(info.amount, asset === 'null') + '</div>' +
 									'</div>';
 							}
 							else if (input.output_index !== undefined) {
 								key = input.unit + '_' + input.output_index + '_' + (asset);
-								messagesOut += '<div><span>' +
-									`${transfersInfo[key].amount} bytes` +
-									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(transfersInfo[key].amount)} USD)` : '') +
-									'</span> from ' +
+								messagesOut += '<div>' + getFormattedText(transfersInfo[key].amount, asset === 'null') + ' from ' +
 									'<a href="#' + transfersInfo[key].unit + '">' + transfersInfo[key].unit + '</a></div>';
 							} else if (input.type === 'headers_commission' || input.type === 'witnessing') {
 								key = input.from_main_chain_index + '_' + input.to_main_chain_index;
 								var objName = (input.type === 'headers_commission' ? 'headers' : (input.type === 'witnessing' ? 'witnessing' : false));
 								if (objName) {
-									messagesOut += '<div><span class="numberFormat">' + assocCommissions[objName][key].sum + '</span> bytes of ' + objName + ' commissions on <a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a>' +
+									messagesOut += '<div>' + getFormattedText(assocCommissions[objName][key].sum, asset === 'null') + ' of ' + objName + ' commissions on <a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a>' +
 										' from mci ' + assocCommissions[objName][key].from_mci + ' to mci ' + assocCommissions[objName][key].to_mci + '</div>';
 								}
 							}
@@ -876,17 +877,11 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						outputsUnit[asset].forEach(function(output) {
 							messagesOut += '<div class="outputs_div">';
 							if (output.is_spent) {
-								messagesOut += '<div><span>' +
-									`${output.amount} bytes` +
-									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(output.amount)} USD)` : '') +
-									'</span> to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
+								messagesOut += '<div>' + getFormattedText(output.amount, asset === 'null') + ' to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
 									'(spent in <a href="#' + output.spent + '">' + output.spent + '</a>)</div>';
 							}
 							else {
-								messagesOut += '<div><span>' +
-									`${output.amount} bytes` +
-									(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(output.amount)} USD)` : '') +
-									'</span> to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
+								messagesOut += '<div>' + getFormattedText(output.amount, asset === 'null') + ' to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
 							}
 							messagesOut += '</div>';
 						});
@@ -979,15 +974,7 @@ socket.on('info', function(data) {
 
 		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
 
-		$('#fees').html('<span>' +
-			`${parseInt(data.headers_commission) + parseInt(data.payload_commission)} bytes` +
-			(dataFeed['GBYTE_USD'] ? ` (${getUsdAmount(parseInt(data.headers_commission) + parseInt(data.payload_commission))} USD)` : '') +
-			'</span> (<span>' +
-			`${parseInt(data.headers_commission)} bytes` +
-			'</span> '+ $('#labelHeaders').text() +
-			', <span>' +
-			`${parseInt(data.payload_commission)} bytes` +
-			'</span> '+ $('#labelPayload').text() +')');
+		$('#fees').html(getFormattedText(parseInt(data.headers_commission) + parseInt(data.payload_commission), true) + ' (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
 		$('#level').html(data.level);
 		$('#witnessed_level').html(data.witnessed_level);
