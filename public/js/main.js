@@ -755,12 +755,9 @@ socket.on('deleted', function(unit) { // happens when uncovered non serial units
 	showInfoMessage($('#infoMessageUnitDeleted').text());
 });
 
-socket.on('rates_updated', function(_exchangeRates) {
-	const data = JSON.parse(_exchangeRates);
-	if(data.length > 1 && data[1].body) {
-		exchangeRates = { ...exchangeRates, ...data[1].body };
-		socket.emit('info');
-	}
+socket.on('rates_updated', function(data) {
+	console.log('rates_updated: ', data);
+	exchangeRates = { ...exchangeRates, ...data };
 })
 
 function generateAaResponsesInfo(aa_responses){
@@ -784,25 +781,14 @@ function getUsdText(byteAmount) {
 		return '';
 	}
 
-	const usdAmount = byteAmount * Number(exchangeRates['GBYTE_USD']) / 1000000000;
-	if(usdAmount >= 0.01) {
-		return ` ≈ ${parseFloat(usdAmount.toFixed(2)).toLocaleString()} USD`;
-	}
+	const usdAmount = byteAmount * Number(exchangeRates['GBYTE_USD']) * 1e-9;
 
-	let x = 0.001, d = 4;
-	while(usdAmount < x) {
-		x /= 10;
-		d++;
-	}
-
-	return ` ≈ ${parseFloat(usdAmount.toFixed(d)).toLocaleString()} USD`;
+	return ` ≈ <span>${usdAmount.toPrecision(2)}</span> $`;
 }
 
 function getFormattedText(amount, bytePayment) {
-		return '<span>' +
-			`${amount.toLocaleString()}` +
-			(bytePayment ? ` bytes${getUsdText(amount)}` : '') +
-			'</span>';
+		return '<span class="numberFormat">' + amount + '</span>' +
+			(bytePayment ? ` bytes${getUsdText(amount)}` : '');
 }
 
 function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable) {
