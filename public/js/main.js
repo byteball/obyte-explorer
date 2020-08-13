@@ -24,7 +24,7 @@ function init(_nodes, _edges) {
 	notLastUnitDown = true;
 	activeNode = null;
 	waitGo = null;
-	dataFeed=[];
+	exchangeRates = {};
 	createCy();
 	generate(_nodes, _edges);
 	oldOffset = _cy.getElementById(nodes[0].data.unit).position().y + 66;
@@ -755,6 +755,14 @@ socket.on('deleted', function(unit) { // happens when uncovered non serial units
 	showInfoMessage($('#infoMessageUnitDeleted').text());
 });
 
+socket.on('rates_updated', function(_exchangeRates) {
+	const data = JSON.parse(_exchangeRates);
+	if(data.length > 1 && data[1].body) {
+		exchangeRates = { ...exchangeRates, ...data[1].body };
+		socket.emit('info');
+	}
+})
+
 function generateAaResponsesInfo(aa_responses){
 	var html = '', blockId =0 ;
 	aa_responses.forEach(function(aa_response){
@@ -772,11 +780,11 @@ function generateAaResponsesInfo(aa_responses){
 }
 
 function getUsdText(byteAmount) {
-	if(!dataFeed['GBYTE_USD']) {
+	if(!exchangeRates['GBYTE_USD']) {
 		return '';
 	}
 
-	const usdAmount = byteAmount * Number(dataFeed['GBYTE_USD']) / 1000000000;
+	const usdAmount = byteAmount * Number(exchangeRates['GBYTE_USD']) / 1000000000;
 	if(usdAmount >= 0.01) {
 		return ` ≈ ${parseFloat(usdAmount.toFixed(2)).toLocaleString()} USD`;
 	}
@@ -817,7 +825,6 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 					break;
 				case 'data_feed':
 					messagesOut += $('#appTypeDataFeed').text();
-					dataFeed = [...dataFeed, ...message.payload];
 					break;
 				case 'profile':
 					messagesOut += $('#appTypeProfile').text();
