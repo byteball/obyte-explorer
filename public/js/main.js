@@ -783,7 +783,7 @@ function getUsdText(byteAmount) {
 
 	const usdAmount = byteAmount * Number(exchangeRates['GBYTE_USD']) * 1e-9;
 
-	return ` ≈ <span>${usdAmount.toPrecision(2)}</span> $`;
+	return ` ≈ $<span>${usdAmount.toPrecision(2)}</span>`;
 }
 
 function getFormattedText(amount, bytePayment) {
