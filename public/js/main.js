@@ -783,7 +783,7 @@ function getUsdText(byteAmount) {
 
 	const usdAmount = byteAmount * Number(exchangeRates['GBYTE_USD']) * 1e-9;
 
-	if(usdAmount >= 0.01) {
+	if(usdAmount >= 0.1) {
 		return ` ≈ $<span>${usdAmount.toFixed(2)}</span>`;
 	}
 
