@@ -12,6 +12,7 @@ if (require.main === module && !fs.existsSync(appDataDir) && fs.existsSync(path.
 require('./relay');
 var conf = require('ocore/conf.js');
 var eventBus = require('ocore/event_bus.js');
+var network = require('ocore/network.js');
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
@@ -42,8 +43,17 @@ app.get('/', function(req, res) {
 	res.render('index', {i18n: i18n});
 });
 
+network.findOutboundPeerOrConnect(conf.initial_peers[0], (err, ws) => {
+	ws.bLoggedIn = true;
+})
+
 eventBus.on('new_joint', function() {
 	io.sockets.emit('update');
+});
+
+eventBus.on('rates_updated', function() {
+	console.log('rates_updated: ', network.exchangeRates);
+	io.sockets.emit('rates_updated', network.exchangeRates);
 });
 
 io.on('connection', function(socket) {
