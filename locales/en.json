@@ -55,6 +55,7 @@
 	"labelPayload": "payload",
 	"labelStateVars": "State vars",
 	"labelAaResponses": "Last AA responses",
+	"labelAasFromTemplate": "AAs based on this template",
 	"triggerUnitID" : "Trigger unit",
 	"triggerAddress" : "Trigger address",
 	"responseUnit" : "Response unit",

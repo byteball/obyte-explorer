@@ -38,7 +38,8 @@ function start(data) {
 		});
 	}
 	else if (data.type === 'address') {
-		address.getAddressInfo(data.address, data.filter || {}, function(objTransactions, unspent, objBalance, end, definition, newLastInputsROWID, newLastOutputsROWID, storage_size, objStateVars, arrAaResponses) {
+		address.getAddressInfo(data.address, data.filter || {}, function(objTransactions, unspent, objBalance, end, definition, 
+			newLastInputsROWID, newLastOutputsROWID, storage_size, objStateVars, arrAaResponses, arrAasFromTemplate) {
 			if (!objTransactions && !definition)
 				return ws.emit('addressInfo');
 			ws.emit('addressInfo', {
@@ -52,7 +53,8 @@ function start(data) {
 				newLastOutputsROWID: newLastOutputsROWID,
 				storage_size: storage_size,
 				objStateVars: objStateVars,
-				arrAaResponses: arrAaResponses
+				arrAaResponses: arrAaResponses,
+				arrAasFromTemplate: arrAasFromTemplate
 			});
 		});
 	}

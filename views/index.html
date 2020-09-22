@@ -155,6 +155,11 @@
 			<div class="infoTitleImg"></div>
 		</div>
 		<div id="definition" style="display: none"></div>
+		<div class="infoTitle hideTitle" id="aasFromTemplateTitleInAddress" onclick="showHideBlock(event, 'aasFromTemplate')" style="display: none">
+			<%= i18n.__('labelAasFromTemplate') %>
+			<div class="infoTitleImg"></div>
+		</div>
+		<div id="aasFromTemplate" style="display: none"></div>
 		<div class="infoTitle hideTitle" id="stateVarsTitleInAddress" onclick="showHideBlock(event, 'stateVarsDiv')" style="display: none">
 			<%= i18n.__('labelStateVars') %>
 			<div class="infoTitleImg"></div>
@@ -216,6 +221,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/cytoscape.min.js"></script>
 <script src="/js/dagre.min.js"></script>
-<script src="/js/main.js?v27"></script>
+<script src="/js/main.js?v28"></script>
 </body>
 </html>

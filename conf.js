@@ -11,6 +11,7 @@ exports.webPort = 4000;
 exports.storage = 'sqlite';
 
 exports.aaResponsesListed = 10;
+exports.aasFromTemplateListed = 50;
 
 exports.selectedLanguage = 'en';
 exports.languagesAvailable = {
