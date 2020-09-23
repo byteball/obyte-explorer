@@ -1054,6 +1054,15 @@ function generateAaResponsesList(arrAaResponses){
  	return	listAaResponses;
 }
 
+function generateAasFromTemplateList(arrAasFromTemplate){
+	var listAasFromTemplate = "<ul>"
+	arrAasFromTemplate.forEach(function(aaFromTemplate){
+		listAasFromTemplate+='<li><a href="#' + aaFromTemplate.address + '">' + aaFromTemplate.address + '</a></li>';
+	});
+	listAasFromTemplate+="</ul>";
+	return listAasFromTemplate;
+}
+
 function generateTransactionsList(objTransactions, address, filter) {
 	filter = filter || {};
 	var transaction, addressOut, _addressTo, listTransactions = '';
@@ -1214,6 +1223,18 @@ var addressInfoContent = {
 			$('#aaResponsesTitleInAddress').hide();
 		}
 	},
+	setAasFromTemplate: function (data) {
+		if (data.arrAasFromTemplate) {
+			$('#aasFromTemplateTitleInAddress').show();
+			$('#aasFromTemplate').html(generateAasFromTemplateList(data.arrAasFromTemplate));
+		} else {
+			$('#aasFromTemplate').hide();
+			if (!$('#aasFromTemplateTitleInAddress').hasClass('hideTitle')) {
+				$('#aasFromTemplateTitleInAddress').addClass('hideTitle');
+			}
+			$('#aasFromTemplateTitleInAddress').hide();
+		}
+	},
 	setUnspent: function (data) {
 		var currAssetKey = this.currAssetKey;
 		var listUnspent = '';
@@ -1283,6 +1304,7 @@ var addressInfoContent = {
 		this.setDefinition(data);
 		this.setStateVars(data);
 		this.setAaResponses(data);
+		this.setAasFromTemplate(data);
 		this.setAssets(data);
 		this.setAdditionalData(data);
 		this.setUnspent(data);

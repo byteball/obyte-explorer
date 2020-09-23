@@ -277,9 +277,15 @@ function getAddressInfo(address, filter, cb) {
 								getAaResponses(address, function(arrAaResponses){
 									return asyncCb(null, arrAaResponses)
 								});
-							}], 
+							},
+							function(asyncCb){
+								getAasFromTemplate(address, function(arrAdresses){
+									return asyncCb(null, arrAdresses)
+								});
+							}	
+						], 
 							function(error, arrResults){
-								cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, rows[0].storage_size, arrResults[0], arrResults[1]);
+								cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, rows[0].storage_size, arrResults[0], arrResults[1], arrResults[2]);
 							}
 						);
 					});
@@ -306,6 +312,13 @@ function getAaResponses(address, handle){
 	db.query("SELECT mci,trigger_address,trigger_unit,bounced,response_unit,response,timestamp \n\
 	FROM aa_responses INNER JOIN units ON aa_responses.trigger_unit=units.unit WHERE aa_address = ?\n\
 	ORDER BY aa_response_id DESC LIMIT " + conf.aaResponsesListed, [address], function (rows) {
+		handle(rows.length > 0 ? rows : null);
+	});
+}
+
+function getAasFromTemplate(address, handle){
+	db.query("SELECT address FROM aa_addresses WHERE base_aa = ? LIMIT " + (conf.aasFromTemplateListed || 50) // failover value for until aa-test-kit conf is updated
+	, [address], function (rows) {
 		handle(rows.length > 0 ? rows : null);
 	});
 }
