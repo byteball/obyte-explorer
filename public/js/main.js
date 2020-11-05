@@ -850,7 +850,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 									'<div class="infoTitleInput" onclick="showHideBlock(event, \'message_' + blockId + '\')">Issue</div>' +
 									'<div class="inputInfo" id="message_' + (blockId++) + '">' +
 									'<div>Serial number: ' + input.serial_number + '</div>' +
-									'<div>Amount: ' + getFormattedText(info.amount, asset === 'null') + '</div>' +
+									'<div>Amount: ' + getFormattedText(input.amount, asset === 'null') + '</div>' +
 									'</div>';
 							}
 							else if (input.output_index !== undefined) {
