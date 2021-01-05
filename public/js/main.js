@@ -1508,7 +1508,7 @@ function convertPosPanToPosScroll(posY, topPos) {
 //Numbers
 function formatAmountUsingDecimalFormat(amount, decimal) {
 	if (decimal) {
-		return amount / parseInt('1'.padEnd(decimal + 1, '0'));
+		return amount / parseInt(10**decimal);
 	} else {
 		return amount;
 	}
