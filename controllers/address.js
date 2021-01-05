@@ -8,6 +8,7 @@ var async = require('async');
 var BIGINT = 9223372036854775807;
 var storage = require('ocore/storage.js');
 var conf = require('ocore/conf.js');
+const getAssetNameAndDecimals = require('../helpers/getAssetNameAndDecimals');
 
 function getAmountForInfoAddress(objTransactions, cb) {
 	var arrTransactionsUnits = [], key;
@@ -133,9 +134,19 @@ function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROW
 	);
 }
 
+async function getAndSaveAssetNameAndDecimals(asset, cache) {
+	if (asset === 'bytes') return null;
+	if (cache[asset] !== undefined) return cache[asset];
+
+	const objResult = await getAssetNameAndDecimals(asset);
+	cache[asset] = objResult;
+	return objResult;
+}
+
 function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filter, cb) {
 	getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter, function(arrUnits, newLastInputsROWID, newLastOutputsROWID) {
 		if (arrUnits.length) {
+			const objAssetsCache = {};
 			var strFilterAsset = filter.asset;
 
 			var arrQuerySql = [
@@ -153,20 +164,30 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 			db.query(
 				arrQuerySql.join(" \n"),
 				[arrUnits],
-				function (rowsTransactions) {
+				async function (rowsTransactions) {
 					var key, objTransactions = {};
 					if (rowsTransactions.length) {
-						rowsTransactions.forEach(function(row) {
+						for(let k in rowsTransactions){
+							const row = rowsTransactions[k];
 							key = row.unit + '_' + row.asset;
-							if (!objTransactions[key]) objTransactions[key] = {
-								unit: row.unit,
-								timestamp: row.timestamp,
-								from: [],
-								to: {},
-								spent: false,
-								asset: row.asset,
-								output_id: row.output_id
-							};
+							if (!objTransactions[key]) {
+								objTransactions[key] = {
+									unit: row.unit,
+									timestamp: row.timestamp,
+									from: [],
+									to: {},
+									spent: false,
+									asset: row.asset,
+									output_id: row.output_id
+								};
+								if (row.asset) {
+									const objResult = await getAndSaveAssetNameAndDecimals(row.asset, objAssetsCache);
+									if (objResult) {
+										objTransactions[key].assetName = objResult.name;
+										objTransactions[key].assetDecimals = objResult.decimals;
+									}
+								}
+							}
 							if (objTransactions[key].from.indexOf(row.address) === -1) objTransactions[key].from.push(row.address);
 							if (!objTransactions[key].to[row.output_id + '_' + row.message_index + '_' + row.output_index]) {
 								objTransactions[key].to[row.output_id + '_' + row.message_index + '_' + row.output_index] = {
@@ -175,7 +196,7 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 									spent: 0
 								};
 							}
-						});
+						}
 
 						for (var key in objTransactions) {
 							if (objTransactions[key].from.indexOf(address) !== -1) {
@@ -186,7 +207,7 @@ function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filt
 
 						getAmountForInfoAddress(objTransactions, function(objTransactions) {
 							getSpentOutputs(objTransactions, function(objTransactions) {
-								cb(objTransactions, newLastInputsROWID, newLastOutputsROWID);
+								cb(objTransactions, newLastInputsROWID, newLastOutputsROWID, objAssetsCache);
 							});
 						});
 					}
@@ -224,39 +245,55 @@ function getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) {
 }
 
 function getAddressInfo(address, filter, cb) {
-	getAddressTransactions(address, BIGINT, BIGINT, filter, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
+	getAddressTransactions(address, BIGINT, BIGINT, filter, function(objTransactions, newLastInputsROWID, newLastOutputsROWID, objAssetsCache) {
 		db.query(
 			"SELECT * \n\
 			FROM outputs \n\
 			WHERE address=? and is_spent=0 \n\
 			ORDER BY output_id DESC"
 			, [address] 
-			, function(rowsOutputs) {
+			, async function(rowsOutputs) {
 				if (objTransactions !== null || rowsOutputs.length) {
 					var strFilterAsset = filter.asset;
-					var objBalance = { bytes: 0 }, unspent = [];
+					var objBalances = {bytes: {balance: 0}}, unspent = [];
 					if (typeof strFilterAsset === 'undefined') {
 						strFilterAsset = 'all';
 					} else if (strFilterAsset === 'bytes') {
 						strFilterAsset = null;
 					}
 
-					rowsOutputs.forEach(function(row) {
-						if (strFilterAsset === 'all' || strFilterAsset === row.asset) {
+					for (let k in rowsOutputs) {
+						const row = rowsOutputs[k];
+						const assetKey = row.asset;
+						if (strFilterAsset === 'all' || strFilterAsset === assetKey) {
+							if(row.asset){
+								const objResult = await getAndSaveAssetNameAndDecimals(assetKey, objAssetsCache);
+								if (objResult) {
+									row.assetName = objResult.name;
+									row.assetDecimals = objResult.decimals;
+								}
+							}
 							unspent.push(row);
 						}
 
-						var assetKey = row.asset;
 						if (assetKey === null) {
-							objBalance.bytes += row.amount;
-						}
-						else {
-							if (!objBalance[assetKey]) {
-								objBalance[assetKey] = 0;
+							objBalances.bytes.balance += row.amount;
+						} else {
+							if (!objBalances[assetKey]) {
+								const objResult = await getAndSaveAssetNameAndDecimals(assetKey, objAssetsCache);
+								if (objResult) {
+									objBalances[assetKey] = {
+										balance: 0,
+										assetName: objResult.name,
+										assetDecimals: objResult.decimals
+									};
+								} else {
+									objBalances[assetKey] = {balance: 0};
+								}
 							}
-							objBalance[assetKey] += row.amount;
+							objBalances[assetKey].balance += row.amount;
 						}
-					});
+					}
 				}
 				var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
 				if (isFinite(constants.formulaUpgradeMci)) {
@@ -285,7 +322,7 @@ function getAddressInfo(address, filter, cb) {
 							}	
 						], 
 							function(error, arrResults){
-								cb(objTransactions, unspent, objBalance, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, rows[0].storage_size, arrResults[0], arrResults[1], arrResults[2]);
+								cb(objTransactions, unspent, objBalances, end, rows[0].definition, newLastInputsROWID, newLastOutputsROWID, rows[0].storage_size, arrResults[0], arrResults[1], arrResults[2]);
 							}
 						);
 					});
@@ -296,10 +333,10 @@ function getAddressInfo(address, filter, cb) {
 				function findRegularDefinition() {
 					storage.readDefinitionByAddress(db, address, 2147483647, {
 						ifFound: function (definition) {
-							cb(objTransactions, unspent, objBalance, end, JSON.stringify(definition), newLastInputsROWID, newLastOutputsROWID);
+							cb(objTransactions, unspent, objBalances, end, JSON.stringify(definition), newLastInputsROWID, newLastOutputsROWID);
 						},
 						ifDefinitionNotFound: function () {
-							cb(objTransactions, unspent, objBalance, end, false, newLastInputsROWID, newLastOutputsROWID);
+							cb(objTransactions, unspent, objBalances, end, false, newLastInputsROWID, newLastOutputsROWID);
 						}
 					});
 				}

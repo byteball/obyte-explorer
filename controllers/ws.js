@@ -38,7 +38,7 @@ function start(data) {
 		});
 	}
 	else if (data.type === 'address') {
-		address.getAddressInfo(data.address, data.filter || {}, function(objTransactions, unspent, objBalance, end, definition, 
+		address.getAddressInfo(data.address, data.filter || {}, function(objTransactions, unspent, objBalances, end, definition,
 			newLastInputsROWID, newLastOutputsROWID, storage_size, objStateVars, arrAaResponses, arrAasFromTemplate) {
 			if (!objTransactions && !definition)
 				return ws.emit('addressInfo');
@@ -46,7 +46,7 @@ function start(data) {
 				address: data.address,
 				objTransactions: objTransactions,
 				unspent: unspent,
-				objBalance: objBalance,
+				objBalances: objBalances,
 				end: end,
 				definition: definition,
 				newLastInputsROWID: newLastInputsROWID,

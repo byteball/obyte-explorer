@@ -5,6 +5,7 @@ var db = require('ocore/db.js');
 var storage = require('ocore/storage.js');
 var async = require('async');
 var constants = require("ocore/constants.js");
+const getAssetNameAndDecimals = require('../helpers/getAssetNameAndDecimals');
 
 function getLastUnits(cb) {
 	var nodes = [];
@@ -341,7 +342,7 @@ async function goDownMainChainToDetermineConfirmationTimes(parent, arrWitnesses,
 	unit_authors.address,main_chain_index FROM units \n\
 	CROSS JOIN unit_authors USING(unit) WHERE best_parent_unit=? AND is_on_main_chain=1", [parent],
 	function(rows){
-		async.each(rows, 
+		async.each(rows,
 			function(row, cb) {
 				if (row.main_chain_index){
 					if (arrWitnesses.indexOf(row.address) >= 0 && arrFoundWitnesses.indexOf(row.address) === -1)
@@ -362,6 +363,20 @@ async function goDownMainChainToDetermineConfirmationTimes(parent, arrWitnesses,
 	});
 }
 
+async function setAssetNameAndDecimalsInMessages(messages) {
+	for(let i = 0; i < messages.length; i++) {
+		const m = messages[i];
+		if (m.app === 'payment' && m.payload.asset) {
+			const objResult = await getAssetNameAndDecimals(m.payload.asset);
+			if (objResult) {
+				messages[i].payload.assetName = objResult.name;
+				messages[i].payload.assetDecimals = objResult.decimals;
+			}
+		}
+	}
+	return messages;
+}
+
 function getInfoOnUnit(unit, cb) {
 	db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable FROM units WHERE unit = ?', [unit], function(unitProps) {
 		if (!unitProps.length)
@@ -378,6 +393,7 @@ function getInfoOnUnit(unit, cb) {
 									getUnitSequence(unit, function(sequence) {
 										getAaResponses(unit, function(arrAaResponses){
 											getTriggerUnit(unit, async function(trigger_unit){
+												const messages = await setAssetNameAndDecimalsInMessages(objJoint.unit.messages);
 												var objInfo = {
 													unit: unit,
 													sequence: sequence,
@@ -392,7 +408,7 @@ function getInfoOnUnit(unit, cb) {
 													witnessed_level: unitProps.witnessed_level,
 													is_stable: unitProps.is_stable,
 													last_ball_unit: objJoint.unit.last_ball_unit,
-													messages: objJoint.unit.messages,
+													messages: messages,
 													transfersInfo: transfersInfo,
 													outputsUnit: unitOutputs,
 													timestamp: objJoint.unit.timestamp,
