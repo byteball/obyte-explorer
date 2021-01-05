@@ -8,6 +8,7 @@ var notLastUnitUp = false, notLastUnitDown = true;
 var lastActiveUnit;
 var page, isInit = false;
 var queueAnimationPanUp = [], animationPlaysPanUp = false;
+let testnet = false;
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -690,6 +691,7 @@ socket.on('start', function(data) {
 	if (data.not_found) showInfoMessage($('#infoMessageUnitNotFound').text());
 	notLastUnitDown = true;
 	if (bWaitingForHighlightNode) bWaitingForHighlightNode = false;
+	testnet = data.testnet;
 });
 
 socket.on('next', function(data) {
@@ -803,7 +805,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 			asset = message.payload.asset || 'null';
 			assetName = message.payload.asset || 'bytes';
 			if(message.payload.assetName) {
-				assetName = '<a href="https://tokens.ooo/' + message.payload.assetName + '" target="_blank">' + message.payload.assetName + '</a>';
+				assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${message.payload.assetName}" target="_blank">${message.payload.assetName}</a>`;
 				assetDecimals = message.payload.assetDecimals;
 			}
 			messagesOut +=
@@ -1078,9 +1080,7 @@ function generateTransactionsList(objTransactions, address, filter) {
 		const transactionAssetKey = transaction.asset || 'bytes';
 		let assetName = transactionAssetKey;
 		if(transaction.assetName) {
-			assetName = '<a href="https://tokens.ooo/' + transaction.assetName + '" target="_blank">' + 
-				transaction.assetName + 
-				'</a>';
+			assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${transaction.assetName}" target="_blank">${transaction.assetName}</a>`;
 		}
 		const assetDecimals = transaction.assetDecimals;
 		if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
@@ -1154,7 +1154,7 @@ var addressInfoContent = {
 			else {
 				if (objBalance.assetName) {
 					const balance = formatAmountUsingDecimalFormat(objBalance.balance, objBalance.assetDecimals);
-					resultStr += '<div title="' + assetKey + '"><span class="numberFormat">' + balance + '</span> <a href="https://tokens.ooo/' + objBalance.assetName + '" target="_blank">' + objBalance.assetName + '</a></div>';
+					resultStr += '<div title="' + assetKey + '"><span class="numberFormat">' + balance + '</span> <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + objBalance.assetName + '" target="_blank">' + objBalance.assetName + '</a></div>';
 				} else {
 					resultStr += '<div><span class="numberFormat">' + objBalance.balance + '</span> of ' + assetKey + '</div>';
 				}
@@ -1270,7 +1270,7 @@ var addressInfoContent = {
 				const amount = formatAmountUsingDecimalFormat(row.amount, row.assetDecimals);
 				let assetName = row.asset == null ? 'bytes' : row.asset;
 				if(row.assetName) {
-					assetName = '<a href="https://tokens.ooo/' + row.assetName + '" target="_blank">' + row.assetName + '</a>';
+					assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${row.assetName}" target="_blank">${row.assetName}</a>`;
 				}
 
 				listUnspent += [
@@ -1345,6 +1345,7 @@ function changeAsset(sel) {
 
 socket.on('addressInfo', function(data) {
 	if (data) {
+		testnet = data.testnet;
 		var currHashParams = getUrlHashParams();
 		var currAssetKey = currHashParams.asset || 'all';
 		addressInfoContent.setNew(currAssetKey, data);
