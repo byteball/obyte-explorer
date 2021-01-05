@@ -804,6 +804,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 		if (message.payload) {
 			asset = message.payload.asset || 'null';
 			assetName = message.payload.asset || 'bytes';
+			assetDecimals = 0;
 			if(message.payload.assetName) {
 				assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${message.payload.assetName}" target="_blank">${message.payload.assetName}</a>`;
 				assetDecimals = message.payload.assetDecimals;
@@ -1508,7 +1509,7 @@ function convertPosPanToPosScroll(posY, topPos) {
 //Numbers
 function formatAmountUsingDecimalFormat(amount, decimal) {
 	if (decimal) {
-		return amount / parseInt(10**decimal);
+		return amount / (10 ** decimal);
 	} else {
 		return amount;
 	}
