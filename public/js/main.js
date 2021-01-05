@@ -8,6 +8,7 @@ var notLastUnitUp = false, notLastUnitDown = true;
 var lastActiveUnit;
 var page, isInit = false;
 var queueAnimationPanUp = [], animationPlaysPanUp = false;
+let testnet = false;
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -570,6 +571,7 @@ function scrollUp() {
 }
 
 function showHideBlock(event, id) {
+	if(event.target.nodeName === 'A') return;
 	var block = $('#' + id);
 	var target;
 	if (event.target.classList.contains('infoTitle')) {
@@ -689,6 +691,7 @@ socket.on('start', function(data) {
 	if (data.not_found) showInfoMessage($('#infoMessageUnitNotFound').text());
 	notLastUnitDown = true;
 	if (bWaitingForHighlightNode) bWaitingForHighlightNode = false;
+	testnet = data.testnet;
 });
 
 socket.on('next', function(data) {
@@ -790,22 +793,27 @@ function getUsdText(byteAmount) {
 	return ` ≈ $<span>${usdAmount.toPrecision(2)}</span>`;
 }
 
-function getFormattedText(amount, bytePayment) {
-		return '<span class="numberFormat">' + amount + '</span>' +
+function getFormattedText(amount, bytePayment, decimals) {
+		return '<span class="numberFormat">' + formatAmountUsingDecimalFormat(amount, decimals) + '</span>' +
 			(bytePayment ? ` bytes${getUsdText(amount)}` : '');
 }
 
 function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable) {
-	var messagesOut = '', blockId = 0, key, asset, shownHiddenPayments = false;
+	var messagesOut = '', blockId = 0, key, asset, assetName, assetDecimals, shownHiddenPayments = false;
 	messages.forEach(function(message) {
 		if (message.payload) {
 			asset = message.payload.asset || 'null';
+			assetName = message.payload.asset || 'bytes';
+			if(message.payload.assetName) {
+				assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${message.payload.assetName}" target="_blank">${message.payload.assetName}</a>`;
+				assetDecimals = message.payload.assetDecimals;
+			}
 			messagesOut +=
 				'<div class="message">' +
-				'<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'message_' + blockId + '\')">';
+				'<div class="message_app infoTitleChild" title="' + (asset !== 'null' ? asset : '') + '" onclick="showHideBlock(event, \'message_' + blockId + '\')">';
 			switch (message.app) {
 				case 'payment':
-					messagesOut += $('#appTypePayment').text() + ' (' + (asset == 'null' ? 'bytes' : asset) + ')';
+					messagesOut += $('#appTypePayment').text() + ' (' + assetName + ')';
 					break;
 				case 'asset':
 					messagesOut += $('#appTypeAsset').text();
@@ -850,18 +858,18 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 									'<div class="infoTitleInput" onclick="showHideBlock(event, \'message_' + blockId + '\')">Issue</div>' +
 									'<div class="inputInfo" id="message_' + (blockId++) + '">' +
 									'<div>Serial number: ' + input.serial_number + '</div>' +
-									'<div>Amount: ' + getFormattedText(input.amount, asset === 'null') + '</div>' +
+									'<div>Amount: ' + getFormattedText(input.amount, asset === 'null', assetDecimals) + '</div>' +
 									'</div>';
 							}
 							else if (input.output_index !== undefined) {
 								key = input.unit + '_' + input.output_index + '_' + (asset);
-								messagesOut += '<div>' + getFormattedText(transfersInfo[key].amount, asset === 'null') + ' from ' +
+								messagesOut += '<div>' + getFormattedText(transfersInfo[key].amount, asset === 'null', assetDecimals) + ' from ' +
 									'<a href="#' + transfersInfo[key].unit + '">' + transfersInfo[key].unit + '</a></div>';
 							} else if (input.type === 'headers_commission' || input.type === 'witnessing') {
 								key = input.from_main_chain_index + '_' + input.to_main_chain_index;
 								var objName = (input.type === 'headers_commission' ? 'headers' : (input.type === 'witnessing' ? 'witnessing' : false));
 								if (objName) {
-									messagesOut += '<div>' + getFormattedText(assocCommissions[objName][key].sum, asset === 'null') + ' of ' + objName + ' commissions on <a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a>' +
+									messagesOut += '<div>' + getFormattedText(assocCommissions[objName][key].sum, asset === 'null', assetDecimals) + ' of ' + objName + ' commissions on <a href="#' + assocCommissions[objName][key].address + '">' + assocCommissions[objName][key].address + '</a>' +
 										' from mci ' + assocCommissions[objName][key].from_mci + ' to mci ' + assocCommissions[objName][key].to_mci + '</div>';
 								}
 							}
@@ -874,11 +882,11 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						outputsUnit[asset].forEach(function(output) {
 							messagesOut += '<div class="outputs_div">';
 							if (output.is_spent) {
-								messagesOut += '<div>' + getFormattedText(output.amount, asset === 'null') + ' to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
+								messagesOut += '<div>' + getFormattedText(output.amount, asset === 'null', assetDecimals) + ' to <a href="#' + output.address + '">' + output.address + '</a><br> ' +
 									'(spent in <a href="#' + output.spent + '">' + output.spent + '</a>)</div>';
 							}
 							else {
-								messagesOut += '<div>' + getFormattedText(output.amount, asset === 'null') + ' to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
+								messagesOut += '<div>' + getFormattedText(output.amount, asset === 'null', assetDecimals) + ' to <a href="#' + output.address + '">' + output.address + '</a><br> (not spent)</div>';
 							}
 							messagesOut += '</div>';
 						});
@@ -1069,7 +1077,12 @@ function generateTransactionsList(objTransactions, address, filter) {
 	var filterAssetKey = filter.asset;
 	for (var k in objTransactions) {
 		transaction = objTransactions[k];
-		var transactionAssetKey = transaction.asset || 'bytes';
+		const transactionAssetKey = transaction.asset || 'bytes';
+		let assetName = transactionAssetKey;
+		if(transaction.assetName) {
+			assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${transaction.assetName}" target="_blank">${transaction.assetName}</a>`;
+		}
+		const assetDecimals = transaction.assetDecimals;
 		if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
 			continue;
 		}
@@ -1082,11 +1095,12 @@ function generateTransactionsList(objTransactions, address, filter) {
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
 			'<tr><td>';
 		transaction.from.forEach(function(objFrom) {
+			const amount = formatAmountUsingDecimalFormat(objFrom.amount, assetDecimals);
 			var addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 			if (objFrom.issue) {
 				listTransactions += '<div class="transactionUnitListAddress">' +
 					'<div>' + addressOut + '</div>' +
-					'<div>Issue <span class="numberFormat">' + objFrom.amount + '</span> <span class="unit">' + transaction.asset + '</span></div>' +
+					'<div>Issue <span class="numberFormat">' + amount + '</span> <span class="unit">' + assetName + '</span></div>' +
 					'<div>serial number: ' + objFrom.serial_number + '</div></div>';
 			} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
 				var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
@@ -1097,19 +1111,20 @@ function generateTransactionsList(objTransactions, address, filter) {
 						' Sum: <span class="numberFormat">' + objFrom.sum + '</span> bytes</div>' +
 						'</div>';
 				}
-			}
-			else {
+			} else {
 				listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
-					'<div>(<span class="numberFormat">' + objFrom.amount + '</span> ' + (transaction.asset == null ? 'bytes' : transaction.asset) + ')</div></div>';
+					'<div>(<span class="numberFormat">' + amount + '</span> ' + assetName + ')</div></div>';
 			}
 		});
 		listTransactions += '</td><td><img width="32" src="' + (transaction.spent ? '/img/red_right2.png' : '/img/green_right2.png') + '"></td><td>';
 		for (var k in transaction.to) {
 			_addressTo = transaction.to[k];
+			const amount = formatAmountUsingDecimalFormat(_addressTo.amount, assetDecimals);
+
 			addressOut = _addressTo.address == address ? '<span class="thisAddress">' + _addressTo.address + '</span>' : '<a href="#' + _addressTo.address + '">' + _addressTo.address + '</a>';
 
 			listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
-				'<div>(<span class="numberFormat">' + _addressTo.amount + '</span> <span class="unit">' + (transaction.asset == null ? 'bytes' : transaction.asset) + '</span>, ' +
+				'<div>(<span class="numberFormat">' + amount + '</span> <span class="unit">' + assetName + '</span>, ' +
 				(_addressTo.spent === 0 ? 'not spent' : 'spent in ' + '<a href="#' + _addressTo.spent + '">' + _addressTo.spent + '</a>') +
 				')</div></div>';
 		}
@@ -1128,16 +1143,21 @@ var addressInfoContent = {
 		$('#address').html(data.address);
 	},
 	setBalance: function (data) {
-		var objBalance = data.objBalance;
+		var objBalances = data.objBalances;
 		var resultStr = '';
 
-		for (var assetKey in objBalance) {
-			var balance = objBalance[assetKey];
+		for (var assetKey in objBalances) {
+			var objBalance = objBalances[assetKey];
 			if (assetKey === 'bytes') {
-				resultStr += '<div><span class="numberFormat">' + balance + '</span> bytes</div>';
+				resultStr += '<div><span class="numberFormat">' + objBalance.balance + '</span> bytes</div>';
 			}
 			else {
-				resultStr += '<div><span class="numberFormat">' + balance + '</span> of ' + assetKey + '</div>';
+				if (objBalance.assetName) {
+					const balance = formatAmountUsingDecimalFormat(objBalance.balance, objBalance.assetDecimals);
+					resultStr += '<div title="' + assetKey + '"><span class="numberFormat">' + balance + '</span> <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + objBalance.assetName + '" target="_blank">' + objBalance.assetName + '</a></div>';
+				} else {
+					resultStr += '<div><span class="numberFormat">' + objBalance.balance + '</span> of ' + assetKey + '</div>';
+				}
 			}
 		}
 
@@ -1147,13 +1167,14 @@ var addressInfoContent = {
 		updateUrlHashWithParams({asset: newAssetKey});
 	},
 	setAssets: function (data) {
-		var objBalance = data.objBalance;
+		var objBalances = data.objBalances;
 		var assetsOptions = '<option value="all" ' + (this.currAssetKey==='all' ? 'selected' : '') + '>'+ $('#labelAll').text() +'</option>';
 
-		for (var assetKey in objBalance) {
+		for (var assetKey in objBalances) {
+			const assetName = objBalances[assetKey].assetName ? objBalances[assetKey].assetName : assetKey;
 			assetsOptions += [
 				'<option value="' + assetKey + '" ' + (assetKey === this.currAssetKey ? 'selected' : '') + '>',
-				assetKey,
+				assetName,
 				'</option>'
 			].join('');
 		}
@@ -1246,11 +1267,17 @@ var addressInfoContent = {
 					return;
 				}
 
+				const amount = formatAmountUsingDecimalFormat(row.amount, row.assetDecimals);
+				let assetName = row.asset == null ? 'bytes' : row.asset;
+				if(row.assetName) {
+					assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${row.assetName}" target="_blank">${row.assetName}</a>`;
+				}
+
 				listUnspent += [
 					'<div>',
 					'<a href="#' + row.unit + '">' + row.unit + '</a> ',
-					'(<span class="numberFormat">' + row.amount + '</span> ',
-					(row.asset == null ? 'bytes' : row.asset) + ')',
+					'(<span class="numberFormat">' + amount + '</span> ',
+					assetName + ')',
 					'</div>'
 				].join('');
 			});
@@ -1318,6 +1345,7 @@ function changeAsset(sel) {
 
 socket.on('addressInfo', function(data) {
 	if (data) {
+		testnet = data.testnet;
 		var currHashParams = getUrlHashParams();
 		var currAssetKey = currHashParams.asset || 'all';
 		addressInfoContent.setNew(currAssetKey, data);
@@ -1478,9 +1506,24 @@ function convertPosPanToPosScroll(posY, topPos) {
 }
 
 //Numbers
+function formatAmountUsingDecimalFormat(amount, decimal) {
+	if (decimal) {
+		return amount / parseInt(10**decimal);
+	} else {
+		return amount;
+	}
+}
 
 function numberFormat(number) {
-	return number.replace(new RegExp("^(\\d{" + (number.length % 3 ? number.length % 3 : 0) + "})(\\d{3})", "g"), "$1 $2").replace(/(\d{3})+?/gi, "$1 ").trim().replace(/\s/gi, ",");
+	var decimal = '';
+	if (number.includes('.')) {
+		var s = number.split('.');
+		number = s[0];
+		decimal = '.' + s[1];
+	}
+	return (number.replace(new RegExp("^(\\d{" + (number.length % 3 ? number.length % 3 : 0) + "})(\\d{3})", "g"), "$1 $2")
+		.replace(/(\d{3})+?/gi, "$1 ").trim()
+		.replace(/\s/gi, ",")) + decimal;
 }
 
 function formatAllNumbers() {

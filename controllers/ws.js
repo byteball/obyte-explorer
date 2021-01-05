@@ -12,7 +12,8 @@ function start(data) {
 		units.getLastUnits(function(nodes, edges) {
 			ws.emit('start', {
 				nodes: nodes,
-				edges: edges
+				edges: edges,
+				testnet: !!process.env.testnet
 			});
 		});
 	}
@@ -23,7 +24,8 @@ function start(data) {
 					ws.emit('start', {
 						nodes: nodes,
 						edges: edges,
-						not_found: true
+						not_found: true,
+						testnet: !!process.env.testnet
 					});
 				});
 			}
@@ -31,14 +33,15 @@ function start(data) {
 				units.getUnitsBeforeRowid(row[0].rowid + 25, 100, function(nodes, edges) {
 					ws.emit('start', {
 						nodes: nodes,
-						edges: edges
+						edges: edges,
+						testnet: !!process.env.testnet
 					});
 				});
 			}
 		});
 	}
 	else if (data.type === 'address') {
-		address.getAddressInfo(data.address, data.filter || {}, function(objTransactions, unspent, objBalance, end, definition, 
+		address.getAddressInfo(data.address, data.filter || {}, function(objTransactions, unspent, objBalances, end, definition,
 			newLastInputsROWID, newLastOutputsROWID, storage_size, objStateVars, arrAaResponses, arrAasFromTemplate) {
 			if (!objTransactions && !definition)
 				return ws.emit('addressInfo');
@@ -46,7 +49,7 @@ function start(data) {
 				address: data.address,
 				objTransactions: objTransactions,
 				unspent: unspent,
-				objBalance: objBalance,
+				objBalances: objBalances,
 				end: end,
 				definition: definition,
 				newLastInputsROWID: newLastInputsROWID,
@@ -54,7 +57,8 @@ function start(data) {
 				storage_size: storage_size,
 				objStateVars: objStateVars,
 				arrAaResponses: arrAaResponses,
-				arrAasFromTemplate: arrAasFromTemplate
+				arrAasFromTemplate: arrAasFromTemplate,
+				testnet: !!process.env.testnet
 			});
 		});
 	}
@@ -143,7 +147,8 @@ function highlightNode(data) {
 				units.getUnitsBeforeRowid(rowid + 25, 100, function(nodes, edges) {
 					ws.emit('start', {
 						nodes: nodes,
-						edges: edges
+						edges: edges,
+						testnet: !!process.env.testnet
 					});
 				});
 			}
