@@ -43,9 +43,11 @@ app.get('/', function(req, res) {
 	res.render('index', {i18n: i18n});
 });
 
-network.findOutboundPeerOrConnect(conf.initial_peers[0], (err, ws) => {
-	ws.bLoggedIn = true;
-})
+if (conf.initial_peers) {
+	network.findOutboundPeerOrConnect(conf.initial_peers[0], (err, ws) => {
+		ws.bLoggedIn = true;
+	});
+}
 
 eventBus.on('new_joint', function() {
 	io.sockets.emit('update');
