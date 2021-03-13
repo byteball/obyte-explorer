@@ -50,7 +50,7 @@ exports.initial_witnesses = !process.env.testnet ? [
 ];
 
 exports.initial_peers = [
-	process.env.testnet ? 'wss://obyte.org/bb-test' : 'wss://obyte.org/bb'
+	process.env.testnet ? 'wss://obyte.org/bb-test' : (process.env.devnet ? 'localhost:6611' : 'obyte.org/bb')
 ];
 
 console.log('finished explorer conf');
