@@ -45,6 +45,8 @@ app.get('/', function(req, res) {
 
 if (conf.initial_peers) {
 	network.findOutboundPeerOrConnect(conf.initial_peers[0], (err, ws) => {
+		if (err)
+			return console.log('failed to connect to initial peer ' + conf.initial_peers[0] + ': ' + err);
 		ws.bLoggedIn = true;
 	});
 }
