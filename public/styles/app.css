@@ -121,14 +121,14 @@ body {
 	color: #808080;
 }
 
-#infoClose, #addressClose {
+#infoClose, #addressClose, #assetClose {
 	text-align: right;
 	font-size: 18px;
 	margin: 10px;
 	display: none;
 }
 
-#addressClose {
+#addressClose, #assetClose {
 	display: block;
 	margin: 10px auto;
 }
@@ -321,11 +321,11 @@ label {
 	clear: both;
 }
 
-#infoAndBalanceAddress {
+#infoAndBalanceAddress, #infoAndBalanceAsset {
 	margin-top: 20px;
 }
 
-#addressInfo {
+#addressInfo, #assetInfo {
 	position: absolute;
 	top: 46px;
 	right: 0;
@@ -355,7 +355,7 @@ label {
 	margin: 10px 0;
 }
 
-#blockListUnspent {
+#blockListUnspent, #blockListTopHolders {
 	display: none;
 	margin-top: 50px;
 }
@@ -422,7 +422,7 @@ label {
 	/*cursor: pointer;*/
 }
 
-#tableListTransactions {
+#tableListTransactions, #tableListAssetTransactions {
 	width: 100%;
     border-collapse: collapse;
 }
@@ -547,7 +547,7 @@ label {
 		display: block;
 	}
 
-	#listUnits td {
+	#listUnits td, #listAssetUnits td {
 		display: block;
 		width: 100%;
 	}
@@ -571,7 +571,7 @@ label {
 		right: 22px;
 	}
 
-	#addressInfo {
+	#addressInfo, #assetInfo {
 		top: 86px;
 	}
 

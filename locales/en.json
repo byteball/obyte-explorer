@@ -37,6 +37,7 @@
 	"infoMessagePleaseEnter": "Please enter a unit or address",
 	"infoMessageUnitNotFound": "Unit not found",
 	"infoMessageAddressNotFound": "Address not found",
+	"infoMessageAssetNotFound": "Asset not found",
 	"infoMessageUnitDeleted" : "Unit was deleted",
 	"hiddenPayments": "Hidden payments",
 	"appTypePayment": "Payment",
@@ -66,5 +67,6 @@
 	"aaAdress" : "AA address",
 	"from" : "From",
 	"tooManyVars" : "All state vars can't be displayed, please filter.",
-	"storageSize" : "Storage size"
+	"storageSize" : "Storage size",
+	"holders": "Holders"
 }
