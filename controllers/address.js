@@ -123,17 +123,19 @@ async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutp
 	});
 	const newExcludeUnits = [];
 
-	const unitRows = await db.query(
-		"SELECT DISTINCT unit FROM units JOIN inputs USING(unit) JOIN outputs USING(unit) WHERE timestamp IN (?) AND (inputs.address = ? OR outputs.address = ?)",
-		[timestamps, address, address]);
+	if (timestamps.length) {
+		const unitRows = await db.query(
+			"SELECT DISTINCT unit FROM units JOIN inputs USING(unit) JOIN outputs USING(unit) WHERE timestamp IN (?) AND (inputs.address = ? OR outputs.address = ?)",
+			[timestamps, address, address]);
 
-	unitRows.forEach(row => {
-		if (arrUnits.includes(row.unit)) return;
-		
-		if (!newExcludeUnits.includes(row.unit)) {
-			newExcludeUnits.push(row.unit);
-		}
-	});
+		unitRows.forEach(row => {
+			if (arrUnits.includes(row.unit)) return;
+
+			if (!newExcludeUnits.includes(row.unit)) {
+				newExcludeUnits.push(row.unit);
+			}
+		});
+	}
 
 	return {
 		arrUnits: [...arrUnits, ...newExcludeUnits],

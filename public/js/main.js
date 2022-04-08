@@ -644,14 +644,24 @@ function addLinksToAddresses(text){
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
-	if (currHash.length == 45) {
+	if (currHash.startsWith('#/asset')) {
+		const asset = currHash.slice(8);
+
+		socket.emit('start', {type: 'asset', asset});
+
+		$('#assetInfo').show();
+		$('#addressInfo').hide();
+		$('.trigger-legend').hide();
+	}
+	else if (currHash.length === 45) {
 		highlightNode(currHash.substr(1));
+		$('#assetInfo').hide();
 		if ($('#addressInfo').css('display') == 'block') {
 			$('#addressInfo').hide();
 			$('.trigger-legend').show();
 		}
 	}
-	else if (currHash.length == 33) {
+	else if (currHash.length === 33) {
 		var currHashParams = getUrlHashParams();
 		var paramAsset = currHashParams.asset;
 		socket.emit('start', {
@@ -661,6 +671,9 @@ window.addEventListener('hashchange', function() {
 				asset: paramAsset,
 			},
 		});
+		$('#addressInfo').show();
+		$('#assetInfo').hide();
+		$('.trigger-legend').hide();
 	}
 });
 
@@ -1157,7 +1170,7 @@ socket.on('assetInfo', (data) => {
 	if (data && data.holders.length) {
 		page = 'asset';
 		testnet = data.testnet;
-		
+		console.log('assetInfo', data);
 		assetInfoContent.setAssetInfoContent(data);
 
 		if ($('#assetInfo').css('display') === 'none') {
@@ -1544,6 +1557,9 @@ socket.on('addressInfo', function(data) {
 
 socket.on('nextPageTransactions', function(data) {
 	if (data) {
+		if (page !== 'address' && page !== 'asset') return;
+		
+		console.log('nextPageT', data);
 		const infoContent = page === 'address' ? addressInfoContent : assetInfoContent;
 		
 		infoContent.appendTransactions(data);
@@ -1601,7 +1617,7 @@ function getNextPageTransactions() {
 		var currHashParams = getUrlHashParams();
 		var paramAsset = currHashParams.asset;
 		
-		if(page === 'address') {
+		if (page === 'address') {
 			socket.emit('nextPageTransactions', {
 				address: currHash.substr(1),
 				lastInputsROWID,
@@ -1610,17 +1626,17 @@ function getNextPageTransactions() {
 				filter: {
 					asset: paramAsset,
 				},
-			});	
-		} else {
+			});
+			bWaitingForNextPageTransactions = true;
+		} else if (page === 'asset') {
 			socket.emit('nextPageAssetTransactions', {
 				asset: currHash.slice(8),
 				lastInputsROWID,
 				lastOutputsROWID,
 				excludeUnits,
 			});
+			bWaitingForNextPageTransactions = true;
 		}
-		
-		bWaitingForNextPageTransactions = true;
 	}
 }
 

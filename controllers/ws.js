@@ -6,6 +6,7 @@ var units = require('./units');
 var address = require('./address');
 
 async function start(data) {
+	console.log('start', data);
 	var ws = this;
 
 	if (data.type === 'last') {
@@ -87,6 +88,7 @@ async function start(data) {
 }
 
 function next(data) {
+	console.log('next', data);
 	var ws = this;
 
 	units.getUnitsThatBecameStable(data.notStable, function(arrStableUnits) {
@@ -131,6 +133,7 @@ function newUnits(data) {
 
 
 function info(data) {
+	console.log('info', data);
 	var ws = this;
 
 	units.getInfoOnUnit(data.unit, function(objInfo) {
@@ -182,6 +185,7 @@ function highlightNode(data) {
 }
 
 async function nextPageTransactions(data) {
+	console.log('nextPageTransactions', data);
 	var ws = this;
 	const {
 		objTransactions,
@@ -203,6 +207,7 @@ async function nextPageTransactions(data) {
 }
 
 async function nextPageAssetTransactions(data) {
+	console.log('nextPageAssetTransactions', data);
 	var ws = this;
 
 	const transactionsData = await address.getAssetTransactions(data.asset, data.lastInputsROWID, data.lastOutputsROWID, data.excludeUnits);
