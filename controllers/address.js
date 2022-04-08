@@ -421,17 +421,19 @@ async function getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputs
 	});
 	const newExcludeUnits = [];
 
-	const unitRows = await db.query(
-		"SELECT DISTINCT unit FROM units JOIN inputs USING(unit) JOIN outputs USING(unit) WHERE timestamp IN (?) AND (inputs.asset = ? OR outputs.asset = ?)",
-		[timestamps, asset, asset]);
+	if (timestamps.length) {
+		const unitRows = await db.query(
+			"SELECT DISTINCT unit FROM units JOIN inputs USING(unit) JOIN outputs USING(unit) WHERE timestamp IN (?) AND (inputs.asset = ? OR outputs.asset = ?)",
+			[timestamps, asset, asset]);
 
-	unitRows.forEach(row => {
-		if (arrUnits.includes(row.unit)) return;
+		unitRows.forEach(row => {
+			if (arrUnits.includes(row.unit)) return;
 
-		if (!newExcludeUnits.includes(row.unit)) {
-			newExcludeUnits.push(row.unit);
-		}
-	});
+			if (!newExcludeUnits.includes(row.unit)) {
+				newExcludeUnits.push(row.unit);
+			}
+		});
+	}
 
 	return {
 		arrUnits: [...arrUnits, ...newExcludeUnits],
