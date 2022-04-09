@@ -402,7 +402,7 @@ async function getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputs
 	const arrQuerySql = [
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID, timestamp",
 		"FROM inputs, outputs, units",
-		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE asset = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))",
+		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs INDEXED BY inputsIndexByAssetType WHERE asset = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))",
 		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE asset = ? AND ROWID < ? AND (is_spent=1 OR is_spent=0) ORDER BY ROWID DESC LIMIT 0, 5)))",
 		"AND inputs.unit = outputs.unit",
 		"AND units.unit = inputs.unit",
@@ -544,7 +544,8 @@ async function getAssetData(asset) {
 	const objJoint = await getJoint(assetUnit);	
 
 	let isLimitedCap = false;
-	if(objJoint.unit.messages.cap) {
+	const message = objJoint.unit.messages.find(msg => msg.app === 'asset');
+	if(message && message.payload.cap) {
 		isLimitedCap = true;
 	}
 
