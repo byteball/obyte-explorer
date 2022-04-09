@@ -1052,7 +1052,7 @@ const assetInfoContent = {
 		let nameConditionalBlock = this.data.assetUnit;
 
 		if (this.data.name) {
-			nameConditionalBlock = this.data.name + '<span>view on <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + this.data.name + '" target="_blank"> tokens.ooo </a></span>';
+			nameConditionalBlock = this.data.name + '<span style="font-weight: normal"> - view on <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + this.data.name + '" target="_blank"> tokens.ooo </a></span>';
 		}
 		
 		let resultStr = '<div title="' + this.data.assetUnit + '">'+ nameConditionalBlock + '</div>';
