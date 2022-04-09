@@ -7,6 +7,8 @@ var BIGINT = 9223372036854775807;
 var storage = require('ocore/storage.js');
 var conf = require('ocore/conf.js');
 const getAssetNameAndDecimals = require('../helpers/getAssetNameAndDecimals');
+const getAssetUnit = require('../helpers/getAssetUnit');
+const getJoint = require('../helpers/readJoint');
 
 async function getAmountForInfoAddress(objTransactions) {
 	var arrTransactionsUnits = [], key;
@@ -534,17 +536,26 @@ async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID, ex
 	}
 }
 
-async function getAssetData(asset) {
-	const assetData = { assetUnit: asset, holders: [], assetTransactions: [] };
+async function getAssetData(asset) {	
+	const assetUnit = await getAssetUnit(asset) || asset;
+
+	const assetData = { assetUnit, holders: [], assetTransactions: [] };
 	
+	const objJoint = await getJoint(assetUnit);	
+
+	let isLimitedCap = false;
+	if(objJoint.unit.messages.cap) {
+		isLimitedCap = true;
+	}
+
 	const rows = await db.query(
 		"SELECT address, asset, SUM(amount) AS balance \n\
 		FROM outputs INDEXED BY outputsIndexByAsset JOIN units USING(unit) \n\
 		WHERE is_spent=0 AND asset=? AND sequence='good' \n\
-		GROUP BY address, asset	ORDER BY balance DESC", [asset]);
+		GROUP BY address, asset	ORDER BY balance DESC", [assetUnit]);
 
 	if (rows.length) {
-		const assetNameAndDecimals = await getAssetNameAndDecimals(asset);
+		const assetNameAndDecimals = await getAssetNameAndDecimals(assetUnit);
 
 		if (assetNameAndDecimals) {
 			assetData.name = assetNameAndDecimals.name;
@@ -557,11 +568,11 @@ async function getAssetData(asset) {
 				asset: row.asset,
 				balance: row.balance,
 			}
-		});
+		}).filter(row => row.address !== objJoint.unit.authors[0].address  && !isLimitedCap);
 		
 		assetData.holders = holders;
 		assetData.supply = (holders.reduce((total, holder) => total + holder.balance, 0));
-		assetData.transactionsData = await getAssetTransactions(asset, BIGINT, BIGINT, []);
+		assetData.transactionsData = await getAssetTransactions(assetUnit, BIGINT, BIGINT, []);
 	}
 
 	assetData.end = assetData.assetTransactions.objTransactions ? Object.keys(assetData.assetTransactions.objTransactions).length < 5 : null;
