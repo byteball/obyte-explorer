@@ -462,7 +462,7 @@ async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID, ex
 			CASE timestamp \n\
 				WHEN 0 THEN " + db.getUnixTimestamp("units.creation_date") + " ELSE timestamp \n\
 				END timestamp \n\
-				FROM inputs, outputs, units",
+				FROM inputs INDEXED BY sqlite_autoindex_inputs_1, outputs, units",
 			"WHERE units.unit IN (?) AND outputs.unit = inputs.unit",
 			getStrSqlFilterAssetForTransactions(asset),
 			"AND units.unit = inputs.unit",
