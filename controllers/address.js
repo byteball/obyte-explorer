@@ -156,6 +156,19 @@ async function getAndSaveAssetNameAndDecimals(asset, cache) {
 	return objResult;
 }
 
+function filterTransactionsWithoutMyAddress(objTransactions, address) {
+	for (let key in objTransactions) {
+		const addressInFrom = objTransactions[key].from.find(t => t.address === address);
+		if (addressInFrom) continue;
+		
+		const addressInTo = Object.values(objTransactions[key].to).find(t => t.address === address);
+		if (addressInTo) continue;
+		
+		delete objTransactions[key];
+	}
+	return objTransactions;
+}
+
 async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filter, excludeUnits) {
 	const {
 		arrUnits,
@@ -228,8 +241,9 @@ async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID
 				}
 				objTransactions[key].from = [];
 			}
-
+			
 			objTransactions = await getAmountForInfoAddress(objTransactions);
+			objTransactions = filterTransactionsWithoutMyAddress(objTransactions, address);
 			objTransactions = await getSpentOutputs(objTransactions);
 			return { objTransactions, newLastInputsROWID, newLastOutputsROWID, excludeUnits: newExcludeUnits, objAssetsCache, unitAssets }
 		} else {

@@ -1170,7 +1170,6 @@ socket.on('assetInfo', (data) => {
 	if (data && data.holders.length) {
 		page = 'asset';
 		testnet = data.testnet;
-		console.log('assetInfo', data);
 		assetInfoContent.setAssetInfoContent(data);
 
 		if ($('#assetInfo').css('display') === 'none') {
@@ -1261,7 +1260,7 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets) 
 				
 			const key = `${unit}_${asset}`;
 			transaction = objTransactions[key];
-			
+			if (!transaction) return;
 			const transactionAssetKey = transaction.asset || 'bytes';
 			let assetName = transactionAssetKey;
 
@@ -1559,7 +1558,6 @@ socket.on('nextPageTransactions', function(data) {
 	if (data) {
 		if (page !== 'address' && page !== 'asset') return;
 		
-		console.log('nextPageT', data);
 		const infoContent = page === 'address' ? addressInfoContent : assetInfoContent;
 		
 		infoContent.appendTransactions(data);
