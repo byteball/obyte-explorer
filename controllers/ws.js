@@ -4,6 +4,7 @@
 var db = require('ocore/db.js');
 var units = require('./units');
 var address = require('./address');
+const getAssetUnit = require('../helpers/getAssetUnit');
 
 async function start(data) {
 	var ws = this;
@@ -205,7 +206,8 @@ async function nextPageTransactions(data) {
 async function nextPageAssetTransactions(data) {
 	var ws = this;
 
-	const transactionsData = await address.getAssetTransactions(data.asset, data.lastInputsROWID, data.lastOutputsROWID, data.excludeUnits);
+	const assetUnit = await getAssetUnit(data.asset) || data.asset;
+	const transactionsData = await address.getAssetTransactions(assetUnit, data.lastInputsROWID, data.lastOutputsROWID, data.excludeUnits);
 	
 	ws.emit('nextPageTransactions', {
 		transactionsData,
