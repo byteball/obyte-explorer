@@ -577,20 +577,24 @@ async function getAssetData(asset) {
 			assetData.decimals = assetNameAndDecimals.decimals;			
 		}
 
-		const holders = rows.map(row => {
+		let holders = rows.map(row => {
 			return {
 				address: row.address,
 				asset: row.asset,
 				balance: row.balance,
 			}
-		}).filter(row => row.address !== objJoint.unit.authors[0].address  && !isLimitedCap);
+		});
+		if (isLimitedCap) {
+			const author = objJoint.unit.authors[0].address;
+			holders = holders.filter(row => row.address !== author);
+		}
 		
 		assetData.holders = holders;
 		assetData.supply = (holders.reduce((total, holder) => total + holder.balance, 0));
 		assetData.transactionsData = await getAssetTransactions(assetUnit, BIGINT, BIGINT, []);
 	}
 
-	assetData.end = assetData.assetTransactions.objTransactions ? Object.keys(assetData.assetTransactions.objTransactions).length < 5 : null;
+	assetData.end = assetData.assetTransactions.objTransactions ? Object.keys(assetData.assetTransactions.objTransactions).length < 5 : false;
 
 	return assetData;
 }
