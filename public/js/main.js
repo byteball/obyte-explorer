@@ -51,6 +51,7 @@ function start() {
 
 		$('#assetInfo').show();
 		$('.trigger-legend').hide();
+		$('#loader').show();
 	}
 	else if (!currHash || (currHash.length != 45 && currHash.length != 33)) {
 		socket.emit('start', {type: 'last'});
@@ -71,6 +72,7 @@ function start() {
 		});
 		$('#addressInfo').show();
 		$('.trigger-legend').hide();
+		$('#loader').show();
 	}
 }
 
@@ -652,6 +654,7 @@ window.addEventListener('hashchange', function() {
 		$('#assetInfo').show();
 		$('#addressInfo').hide();
 		$('.trigger-legend').hide();
+		$('#loader').show();
 	}
 	else if (currHash.length === 45) {
 		highlightNode(currHash.substr(1));
@@ -674,6 +677,7 @@ window.addEventListener('hashchange', function() {
 		$('#addressInfo').show();
 		$('#assetInfo').hide();
 		$('.trigger-legend').hide();
+		$('#loader').show();
 	}
 });
 
@@ -1068,8 +1072,8 @@ const assetInfoContent = {
 		let resultStr =`<div>Total supply: <span class="numberFormat">${supply}</span> ${this.name}</div>`;
 		
 		if (this.dollarPrice !== null) {
-			resultStr += `<div>Price: <span class="numberFormat">$${Number(this.dollarPrice.toFixed(2))}</span></div>`;
-			resultStr += `<div>Marketcap: <span class="numberFormat">$${Number(this.marketCap.toFixed(2))}</span></div>`;
+			resultStr += `<div>Price: $<span class="numberFormat">${Number(this.dollarPrice.toPrecision(6))}</span></div>`;
+			resultStr += `<div>Marketcap: $<span class="numberFormat">${Number(this.marketCap.toFixed(2))}</span></div>`;
 		}
 
 		$('#assetData').html(resultStr);
@@ -1166,6 +1170,7 @@ const assetInfoContent = {
 }
 
 socket.on('assetInfo', (data) => {
+	$('#loader').hide();
 	$(`${pageBlockNames.address.info}`).hide();
 	$(`${pageBlockNames.address.blockList}`).hide();
 	excludeUnits = [];
@@ -1533,6 +1538,7 @@ function changeAsset(sel) {
 }
 
 socket.on('addressInfo', function(data) {
+	$('#loader').hide();
 	$(`${pageBlockNames.asset.info}`).hide();
 	$(`${pageBlockNames.asset.blockList}`).hide();
 	excludeUnits = [];

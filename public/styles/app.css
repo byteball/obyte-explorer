@@ -325,6 +325,16 @@ label {
 	margin-top: 20px;
 }
 
+#loader {
+	display: none; 
+	margin-top: 50px; 
+	position: absolute; 
+	z-index: 9999999999;
+	left: 0;
+	right: 0;
+	text-align: center;
+}
+
 #addressInfo, #assetInfo {
 	position: absolute;
 	top: 46px;
@@ -569,6 +579,10 @@ label {
 	#goToTop {
 		top: 109px;
 		right: 22px;
+	}
+
+	#loader {
+		margin-top: 90px;
 	}
 
 	#addressInfo, #assetInfo {
