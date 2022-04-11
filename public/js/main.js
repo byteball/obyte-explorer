@@ -829,7 +829,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 			assetName = message.payload.asset || 'bytes';
 			assetDecimals = 0;
 			if(message.payload.assetName) {
-				assetName = `<a href="#/asset/${message.payload.assetName}" target="_blank">${message.payload.assetName}</a>`;
+				assetName = `<a href="#/asset/${message.payload.assetName}">${message.payload.assetName}</a>`;
 				assetDecimals = message.payload.assetDecimals;
 			}
 			messagesOut +=
@@ -1272,7 +1272,7 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets) 
 			}
 			
 			if (transaction.assetName) {
-				assetName = `<a href="#/asset/${transaction.assetName}" target="_blank">${transaction.assetName}</a>`;
+				assetName = `<a href="#/asset/${transaction.assetName}">${transaction.assetName}</a>`;
 			}
 			
 			const assetDecimals = transaction.assetDecimals;
@@ -1342,7 +1342,7 @@ var addressInfoContent = {
 			else {
 				if (objBalance.assetName) {
 					const balance = formatAmountUsingDecimalFormat(objBalance.balance, objBalance.assetDecimals);
-					resultStr += '<div title="' + assetKey + '"><span class="numberFormat">' + balance + '</span> <a href="#/asset/' + objBalance.assetName + '" target="_blank">' + objBalance.assetName + '</a></div>';
+					resultStr += '<div title="' + assetKey + '"><span class="numberFormat">' + balance + '</span> <a href="#/asset/' + objBalance.assetName + '">' + objBalance.assetName + '</a></div>';
 				} else {
 					resultStr += '<div><span class="numberFormat">' + objBalance.balance + '</span> of ' + assetKey + '</div>';
 				}
@@ -1458,7 +1458,7 @@ var addressInfoContent = {
 				const amount = formatAmountUsingDecimalFormat(row.amount, row.assetDecimals);
 				let assetName = row.asset == null ? 'bytes' : row.asset;
 				if(row.assetName) {
-					assetName = `<a href="#/asset/${row.assetName}" target="_blank">${row.assetName}</a>`;
+					assetName = `<a href="#/asset/${row.assetName}">${row.assetName}</a>`;
 				}
 
 				listUnspent += [
