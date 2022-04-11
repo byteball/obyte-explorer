@@ -327,8 +327,8 @@ label {
 
 #loader {
 	display: none; 
-	margin-top: 50px; 
-	position: absolute; 
+	top: 50px; 
+	position: fixed; 
 	z-index: 9999999999;
 	left: 0;
 	right: 0;
@@ -582,7 +582,7 @@ label {
 	}
 
 	#loader {
-		margin-top: 90px;
+		top: 90px;
 	}
 
 	#addressInfo, #assetInfo {
