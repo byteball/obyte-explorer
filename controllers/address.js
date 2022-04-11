@@ -584,7 +584,7 @@ async function getAssetData(asset) {
 				balance: row.balance,
 			}
 		});
-		if (isLimitedCap) {
+		if (!isLimitedCap) {
 			const author = objJoint.unit.authors[0].address;
 			holders = holders.filter(row => row.address !== author);
 		}
