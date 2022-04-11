@@ -6,8 +6,8 @@ var constants = require('ocore/constants.js');
 var BIGINT = 9223372036854775807;
 var storage = require('ocore/storage.js');
 var conf = require('ocore/conf.js');
-const getAssetNameAndDecimals = require('../helpers/getAssetNameAndDecimals');
-const getAssetUnit = require('../helpers/getAssetUnit');
+const getAssetNameAndDecimals = require('../api/getAssetNameAndDecimals');
+const getAssetUnit = require('../api/getAssetUnit');
 const getJoint = require('../helpers/readJoint');
 
 async function getAmountForInfoAddress(objTransactions) {

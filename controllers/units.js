@@ -5,7 +5,7 @@ var db = require('ocore/db.js');
 var storage = require('ocore/storage.js');
 var async = require('async');
 var constants = require("ocore/constants.js");
-const getAssetNameAndDecimals = require('../helpers/getAssetNameAndDecimals');
+const getAssetNameAndDecimals = require('../api/getAssetNameAndDecimals');
 
 function getLastUnits(cb) {
 	var nodes = [];

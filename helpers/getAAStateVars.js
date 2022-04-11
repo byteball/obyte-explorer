@@ -5,17 +5,7 @@ async function getAAStateVars(name) {
 		name,
 		name,
 		2000);
-
 	return r[name];
 }
 
-module.exports = async (name) => {
-	const asset = await getAAStateVars('s2a_' + name.toUpperCase());
-
-	if (asset) {
-		return asset;
-	}
-	
-	return null;
-}
-
+module.exports = getAAStateVars;

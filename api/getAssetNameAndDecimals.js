@@ -1,12 +1,4 @@
-const storage = require('ocore/storage.js');
-
-async function getAAStateVars(name) {
-	const r = await storage.readAAStateVars("O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ",
-		name,
-		name,
-		2000);
-	return r[name];
-}
+const getAAStateVars = require('../helpers/getAAStateVars');
 
 module.exports = async (asset) => {
 	const name = await getAAStateVars('a2s_' + asset);
