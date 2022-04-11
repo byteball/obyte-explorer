@@ -950,6 +950,9 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 							messagesOut += '</div>';
 						}
 					}
+					if (message.app === 'asset') {
+						messagesOut += '<div><a href="javascript:" onclick="openAssetInfo()">Asset info</a></div>';
+					}
 					break;
 			}
 			messagesOut += '</div></div>';
@@ -1853,6 +1856,10 @@ function windowOnClick(event) {
     if (event.target === modal) {
         toggleModal();
     }
+}
+
+function openAssetInfo() {
+	location.hash = '/asset/' + location.hash.substr(1);
 }
 
 trigger.addEventListener("click", toggleModal);
