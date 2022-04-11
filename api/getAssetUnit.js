@@ -1,7 +1,7 @@
-const getAAStateVars = require('../helpers/getAAStateVars');
+const getAAStateVar = require('../helpers/getAAStateVar');
 
 module.exports = async (name) => {
-	const asset = await getAAStateVars('s2a_' + name.toUpperCase());
+	const asset = await getAAStateVar('s2a_' + name.toUpperCase());
 
 	if (asset) {
 		return asset;

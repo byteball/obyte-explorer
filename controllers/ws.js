@@ -4,7 +4,7 @@
 var db = require('ocore/db.js');
 var units = require('./units');
 var address = require('./address');
-const getAssetUnit = require('../helpers/getAssetUnit');
+const getAssetUnit = require('../api/getAssetUnit');
 
 async function start(data) {
 	var ws = this;
@@ -50,7 +50,7 @@ async function start(data) {
 			definition,
 			newLastInputsROWID, 
 			newLastOutputsROWID,
-			excludeUnits,
+			excludedUnits,
 			storage_size,
 			objStateVars,
 			arrAaResponses,
@@ -70,7 +70,7 @@ async function start(data) {
 			definition: definition,
 			newLastInputsROWID,
 			newLastOutputsROWID,
-			excludeUnits,
+			excludedUnits,
 			storage_size: storage_size,
 			objStateVars: objStateVars,
 			arrAaResponses: arrAaResponses,
@@ -188,9 +188,9 @@ async function nextPageTransactions(data) {
 		objTransactions,
 		newLastInputsROWID, 
 		newLastOutputsROWID, 
-		excludeUnits,
+		excludedUnits,
 		unitAssets,
-	} = await address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {}, data.excludeUnits);
+	} = await address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {}, data.excludedUnits);
 	
 	ws.emit('nextPageTransactions', {
 		address: data.address,
@@ -198,7 +198,7 @@ async function nextPageTransactions(data) {
 		end: objTransactions === null || Object.keys(objTransactions).length < 5,
 		newLastInputsROWID,
 		newLastOutputsROWID,
-		excludeUnits,
+		excludedUnits,
 		unitAssets,
 	});
 }
@@ -207,7 +207,7 @@ async function nextPageAssetTransactions(data) {
 	var ws = this;
 
 	const assetUnit = await getAssetUnit(data.asset) || data.asset;
-	const transactionsData = await address.getAssetTransactions(assetUnit, data.lastInputsROWID, data.lastOutputsROWID, data.excludeUnits);
+	const transactionsData = await address.getAssetTransactions(assetUnit, data.lastInputsROWID, data.lastOutputsROWID, data.excludedUnits);
 	
 	ws.emit('nextPageTransactions', {
 		transactionsData,

@@ -13,6 +13,8 @@ exports.storage = 'sqlite';
 exports.aaResponsesListed = 10;
 exports.aasFromTemplateListed = 50;
 
+exports.tokenRegistryAA = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
+
 exports.selectedLanguage = 'en';
 exports.languagesAvailable = {
 	en: {name: "English", file: "en"},
