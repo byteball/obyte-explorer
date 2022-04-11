@@ -821,7 +821,7 @@ function getFormattedText(amount, bytePayment, decimals) {
 			(bytePayment ? ` bytes${getUsdText(amount)}` : '');
 }
 
-function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable) {
+function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable, unit) {
 	var messagesOut = '', blockId = 0, key, asset, assetName, assetDecimals, shownHiddenPayments = false;
 	messages.forEach(function(message) {
 		if (message.payload) {
@@ -951,7 +951,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 						}
 					}
 					if (message.app === 'asset') {
-						messagesOut += '<div><a href="javascript:" onclick="openAssetInfo()">Asset info</a></div>';
+						messagesOut += '<div><a href="#/asset/' + unit + '">Asset info</a></div>';
 					}
 					break;
 			}
@@ -1004,7 +1004,7 @@ socket.on('info', function(data) {
 		} else
 			$('#confDelayLightDiv').hide();
 
-		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable, data.unit));
 
 		$('#fees').html(getFormattedText(parseInt(data.headers_commission) + parseInt(data.payload_commission), true) + ' (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
@@ -1856,10 +1856,6 @@ function windowOnClick(event) {
     if (event.target === modal) {
         toggleModal();
     }
-}
-
-function openAssetInfo() {
-	location.hash = '/asset/' + location.hash.substr(1);
 }
 
 trigger.addEventListener("click", toggleModal);
