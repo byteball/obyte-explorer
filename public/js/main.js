@@ -707,7 +707,6 @@ var socket = io.connect(location.href);
 var bWaitingForNext = false, bWaitingForNew = false, bHaveDelayedNewRequests = false, bWaitingForPrev = false,
 	bWaitingForHighlightNode = false, bWaitingForNextPageTransactions = false;
 var nextPageTransactionsEnd = false, lastInputsROWID = 0, lastOutputsROWID = 0;
-var excludedUnits = [];
 
 socket.on('connect', function() {
 	start();
@@ -1132,8 +1131,6 @@ const assetInfoContent = {
 		if (data.transactionsData.newLastInputsROWID) {
 			lastInputsROWID = data.transactionsData.newLastInputsROWID;
 			lastOutputsROWID = data.transactionsData.newLastOutputsROWID;
-			excludedUnits = [...excludedUnits, ...data.transactionsData.excludedUnits];
-			console.log(1, excludedUnits);
 		}
 		nextPageTransactionsEnd = data.end;
 	},
@@ -1174,7 +1171,6 @@ socket.on('assetInfo', (data) => {
 	$('#loader').hide();
 	$(`${pageBlockNames.address.info}`).hide();
 	$(`${pageBlockNames.address.blockList}`).hide();
-	excludedUnits = [];
 	
 	if (data && data.notFound) {
 		showInfoMessage($('#infoMessageAssetNotFound').text());
@@ -1517,8 +1513,6 @@ var addressInfoContent = {
 		if (data.newLastOutputsROWID && data.newLastOutputsROWID) {
 			lastInputsROWID = data.newLastInputsROWID;
 			lastOutputsROWID = data.newLastOutputsROWID;
-			excludedUnits = [...excludedUnits, ...data.excludedUnits];
-			console.log(2, excludedUnits);
 		}
 		nextPageTransactionsEnd = data.end;
 	},
@@ -1545,7 +1539,6 @@ socket.on('addressInfo', function(data) {
 	$('#loader').hide();
 	$(`${pageBlockNames.asset.info}`).hide();
 	$(`${pageBlockNames.asset.blockList}`).hide();
-	excludedUnits = [];
 		
 	if (data) {
 		page = 'address';
@@ -1633,7 +1626,6 @@ function getNextPageTransactions() {
 				address: currHash.substr(1),
 				lastInputsROWID,
 				lastOutputsROWID,
-				excludedUnits,
 				filter: {
 					asset: paramAsset,
 				},
@@ -1644,7 +1636,6 @@ function getNextPageTransactions() {
 				asset: currHash.slice(8),
 				lastInputsROWID,
 				lastOutputsROWID,
-				excludedUnits,
 			});
 			bWaitingForNextPageTransactions = true;
 		}

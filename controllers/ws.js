@@ -50,7 +50,6 @@ async function start(data) {
 			definition,
 			newLastInputsROWID, 
 			newLastOutputsROWID,
-			excludedUnits,
 			storage_size,
 			objStateVars,
 			arrAaResponses,
@@ -70,7 +69,6 @@ async function start(data) {
 			definition: definition,
 			newLastInputsROWID,
 			newLastOutputsROWID,
-			excludedUnits,
 			storage_size: storage_size,
 			objStateVars: objStateVars,
 			arrAaResponses: arrAaResponses,
@@ -188,9 +186,8 @@ async function nextPageTransactions(data) {
 		objTransactions,
 		newLastInputsROWID, 
 		newLastOutputsROWID, 
-		excludedUnits,
 		unitAssets,
-	} = await address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {}, data.excludedUnits);
+	} = await address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {});
 	
 	ws.emit('nextPageTransactions', {
 		address: data.address,
@@ -198,7 +195,6 @@ async function nextPageTransactions(data) {
 		end: objTransactions === null || Object.keys(objTransactions).length < 5,
 		newLastInputsROWID,
 		newLastOutputsROWID,
-		excludedUnits,
 		unitAssets,
 	});
 }
@@ -207,7 +203,7 @@ async function nextPageAssetTransactions(data) {
 	var ws = this;
 
 	const assetUnit = await getAssetUnit(data.asset) || data.asset;
-	const transactionsData = await address.getAssetTransactions(assetUnit, data.lastInputsROWID, data.lastOutputsROWID, data.excludedUnits);
+	const transactionsData = await address.getAssetTransactions(assetUnit, data.lastInputsROWID, data.lastOutputsROWID);
 	
 	ws.emit('nextPageTransactions', {
 		transactionsData,

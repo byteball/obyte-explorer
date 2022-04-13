@@ -95,7 +95,7 @@ async function getSpentOutputs(objTransactions) {
 	return setSpentOutputs();
 }
 
-async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter, excludedUnits) {
+async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter) {
 	const strFilterAsset = filter.asset;
 
 	const arrQuerySql = [
@@ -117,31 +117,10 @@ async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutp
 	const lastRow = rows[rows.length - 1] || {};
 	const arrUnits = rows.map(function (row) {
 		return row.unit;
-	}).filter(unit => {
-		return !excludedUnits.includes(unit);
 	});
-	const timestamps = rows.map(row => {
-		return row.timestamp;
-	});
-	const newExcludedUnits = [];
-
-	if (timestamps.length) {
-		const unitRows = await db.query(
-			"SELECT DISTINCT unit FROM units JOIN inputs USING(unit) JOIN outputs USING(unit) WHERE timestamp IN (?) AND (inputs.address = ? OR outputs.address = ?)",
-			[timestamps, address, address]);
-
-		unitRows.forEach(row => {
-			if (arrUnits.includes(row.unit)) return;
-
-			if (!newExcludedUnits.includes(row.unit)) {
-				newExcludedUnits.push(row.unit);
-			}
-		});
-	}
-
+	
 	return {
-		arrUnits: [...arrUnits, ...newExcludedUnits],
-		excludedUnits: newExcludedUnits,
+		arrUnits,
 		newLastInputsROWID: lastRow.inputsROWID,
 		newLastOutputsROWID: lastRow.outputsROWID
 	};
@@ -169,13 +148,12 @@ function filterTransactionsWithoutMyAddress(objTransactions, address) {
 	return objTransactions;
 }
 
-async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filter, excludedUnits) {
+async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID, filter) {
 	const {
 		arrUnits,
 		newLastInputsROWID,
 		newLastOutputsROWID,
-		excludedUnits: newExcludedUnits,
-	} = await getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter, excludedUnits);
+	} = await getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter);
 	const unitAssets = {};
 	if (arrUnits.length) {
 		const objAssetsCache = {};
@@ -245,7 +223,7 @@ async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID
 			objTransactions = await getAmountForInfoAddress(objTransactions);
 			objTransactions = filterTransactionsWithoutMyAddress(objTransactions, address);
 			objTransactions = await getSpentOutputs(objTransactions);
-			return { objTransactions, newLastInputsROWID, newLastOutputsROWID, excludedUnits: newExcludedUnits, objAssetsCache, unitAssets }
+			return { objTransactions, newLastInputsROWID, newLastOutputsROWID, objAssetsCache, unitAssets }
 		} else {
 			return { objTransactions: null };
 		}
@@ -276,7 +254,7 @@ function getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) {
 }
 
 async function getAddressInfo(address, filter) {
-	const { objTransactions, newLastInputsROWID, newLastOutputsROWID, excludedUnits, objAssetsCache, unitAssets } = await getAddressTransactions(
+	const { objTransactions, newLastInputsROWID, newLastOutputsROWID, objAssetsCache, unitAssets } = await getAddressTransactions(
 		address, BIGINT, BIGINT, filter, []);
 	
 	const rowsOutputs = await db.query(
@@ -353,7 +331,6 @@ async function getAddressInfo(address, filter) {
 			definition: rows[0].definition,
 			newLastInputsROWID, 
 			newLastOutputsROWID,
-			excludedUnits,
 			storage_size: rows[0].storage_size,
 			objStateVars,
 			arrAaResponses,
@@ -376,7 +353,6 @@ async function getAddressInfo(address, filter) {
 						definition: JSON.stringify(definition),
 						newLastInputsROWID, 
 						newLastOutputsROWID,
-						excludedUnits,
 						unitAssets,
 					});
 				},
@@ -389,7 +365,6 @@ async function getAddressInfo(address, filter) {
 						definition: false,
 						newLastInputsROWID, 
 						newLastOutputsROWID,
-						excludedUnits,
 						unitAssets,
 					});
 				}
@@ -412,7 +387,7 @@ async function getAasFromTemplate(address) {
 	return rows.length > 0 ? rows : null;
 }
 
-async function getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputsROWID, excludedUnits) {
+async function getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputsROWID) {
 	const arrQuerySql = [
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID, timestamp",
 		"FROM inputs, outputs, units",
@@ -431,43 +406,21 @@ async function getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputs
 	const lastRow = rows[rows.length - 1] || {};
 	const arrUnits = rows.map(function (row) {
 		return row.unit;
-	}).filter(unit => {
-		return !excludedUnits.includes(unit);
 	});
-	const timestamps = rows.map(row => {
-		return row.timestamp;
-	});
-	const newExcludedUnits = [];
-
-	if (timestamps.length) {
-		const unitRows = await db.query(
-			"SELECT DISTINCT unit FROM units JOIN inputs USING(unit) JOIN outputs USING(unit) WHERE timestamp IN (?) AND (inputs.asset = ? OR outputs.asset = ?)",
-			[timestamps, asset, asset]);
-
-		unitRows.forEach(row => {
-			if (arrUnits.includes(row.unit)) return;
-
-			if (!newExcludedUnits.includes(row.unit)) {
-				newExcludedUnits.push(row.unit);
-			}
-		});
-	}
 
 	return {
-		arrUnits: [...arrUnits, ...newExcludedUnits],
-		excludedUnits: newExcludedUnits,
+		arrUnits,
 		newLastInputsROWID: lastRow.inputsROWID,
 		newLastOutputsROWID: lastRow.outputsROWID
 	};
 }
 
-async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID, excludedUnits) {
+async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID) {
 	const {
 		arrUnits,
 		newLastInputsROWID,
 		newLastOutputsROWID,
-		excludedUnits: newExcludedUnits,
-	} = await getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputsROWID, excludedUnits);
+	} = await getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputsROWID);
 	if (arrUnits.length) {
 		const objAssetsCache = {};
 
@@ -541,7 +494,7 @@ async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID, ex
 
 			objTransactions = await getSpentOutputs(objTransactions);
 
-			return { objTransactions, newLastInputsROWID, newLastOutputsROWID, excludedUnits: newExcludedUnits, objAssetsCache, unitAssets }
+			return { objTransactions, newLastInputsROWID, newLastOutputsROWID, objAssetsCache, unitAssets }
 		} else {
 			return { objTransactions: null };
 		}
