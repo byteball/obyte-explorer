@@ -1176,7 +1176,9 @@ socket.on('assetInfo', (data) => {
 	$(`${pageBlockNames.address.blockList}`).hide();
 	excludedUnits = [];
 	
-	if (data && data.holders.length) {
+	if (data && data.notFound) {
+		showInfoMessage($('#infoMessageAssetNotFound').text());
+	} else if (data && data.holders.length) {
 		page = 'asset';
 		testnet = data.testnet;
 		assetInfoContent.setAssetInfoContent(data);

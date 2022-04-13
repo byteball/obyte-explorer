@@ -557,6 +557,10 @@ async function getAssetData(asset) {
 	
 	const objJoint = await getJoint(assetUnit);	
 
+	if (!objJoint) {
+		return { notFound: true };
+	}
+	
 	let isLimitedCap = false;
 	const message = objJoint.unit.messages.find(msg => msg.app === 'asset');
 	if(message && message.payload.cap) {
