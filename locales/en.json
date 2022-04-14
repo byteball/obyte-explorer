@@ -68,5 +68,6 @@
 	"from" : "From",
 	"tooManyVars" : "All state vars can't be displayed, please filter.",
 	"storageSize" : "Storage size",
-	"holders": "Holders"
+	"holders": "Holders",
+	"showMoreHolders": "Show more holders"
 }

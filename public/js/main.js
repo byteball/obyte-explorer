@@ -1053,12 +1053,16 @@ const assetInfoContent = {
 	name: '',
 	dollarPrice: null,
 	marketCap: null,
+	holdersIndex: 0,
 
 	setTitle: function () {
 		let nameConditionalBlock = this.data.assetUnit;
 
 		if (this.data.name) {
-			nameConditionalBlock = this.data.name + '<span style="font-weight: normal"> - view on <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + this.data.name + '" target="_blank"> tokens.ooo </a></span>';
+			nameConditionalBlock = this.data.name
+			if (this.data.name !== 'Bytes') {
+				nameConditionalBlock += '<span style="font-weight: normal"> - view on <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + this.data.name + '" target="_blank"> tokens.ooo </a></span>';
+			}
 		}
 		
 		let resultStr = '<div title="' + this.data.assetUnit + '">'+ nameConditionalBlock + '</div>';
@@ -1077,15 +1081,16 @@ const assetInfoContent = {
 
 		$('#assetData').html(resultStr);
 	},
-
-	setTopAddresses: function (decimals) {
-		let listUnspent = '';
+	
+	getHTMLCodeForHolders(holders) {
+		let listHolders = '';
 		const assetName = `<span>${this.name}</span>`;
-
-		this.data.holders.forEach(function (row, index) {
-			const place = `${index + 1}. `;
-			const balance = formatAmountUsingDecimalFormat(row.balance, decimals);
-			listUnspent += [
+		
+		holders.forEach((row) => {
+			this.holdersIndex++;
+			const place = `${this.holdersIndex}. `;
+			const balance = formatAmountUsingDecimalFormat(row.balance, this.data.decimals);
+			listHolders += [
 				`<div>${place}`,
 				`<a href="#${row.address}">${row.address}</a> `,
 				`(<span class="numberFormat">${balance}</span> `,
@@ -1093,10 +1098,16 @@ const assetInfoContent = {
 				`</div>`
 			].join('');
 		});
+		
+		return listHolders;
+	},
 
-		$('#topHoldersList').html(listUnspent);
+	setTopAddresses: function () {
+		const listHolders = this.getHTMLCodeForHolders(this.data.holders);
+		
+		$('#topHoldersList').html(listHolders);
 
-		if (listUnspent !== '') {
+		if (listHolders !== '') {
 			$('#blockListTopHolders').show();
 			return;
 		}
@@ -1145,6 +1156,7 @@ const assetInfoContent = {
 	},
 
 	setAssetInfoContent: function (data) {
+		this.holdersIndex = 0;
 		this.data = data;
 		this.name = this.data.name ? this.data.name : this.data.assetUnit;
 		
@@ -1157,17 +1169,49 @@ const assetInfoContent = {
 		this.setStatsInfo();
 		
 		if (this.data.holders.length) {
-			this.setTopAddresses(this.data.decimals);
+			this.setTopAddresses();
+			if (this.data.endHolders) {
+				$('#showMoreHolders').hide();
+			} else {
+				$('#showMoreHolders').show();
+			}
 		}
 		
 		if (Object.keys(this.data.transactionsData.objTransactions).length) {
 			this.setTransactions();
 			this.setAdditionalData();
 		}
+		formatAllNumbers();
 	},
+
+	getMoreHolders: function () {
+		$('#showMoreHolders').hide();
+		const currHash = getUrlHashKey();
+		socket.emit('nextPageAssetHolders', {
+			asset: currHash.slice(8),
+			type: this.data.typeOfHolders,
+			offset: this.holdersIndex,
+		});
+	},
+	setMoreHolders: function (holders, end) {
+		const listHolders = this.getHTMLCodeForHolders(holders);
+		$('#topHoldersList').append(listHolders);
+
+		if (end) {
+			$('#showMoreHolders').hide();
+		} else {
+			$('#showMoreHolders').show();
+		}
+		formatAllNumbers();
+	}
+}
+
+function showMoreHolders() {
+	assetInfoContent.getMoreHolders();
 }
 
 socket.on('assetInfo', (data) => {
+	$(window).scrollTop(0);
 	$('#loader').hide();
 	$(`${pageBlockNames.address.info}`).hide();
 	$(`${pageBlockNames.address.blockList}`).hide();
@@ -1192,6 +1236,10 @@ socket.on('assetInfo', (data) => {
 	
 	if (!nextPageTransactionsEnd && $('#tableListAssetTransactions').height() < $(window).height()) getNextPageTransactions();
 })
+
+socket.on('nextPageAssetHolders', function (data) {
+	assetInfoContent.setMoreHolders(data.holders, data.end);
+});
 
 socket.on('new', function(data) {
 	if (data.nodes.length) {
@@ -1536,6 +1584,7 @@ function changeAsset(sel) {
 }
 
 socket.on('addressInfo', function(data) {
+	$(window).scrollTop(0);
 	$('#loader').hide();
 	$(`${pageBlockNames.asset.info}`).hide();
 	$(`${pageBlockNames.asset.blockList}`).hide();

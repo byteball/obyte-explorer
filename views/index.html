@@ -226,11 +226,14 @@
 		</div>
 	</div>
 	<div class="row" id="blockListTopHolders" style="margin-top: 50px">
-		<div class="infoTitle" onclick="showHideBlock(event, 'topHoldersList')">
+		<div class="infoTitle" onclick="showHideBlock(event, 'topHoldersBlock')">
 			<%= i18n.__('holders') %>
 			<div class="infoTitleImg"></div>
 		</div>
-		<div id="topHoldersList"></div>
+		<div id="topHoldersBlock">
+			<div id="topHoldersList"></div>
+			<span id="showMoreHolders" onclick="showMoreHolders()"><%= i18n.__('showMoreHolders') %></span>
+		</div>
 	</div>
 	<div class="row" style="margin-top: 50px">
 		<div class="infoTitle" id="titleListAssetTransactions" style="display: none" onclick="showHideBlock(event, 'tableListAssetTransactions')">

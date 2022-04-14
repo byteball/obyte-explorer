@@ -12,6 +12,7 @@ exports.storage = 'sqlite';
 
 exports.aaResponsesListed = 10;
 exports.aasFromTemplateListed = 50;
+exports.balanceDumpIntervalInHours = 12;
 
 exports.tokenRegistryAA = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
 

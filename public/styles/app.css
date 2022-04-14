@@ -370,6 +370,13 @@ label {
 	margin-top: 50px;
 }
 
+#showMoreHolders {
+	color: #2a7fb9;
+	margin: 4px 0;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
 #listUnits > tr > td:first-child {
 	width: 45%;
 }

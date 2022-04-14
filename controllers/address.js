@@ -391,8 +391,8 @@ async function getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputs
 	const arrQuerySql = [
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID, timestamp",
 		"FROM inputs, outputs, units",
-		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs INDEXED BY inputsIndexByAssetType WHERE asset = ? AND ROWID < ? ORDER BY ROWID DESC LIMIT 0, 5))",
-		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE asset = ? AND ROWID < ? AND (is_spent=1 OR is_spent=0) ORDER BY ROWID DESC LIMIT 0, 5)))",
+		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE ROWID < ? " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + " ORDER BY ROWID DESC LIMIT 0, 5))",
+		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE ROWID < ? " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + " AND (is_spent=1 OR is_spent=0) ORDER BY ROWID DESC LIMIT 0, 5)))",
 		"AND inputs.unit = outputs.unit",
 		"AND units.unit = inputs.unit",
 		"GROUP BY inputs.unit",
@@ -401,7 +401,7 @@ async function getUnitsForAssetsTransactions(asset, lastInputsROWID, lastOutputs
 
 	const rows = await db.query(
 		arrQuerySql.join(" \n"),
-		[asset, lastInputsROWID, asset, lastOutputsROWID]);
+		[lastInputsROWID, lastOutputsROWID]);
 	
 	const lastRow = rows[rows.length - 1] || {};
 	const arrUnits = rows.map(function (row) {
@@ -503,53 +503,109 @@ async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID) {
 	}
 }
 
-async function getAssetData(asset) {	
-	const assetUnit = await getAssetUnit(asset) || asset;
-
-	const assetData = { assetUnit, holders: [], assetTransactions: [] };
+async function getAssetHolders(asset, type, offset) {
+	const lAsset = asset === 'bytes' ? 'base' : asset;
 	
-	const objJoint = await getJoint(assetUnit);	
-
-	if (!objJoint) {
-		return { notFound: true };
-	}
-	
-	let isLimitedCap = false;
-	const message = objJoint.unit.messages.find(msg => msg.app === 'asset');
-	if(message && message.payload.cap) {
-		isLimitedCap = true;
-	}
-
-	const rows = await db.query(
-		"SELECT address, asset, SUM(amount) AS balance \n\
-		FROM outputs INDEXED BY outputsIndexByAsset JOIN units USING(unit) \n\
-		WHERE is_spent=0 AND asset=? AND sequence='good' \n\
-		GROUP BY address, asset	ORDER BY balance DESC", [assetUnit]);
-
-	if (rows.length) {
-		const assetNameAndDecimals = await getAssetNameAndDecimals(assetUnit);
-
-		if (assetNameAndDecimals) {
-			assetData.name = assetNameAndDecimals.name;
-			assetData.decimals = assetNameAndDecimals.decimals;			
-		}
-
-		let holders = rows.map(row => {
+	if (type === 'large') {
+		const rowsBalances = await db.query("SELECT * FROM balances WHERE asset = ? ORDER BY balance DESC LIMIT " + offset + ", 100", [lAsset]);
+		
+		return rowsBalances.map(row => {
 			return {
 				address: row.address,
-				asset: row.asset,
+				asset: row.asset === 'base' ? 'bytes' : row.asset,
 				balance: row.balance,
 			}
 		});
-		if (!isLimitedCap) {
-			const author = objJoint.unit.authors[0].address;
-			holders = holders.filter(row => row.address !== author);
-		}
-		
-		assetData.holders = holders;
-		assetData.supply = (holders.reduce((total, holder) => total + holder.balance, 0));
-		assetData.transactionsData = await getAssetTransactions(assetUnit, BIGINT, BIGINT, []);
 	}
+
+	const rowsBalances = await db.query(
+		"SELECT address, asset, SUM(amount) AS balance \n\
+		FROM outputs INDEXED BY outputsIndexByAsset JOIN units USING(unit) \n\
+		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + " AND sequence='good' \n\
+		GROUP BY address, asset	ORDER BY balance DESC LIMIT " + offset + ", 100");
+
+	return rowsBalances.map(row => {
+		return {
+			address: row.address,
+			asset: row.asset || 'bytes',
+			balance: row.balance,
+		}
+	});
+}
+
+async function getSupplyForSmallAsset(asset) {
+	const rows = await db.query(
+		"SELECT SUM(amount) AS supply \n\
+		FROM outputs INDEXED BY outputsIndexByAsset JOIN units USING(unit) \n\
+		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + " AND sequence='good'");
+	
+	return rows[0].supply;
+}
+
+async function getAssetHoldersAndSupply(asset, offset = 0) {
+	const lAsset = asset === 'bytes' ? 'base' : asset;
+	const rowsBalancesForLength = await db.query("SELECT COUNT(*) AS count, SUM(balance) AS supply FROM balances WHERE asset = ?", [lAsset]);
+	const count = rowsBalancesForLength[0].count;
+	let supply = rowsBalancesForLength[0].supply;
+	const type = count > 1000 ? 'large' : 'small';
+	const holders = await getAssetHolders(asset, type, offset);
+	
+	if(type === 'small') {
+		supply = await getSupplyForSmallAsset(asset);
+	}
+	
+	return {
+		holders,
+		type,
+		supply,
+	}
+}
+
+async function getAssetData(asset) {
+	let assetUnit = await getAssetUnit(asset) || asset;
+
+	const assetData = { assetUnit, holders: [], assetTransactions: [] };
+
+	const objJoint = await getJoint(assetUnit);
+	let isLimitedCap = false;
+
+	if (assetUnit === 'base') assetUnit = 'bytes';
+
+	if (assetUnit !== 'bytes') {
+		if (!objJoint) {
+			return { notFound: true };
+		}
+		const message = objJoint.unit.messages.find(msg => msg.app === 'asset');
+		if (message && message.payload.cap) {
+			isLimitedCap = true;
+		}
+	} else {
+		isLimitedCap = true;
+	}
+
+	if (assetUnit !== 'bytes') {
+		const assetNameAndDecimals = await getAssetNameAndDecimals(assetUnit);
+		if (assetNameAndDecimals) {
+			assetData.name = assetNameAndDecimals.name;
+			assetData.decimals = assetNameAndDecimals.decimals;
+		}
+	} else {
+		assetData.name = 'Bytes';
+		assetData.decimals = 0;
+	}
+
+	let { holders, type, supply } = await getAssetHoldersAndSupply(assetUnit, 0);
+	if (!isLimitedCap) {
+		const author = objJoint.unit.authors[0].address;
+		holders = holders.filter(row => row.address !== author);
+	}
+
+	assetData.holders = holders;
+	assetData.typeOfHolders = type;
+	assetData.offsetForHolders = 100;
+	assetData.endHolders = holders.length < 100;
+	assetData.supply = supply;
+	assetData.transactionsData = await getAssetTransactions(assetUnit, BIGINT, BIGINT, []);
 
 	assetData.end = assetData.assetTransactions.objTransactions ? Object.keys(assetData.assetTransactions.objTransactions).length < 5 : false;
 
@@ -560,3 +616,4 @@ exports.getAddressInfo = getAddressInfo;
 exports.getAddressTransactions = getAddressTransactions;
 exports.getAssetTransactions = getAssetTransactions;
 exports.getAssetData = getAssetData;
+exports.getAssetHolders = getAssetHolders;

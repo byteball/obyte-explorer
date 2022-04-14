@@ -18,6 +18,7 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var ws = require('./controllers/ws');
+const BalanceDumpService = require('./services/BalanceDumpService');
 var i18nModule = require("i18n");
 let exchange_rates = {};
 
@@ -76,6 +77,13 @@ io.on('connection', function(socket) {
 	socket.on('highlightNode', ws.highlightNode);
 	socket.on('nextPageTransactions', ws.nextPageTransactions);
 	socket.on('nextPageAssetTransactions', ws.nextPageAssetTransactions);
+	socket.on('nextPageAssetHolders', ws.nextPageAssetHolders);
 });
 
 server.listen(conf.webPort);
+
+async function start() {
+	const balanceDumpService = new BalanceDumpService();
+	await balanceDumpService.start();
+}
+start();

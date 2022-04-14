@@ -211,6 +211,18 @@ async function nextPageAssetTransactions(data) {
 	});
 }
 
+async function nextPageAssetHolders(data) {
+	const ws = this;
+
+	const assetUnit = await getAssetUnit(data.asset) || data.asset;
+	const holders = await address.getAssetHolders(assetUnit, data.type, data.offset);
+
+	ws.emit('nextPageAssetHolders', {
+		holders,
+		end: holders.length < 100,
+	});
+}
+
 exports.start = start;
 exports.next = next;
 exports.prev = prev;
@@ -219,3 +231,4 @@ exports.info = info;
 exports.highlightNode = highlightNode;
 exports.nextPageTransactions = nextPageTransactions;
 exports.nextPageAssetTransactions = nextPageAssetTransactions;
+exports.nextPageAssetHolders = nextPageAssetHolders;
