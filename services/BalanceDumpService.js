@@ -12,8 +12,8 @@ class BalanceDumpService {
 
 	async start() {
 		const hours = await BalanceDumpService.getTimeBeforeDumpInHours();
-		console.log('hours', hours);
-		if (hours >= conf.balanceDumpIntervalInHours) {
+
+		if (hours === 0 || hours >= conf.balanceDumpIntervalInHours) {
 			return this.startDump();
 		}
 
