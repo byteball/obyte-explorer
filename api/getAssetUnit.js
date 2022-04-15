@@ -1,7 +1,7 @@
 const getAAStateVar = require('../helpers/getAAStateVar');
 
 module.exports = async (name) => {
-	if (name === 'base') {
+	if (name === 'base' || name.toLowerCase() === 'gbyte') {
 		return 'bytes';
 	}
 	

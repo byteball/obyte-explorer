@@ -568,9 +568,7 @@ async function getAssetData(asset) {
 
 	const objJoint = await getJoint(assetUnit);
 	let isLimitedCap = false;
-
-	if (assetUnit === 'base') assetUnit = 'bytes';
-
+	
 	if (assetUnit !== 'bytes') {
 		if (!objJoint) {
 			return { notFound: true };
