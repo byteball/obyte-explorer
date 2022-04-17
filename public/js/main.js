@@ -1174,12 +1174,12 @@ const assetInfoContent = {
 			for (let transaction of transactionsList) {
 				for (let i = this.transactionsMeta.length - 1; i >= 0; i--) {
 					if (this.transactionsMeta[i].timestamp > transaction.timestamp) {
-						addTransactionInListTransactions(this.transactionsMeta, transaction, i);
+						addTransactionInListTransactions('asset', this.transactionsMeta, transaction, i);
 						this.transactionsMeta.splice(i + 1, 0, transaction);
 						break;
 					} else if(this.transactionsMeta[i].timestamp === transaction.timestamp) {
 						if (this.transactionsMeta[i].rowid > transaction.rowid) {
-							addTransactionInListTransactions(this.transactionsMeta, transaction, i);
+							addTransactionInListTransactions('asset', this.transactionsMeta, transaction, i);
 							this.transactionsMeta.splice(i + 1, 0, transaction);
 							break;
 						}
