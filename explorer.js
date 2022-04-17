@@ -13,6 +13,7 @@ require('./relay');
 var conf = require('ocore/conf.js');
 var eventBus = require('ocore/event_bus.js');
 var network = require('ocore/network.js');
+const device = require('ocore/device');
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
@@ -46,9 +47,12 @@ app.get('/', function(req, res) {
 });
 
 if (conf.initial_peers) {
-	network.findOutboundPeerOrConnect(conf.initial_peers[0], (err, ws) => {
+	const firstPeer = conf.initial_peers[0];
+	const hubAddress = firstPeer.startsWith('wss://') ? firstPeer.substring(6) : firstPeer.substring(5);
+	device.setDeviceHub(hubAddress);
+	network.findOutboundPeerOrConnect(firstPeer, (err, ws) => {
 		if (err)
-			return console.log('failed to connect to initial peer ' + conf.initial_peers[0] + ': ' + err);
+			return console.log('failed to connect to initial peer ' + firstPeer + ': ' + err);
 		ws.bLoggedIn = true;
 
 		network.sendRequest(ws, 'hub/get_exchange_rates', null, null, (ws, err, result) => {
