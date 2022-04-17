@@ -1082,7 +1082,7 @@ const assetInfoContent = {
 
 	setStatsInfo: function () {
 		const supply = formatAmountUsingDecimalFormat(this.data.supply, this.data.decimals);
-		let resultStr =`<div>Total supply: <span class="numberFormat">${supply}</span> ${this.name}</div>`;
+		let resultStr =`<div>Total supply: <span class="numberFormat">${supply}</span> ${this.name === 'Bytes' ? 'GBYTE' : this.name}</div>`;
 		
 		if (this.dollarPrice !== null) {
 			resultStr += `<div>Price: $<span class="numberFormat">${Number(this.dollarPrice.toPrecision(6))}</span></div>`;
@@ -1195,9 +1195,17 @@ const assetInfoContent = {
 		this.data = data;
 		this.name = this.data.name ? this.data.name : this.data.assetUnit;
 		
-		if(exchangeRates[`${this.data.assetUnit}_USD`]) {
-			this.dollarPrice = exchangeRates[`${this.data.assetUnit}_USD`];
-			this.marketCap = this.dollarPrice * (this.data.supply / 10 ** this.data.decimals);
+		if (this.data.assetUnit === 'bytes') {
+			if(exchangeRates[`GBYTE_USD`]) {
+				this.data.supply = this.data.supply / 10 ** 9;
+				this.dollarPrice = exchangeRates[`GBYTE_USD`];
+				this.marketCap = this.dollarPrice * this.data.supply;
+			}
+		} else {
+			if(exchangeRates[`${this.data.assetUnit}_USD`]) {
+				this.dollarPrice = exchangeRates[`${this.data.assetUnit}_USD`];
+				this.marketCap = this.dollarPrice * (this.data.supply / 10 ** this.data.decimals);
+			}
 		}
 		
 		this.setTitle();
