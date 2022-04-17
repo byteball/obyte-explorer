@@ -8,7 +8,9 @@ const {
 } = require('../helpers/time');
 
 class BalanceDumpService {
-	timeout;
+	constructor() {
+		this.timeout = null;
+	}
 
 	async start() {
 		const hours = await BalanceDumpService.getTimeBeforeDumpInHours();

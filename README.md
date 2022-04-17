@@ -4,7 +4,7 @@ View the DAG and all public transactions
 
 #### Installation
 
-Install node.js 11+, clone the repository, then
+Install node.js 10+, clone the repository, then
 
 1) `yarn`
 2) `node migration.js`
