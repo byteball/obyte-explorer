@@ -160,7 +160,7 @@ async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID
 		const strFilterAsset = filter.asset;
 
 		const arrQuerySql = [
-			"SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type,\n\
+			"SELECT units.ROWID AS rowid, inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type,\n\
 			CASE timestamp \n\
 				WHEN 0 THEN " + db.getUnixTimestamp("units.creation_date") + " ELSE timestamp \n\
 				END AS timestamp \n\
@@ -195,7 +195,7 @@ async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID
 							objTransactions[key].assetDecimals = objResult.decimals;
 						}
 					}
-					const unitAssetKey = `${row.unit}_${row.timestamp}`;
+					const unitAssetKey = `${row.unit}_${row.timestamp}_${row.rowid}`;
 					if (!unitAssets[unitAssetKey]) {
 						unitAssets[unitAssetKey] = [];
 					}
@@ -425,7 +425,7 @@ async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID) {
 		const objAssetsCache = {};
 
 		const arrQuerySql = [
-			"SELECT inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type,\n\
+			"SELECT units.ROWID AS rowid, inputs.unit, units.creation_date, inputs.address, outputs.address AS addressTo, outputs.amount, inputs.asset, outputs.asset AS assetTo, outputs.output_id, outputs.message_index, outputs.output_index, inputs.type,\n\
 			CASE timestamp \n\
 				WHEN 0 THEN " + db.getUnixTimestamp("units.creation_date") + " ELSE timestamp \n\
 				END timestamp \n\
@@ -465,7 +465,7 @@ async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID) {
 						}
 					}
 
-					const unitAssetKey = `${row.unit}_${row.timestamp}`;
+					const unitAssetKey = `${row.unit}_${row.timestamp}_${row.rowid}`;
 					if (!unitAssets[unitAssetKey]) {
 						unitAssets[unitAssetKey] = [];
 					}

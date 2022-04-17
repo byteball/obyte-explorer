@@ -8,22 +8,22 @@ const {
 } = require('../helpers/time');
 
 class BalanceDumpService {
-	interval;
+	timeout;
 
 	async start() {
 		const hours = await BalanceDumpService.getTimeBeforeDumpInHours();
 
 		if (hours === 0 || hours >= conf.balanceDumpIntervalInHours) {
-			return this.startDump();
+			return setTimeout(this.startDump.bind(this), 10);
 		}
 
 		const hoursBeforeDump = conf.balanceDumpIntervalInHours - hours;
-		this.interval = setInterval(this.startDump, hoursBeforeDump * HOUR_IN_MS);
+		this.timeout = setTimeout(this.startDump.bind(this), hoursBeforeDump * HOUR_IN_MS);
 	}
 
 	async startDump() {
-		if (this.interval) {
-			clearInterval(this.interval);
+		if (this.timeout) {
+			clearTimeout(this.timeout);
 		}
 		console.log('balance dump: start', new Date());
 
@@ -39,7 +39,7 @@ class BalanceDumpService {
 		conn.release();
 		
 		console.log('balance dump: done', new Date());
-		this.interval = setInterval(this.startDump, conf.balanceDumpIntervalInHours * HOUR_IN_MS);
+		this.timeout = setTimeout(this.startDump.bind(this), conf.balanceDumpIntervalInHours * HOUR_IN_MS);
 	}
 
 	static async getTimeBeforeDumpInHours() {

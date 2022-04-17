@@ -1048,12 +1048,22 @@ socket.on('info', function(data) {
 
 socket.on('update', getNew);
 
+function addTransactionInListTransactions(type, transactionsMeta, transaction, i) {
+	if (transactionsMeta.length === i + 1) {
+		$(type === 'address' ? '#listUnits' :'#listAssetUnits').append(transaction.html);
+	} else {
+		const beforeBlock = transactionsMeta[i + 1];
+		$(`#lt_${beforeBlock.timestamp}_${beforeBlock.rowid}`).before(transaction.html);
+	}
+}
+
 const assetInfoContent = {
 	data: {},
 	name: '',
 	dollarPrice: null,
 	marketCap: null,
 	holdersIndex: 0,
+	transactionsMeta: [],
 
 	setTitle: function () {
 		let nameConditionalBlock = this.data.assetUnit;
@@ -1116,14 +1126,25 @@ const assetInfoContent = {
 	},
 
 	setTransactions: function () {
-		const transactionsList = generateTransactionsList(
+		let transactionsList = generateTransactionsList(
 			this.data.transactionsData.objTransactions,
 			null,
 			null,
 			this.data.transactionsData.unitAssets);
 
 		if (transactionsList) {
-			$('#listAssetUnits').html(transactionsList);
+			let html = '';
+			transactionsList = transactionsList.sort((a, b) => {
+				return b.timestamp - a.timestamp || b.rowid - a.rowid;
+			});
+			transactionsList.forEach(transaction => {
+				html += transaction.html;
+				this.transactionsMeta.push({
+					timestamp: transaction.timestamp,
+					rowid: transaction.rowid,
+				})
+			});
+			$('#listAssetUnits').html(html);
 			$('#titleListAssetTransactions').show();
 			return;
 		}
@@ -1148,10 +1169,26 @@ const assetInfoContent = {
 	
 	appendTransactions: function (data) {
 		this.appendAdditionalData(data);
-		const transactionsList = generateTransactionsList(data.transactionsData.objTransactions, null, null, data.transactionsData.unitAssets);
-		
-		if (transactionsList) {
-			$('#listAssetUnits').append(transactionsList);
+		const transactionsList = generateTransactionsList(data.transactionsData.objTransactions, null, null, data.transactionsData.unitAssets, true);
+		if (transactionsList.length) {
+			for (let transaction of transactionsList) {
+				for (let i = this.transactionsMeta.length - 1; i >= 0; i--) {
+					if (this.transactionsMeta[i].timestamp > transaction.timestamp) {
+						addTransactionInListTransactions(this.transactionsMeta, transaction, i);
+						this.transactionsMeta.splice(i + 1, 0, transaction);
+						break;
+					} else if(this.transactionsMeta[i].timestamp === transaction.timestamp) {
+						if (this.transactionsMeta[i].rowid > transaction.rowid) {
+							addTransactionInListTransactions(this.transactionsMeta, transaction, i);
+							this.transactionsMeta.splice(i + 1, 0, transaction);
+							break;
+						}
+					}
+				}
+			}
+			setTimeout(() => {
+				$('.new_transaction').css("background-color", "#fff");
+			}, 2000);
 		}
 	},
 
@@ -1294,16 +1331,19 @@ function generateAasFromTemplateList(arrAasFromTemplate){
 	return listAasFromTemplate;
 }
 
-function generateTransactionsList(objTransactions, address, filter, unitAssets) {	
+function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {	
 	filter = filter || {};
-	var transaction, addressOut, _addressTo, listTransactions = '';
+	var transaction, addressOut, _addressTo, listTransactions = [];
 	var filterAssetKey = filter.asset;
 
 	for(let key in unitAssets) {
 		const unit = key.split('_')[0];
 		const timestamp = parseInt(key.split('_')[1]);
+		const rowid = parseInt(key.split('_')[2]);
 		
-		listTransactions += '<tr>' +
+		let html = '';
+		
+		html += '<tr id="lt_'+ timestamp +'_'+ rowid +'">' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
 			'<div>'+ $('#unitID').text() +' <a href="#' + unit + '">' + unit + '</a></div>' +
 			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment.unix(timestamp).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
@@ -1311,7 +1351,7 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets) 
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>';
 
 		unitAssets[key].forEach(asset => {
-			listTransactions += '<tr><td>';
+			html += '<tr class="'+ (isNew ? 'new_transaction' : '') +'"><td>';
 				
 			const key = `${unit}_${asset}`;
 			transaction = objTransactions[key];
@@ -1333,26 +1373,26 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets) 
 				const amount = formatAmountUsingDecimalFormat(objFrom.amount, assetDecimals);
 				var addressOut = objFrom.address == address  && page === 'address' ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
 				if (objFrom.issue) {
-					listTransactions += '<div class="transactionUnitListAddress">' +
+					html += '<div class="transactionUnitListAddress">' +
 						'<div>' + addressOut + '</div>' +
 						'<div>Issue <span class="numberFormat">' + amount + '</span> <span class="unit">' + assetName + '</span></div>' +
 						'<div>serial number: ' + objFrom.serial_number + '</div></div>';
 				} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
 					var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
 					if (commissionName) {
-						listTransactions += '<div class="transactionUnitListAddress">' +
+						html += '<div class="transactionUnitListAddress">' +
 							'<div>' + addressOut + ' ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
 							' to mci ' + objFrom.to_mci + '.' +
 							' Sum: <span class="numberFormat">' + objFrom.sum + '</span> bytes</div>' +
 							'</div>';
 					}
 				} else {					
-					listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
+					html += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
 						'<div>(<span class="numberFormat">' + amount + '</span> ' + assetName + ')</div></div>';
 				}
 			});
 			
-			listTransactions += '</td><td><img width="32" src="' + (transaction.spent ? '/img/red_right2.png' : '/img/green_right2.png') + '"></td><td>';
+			html += '</td><td><img width="32" src="' + (transaction.spent ? '/img/red_right2.png' : '/img/green_right2.png') + '"></td><td>';
 			
 			for (var k in transaction.to) {
 				_addressTo = transaction.to[k];
@@ -1360,14 +1400,19 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets) 
 
 				addressOut = _addressTo.address == address && page === 'address' ? '<span class="thisAddress">' + _addressTo.address + '</span>' : '<a href="#' + _addressTo.address + '">' + _addressTo.address + '</a>';
 
-				listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
+				html += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
 					'<div>(<span class="numberFormat">' + amount + '</span> <span class="unit">' + assetName + '</span>, ' +
 					(_addressTo.spent === 0 ? 'not spent' : 'spent in ' + '<a href="#' + _addressTo.spent + '">' + _addressTo.spent + '</a>') +
 					')</div></div>';
 			}
 
-			listTransactions += '</td></tr><tr><th colspan="3"><div style="margin: 10px"></div></th></tr>'
-		})
+			html += '</td></tr><tr><th colspan="3"><div style="margin: 10px"></div></th></tr>'
+		});
+		listTransactions.push({
+			timestamp,
+			rowid,
+			html
+		});
 	}
 	
 	return listTransactions;
@@ -1377,6 +1422,8 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets) 
 var addressInfoContent = {
 	currAddress: null,
 	currAssetKey: null,
+	transactionsMeta: [],
+	
 	setAddress: function (data) {
 		this.currAddress = data.address;
 
@@ -1536,7 +1583,18 @@ var addressInfoContent = {
 			asset: this.currAssetKey,
 		}, data.unitAssets);
 		if (transactionsList) {
-			$('#listUnits').html(transactionsList);
+			let html = '';
+			transactionsList = transactionsList.sort((a, b) => {
+				return b.timestamp - a.timestamp || b.rowid - a.rowid;
+			});
+			transactionsList.forEach(transaction => {
+				html += transaction.html;
+				this.transactionsMeta.push({
+					timestamp: transaction.timestamp,
+					rowid: transaction.rowid,
+				})
+			});
+			$('#listUnits').html(html);
 			$('#titleListTransactions').show();
 		} else {
 			$('#listUnits').html('');
@@ -1552,9 +1610,28 @@ var addressInfoContent = {
 		this.appendAdditionalData(data);
 		var transactionsList = generateTransactionsList(data.objTransactions, data.address, {
 			asset: this.currAssetKey,
-		}, data.unitAssets);
+		}, data.unitAssets, true);
 		if (transactionsList) {
-			$('#listUnits').append(transactionsList);
+			if (transactionsList.length) {
+				for (let transaction of transactionsList) {
+					for (let i = this.transactionsMeta.length - 1; i >= 0; i--) {
+						if (this.transactionsMeta[i].timestamp > transaction.timestamp) {
+							addTransactionInListTransactions('address', this.transactionsMeta, transaction, i);
+							this.transactionsMeta.splice(i + 1, 0, transaction);
+							break;
+						} else if(this.transactionsMeta[i].timestamp === transaction.timestamp) {
+							if (this.transactionsMeta[i].rowid > transaction.rowid) {
+								addTransactionInListTransactions('address', this.transactionsMeta, transaction, i);
+								this.transactionsMeta.splice(i + 1, 0, transaction);
+								break;
+							}
+						}
+					}
+				}
+				setTimeout(() => {
+					$('.new_transaction').css("background-color", "#fff");
+				}, 2000);
+			}
 		}
 	},
 	appendAdditionalData: function (data) {
