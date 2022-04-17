@@ -536,8 +536,7 @@ label {
 }
 
 .new_transaction {
-	background-color: #f1f1f1;
-	transition: 1s;
+	display: none;
 }
 
 /* adaptive */

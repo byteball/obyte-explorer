@@ -1186,9 +1186,7 @@ const assetInfoContent = {
 					}
 				}
 			}
-			setTimeout(() => {
-				$('.new_transaction').css("background-color", "#fff");
-			}, 2000);
+			$('.new_transaction').show(1500);
 		}
 	},
 
@@ -1343,7 +1341,7 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets, 
 		
 		let html = '';
 		
-		html += '<tr id="lt_'+ timestamp +'_'+ rowid +'">' +
+		html += '<tr id="lt_'+ timestamp +'_'+ rowid +'" class="'+ (isNew ? 'new_transaction' : '') +'">' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
 			'<div>'+ $('#unitID').text() +' <a href="#' + unit + '">' + unit + '</a></div>' +
 			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment.unix(timestamp).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
@@ -1628,9 +1626,7 @@ var addressInfoContent = {
 						}
 					}
 				}
-				setTimeout(() => {
-					$('.new_transaction').css("background-color", "#fff");
-				}, 2000);
+				$('.new_transaction').show(1500);
 			}
 		}
 	},
