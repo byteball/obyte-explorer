@@ -560,7 +560,34 @@ async function getAssetHoldersAndSupply(asset, offset = 0) {
 	}
 }
 
+async function getMetaOfPrivateAsset(asset) {
+	const rows = await db.query("SELECT unit, cap FROM assets WHERE is_private = 1 AND unit = ?", [asset]);
+	if (rows.length) {
+		return rows[0];
+	}
+	
+	return false;
+}
+
+function getAssetDataForPrivateAsset(metaOfPrivateAsset) {
+	const assetData = { isPrivate: true };
+	assetData.assetUnit = metaOfPrivateAsset.unit;
+	assetData.cap = metaOfPrivateAsset.cap;
+	assetData.end = true;
+	if (metaOfPrivateAsset.unit === constants.BLACKBYTES_ASSET) {
+		assetData.name = 'GBB';
+		assetData.decimals = 9;
+	}
+	
+	return assetData;
+}
+
 async function getAssetData(asset) {
+	const metaOfPrivateAsset = await getMetaOfPrivateAsset(asset);
+	if (metaOfPrivateAsset) {
+		return getAssetDataForPrivateAsset(metaOfPrivateAsset);
+	}
+	
 	let assetUnit = await getAssetUnit(asset) || asset;
 
 	const assetData = { assetUnit };

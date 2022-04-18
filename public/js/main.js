@@ -1070,7 +1070,7 @@ const assetInfoContent = {
 
 		if (this.data.name) {
 			nameConditionalBlock = this.data.name
-			if (this.data.name !== 'Bytes') {
+			if (this.data.name !== 'Bytes' && this.data.name !== 'GBB') {
 				nameConditionalBlock += '<span style="font-weight: normal"> - view on <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + this.data.name + '" target="_blank"> tokens.ooo </a></span>';
 			}
 		}
@@ -1081,8 +1081,19 @@ const assetInfoContent = {
 	},
 
 	setStatsInfo: function () {
+		if (!this.data.supply) {
+			$('#assetData').html('');
+			return;
+		}
 		const supply = formatAmountUsingDecimalFormat(this.data.supply, this.data.decimals);
-		let resultStr =`<div>Total supply: <span class="numberFormat">${supply}</span> ${this.name === 'Bytes' ? 'GBYTE' : this.name}</div>`;
+		let name = this.name;
+		if (this.name === 'Bytes') {
+			name = 'GBYTE';
+		}
+		if (this.name === 'GBB') {
+			name = 'GBB';
+		}
+		let resultStr =`<div>Total supply: <span class="numberFormat">${supply}</span> ${name}</div>`;
 		
 		if (this.dollarPrice !== null) {
 			resultStr += `<div>Price: $<span class="numberFormat">${Number(this.dollarPrice.toPrecision(6))}</span></div>`;
@@ -1190,19 +1201,43 @@ const assetInfoContent = {
 		}
 	},
 
+	showInfoAboutPrivateAsset: function (isShow) {
+		if (isShow) {
+			$("#infoAboutPrivateAsset").show();
+		} else {
+			$("#infoAboutPrivateAsset").hide();
+		}
+	},
+
 	setAssetInfoContent: function (data) {
 		this.holdersIndex = 0;
+		this.dollarPrice = null; 
+		this.marketCap = null;
 		this.data = data;
 		this.name = this.data.name ? this.data.name : this.data.assetUnit;
 		
 		if (this.data.assetUnit === 'bytes') {
-			if(exchangeRates[`GBYTE_USD`]) {
+			if (exchangeRates[`GBYTE_USD`]) {
 				this.data.supply = this.data.supply / 10 ** 9;
 				this.dollarPrice = exchangeRates[`GBYTE_USD`];
 				this.marketCap = this.dollarPrice * this.data.supply;
 			}
+		} else if (this.data.name && this.data.name === 'GBB') {
+			if (exchangeRates[`GBB_USD`]) {
+				this.data.supply = this.data.cap;
+				this.dollarPrice = exchangeRates[`GBB_USD`];
+				this.marketCap = this.dollarPrice * (this.data.supply / 10 ** 9);
+			}
+		} else if (this.data.isPrivate) {
+			if (this.data.cap) {
+				this.data.supply = this.data.cap;
+				if (exchangeRates[`${this.data.assetUnit}_USD`]) {
+					this.dollarPrice = exchangeRates[`${this.data.assetUnit}_USD`];
+					this.marketCap = this.dollarPrice * this.data.supply;
+				}
+			}
 		} else {
-			if(exchangeRates[`${this.data.assetUnit}_USD`]) {
+			if (exchangeRates[`${this.data.assetUnit}_USD`]) {
 				this.dollarPrice = exchangeRates[`${this.data.assetUnit}_USD`];
 				this.marketCap = this.dollarPrice * (this.data.supply / 10 ** this.data.decimals);
 			}
@@ -1210,7 +1245,16 @@ const assetInfoContent = {
 		
 		this.setTitle();
 		this.setStatsInfo();
-		
+
+		if (this.data.isPrivate) {
+			$('#listAssetUnits').html('');
+			$('#titleListAssetTransactions').hide();
+			$('#blockListTopHolders').hide();
+			this.showInfoAboutPrivateAsset(true);
+			formatAllNumbers();
+			return;
+		}
+
 		if (this.data.holders.length) {
 			this.setTopAddresses();
 			if (this.data.endHolders) {
@@ -1224,6 +1268,7 @@ const assetInfoContent = {
 			this.setTransactions();
 			this.setAdditionalData();
 		}
+		this.showInfoAboutPrivateAsset(false);
 		formatAllNumbers();
 	},
 
@@ -1261,7 +1306,7 @@ socket.on('assetInfo', (data) => {
 	
 	if (data && data.notFound) {
 		showInfoMessage($('#infoMessageAssetNotFound').text());
-	} else if (data && data.holders.length) {
+	} else if (data && (data.isPrivate || data.holders.length)) {
 		page = 'asset';
 		testnet = data.testnet;
 		assetInfoContent.setAssetInfoContent(data);
@@ -1936,7 +1981,7 @@ function getUrlHashKey() {
 	var currHashPrefix = '';
 	if (currHash) {
 		var currHashParts = currHash.split('?');
-		currHashPrefix = currHashParts[0];
+		currHashPrefix = currHashParts[0].replace(/%20/g, ' ');
 	}
 	return currHashPrefix;
 }

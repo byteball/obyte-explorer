@@ -69,5 +69,6 @@
 	"tooManyVars" : "All state vars can't be displayed, please filter.",
 	"storageSize" : "Storage size",
 	"holders": "Holders",
-	"showMoreHolders": "Show more holders"
+	"showMoreHolders": "Show more holders",
+	"infoAboutPrivateAsset": "This is a private asset, transaction information is not available"
 }
