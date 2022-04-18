@@ -8,7 +8,6 @@ var storage = require('ocore/storage.js');
 var conf = require('ocore/conf.js');
 const getAssetNameAndDecimals = require('../api/getAssetNameAndDecimals');
 const getAssetUnit = require('../api/getAssetUnit');
-const getJoint = require('../helpers/readJoint');
 
 async function getAmountForInfoAddress(objTransactions) {
 	var arrTransactionsUnits = [], key;
@@ -564,16 +563,16 @@ async function getAssetHoldersAndSupply(asset, offset = 0) {
 async function getAssetData(asset) {
 	let assetUnit = await getAssetUnit(asset) || asset;
 
-	const assetData = { assetUnit, holders: [], assetTransactions: [] };
+	const assetData = { assetUnit };
 
-	const objJoint = await getJoint(assetUnit);
+	const unit = await storage.readUnit(assetUnit);
 	let isLimitedCap = false;
 	
 	if (assetUnit !== 'bytes') {
-		if (!objJoint) {
+		if (!unit) {
 			return { notFound: true };
 		}
-		const message = objJoint.unit.messages.find(msg => msg.app === 'asset');
+		const message = unit.messages.find(msg => msg.app === 'asset');
 		if (message && message.payload.cap) {
 			isLimitedCap = true;
 		}
@@ -594,7 +593,7 @@ async function getAssetData(asset) {
 
 	let { holders, type, supply } = await getAssetHoldersAndSupply(assetUnit, 0);
 	if (!isLimitedCap) {
-		const author = objJoint.unit.authors[0].address;
+		const author = unit.authors[0].address;
 		holders = holders.filter(row => row.address !== author);
 	}
 
@@ -605,7 +604,7 @@ async function getAssetData(asset) {
 	assetData.supply = supply;
 	assetData.transactionsData = await getAssetTransactions(assetUnit, BIGINT, BIGINT, []);
 
-	assetData.end = assetData.assetTransactions.objTransactions ? Object.keys(assetData.assetTransactions.objTransactions).length < 5 : false;
+	assetData.end = assetData.transactionsData.objTransactions ? Object.keys(assetData.transactionsData.objTransactions).length < 5 : false;
 
 	return assetData;
 }
