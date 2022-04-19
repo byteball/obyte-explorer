@@ -1069,9 +1069,9 @@ const assetInfoContent = {
 		let nameConditionalBlock = this.data.assetUnit;
 
 		if (this.data.name) {
-			nameConditionalBlock = this.data.name
-			if (this.data.name !== 'Bytes' && this.data.name !== 'GBB') {
-				nameConditionalBlock += '<span style="font-weight: normal"> - view on <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + this.data.name + '" target="_blank"> tokens.ooo </a></span>';
+			nameConditionalBlock = this.data.name;
+			if (this.data.url) {
+				nameConditionalBlock += '<span style="font-weight: normal"> - view on <a href="' + this.data.url + '" target="_blank"> ' + this.data.urlName + ' </a></span>';
 			}
 		}
 		

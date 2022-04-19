@@ -582,6 +582,27 @@ function getAssetDataForPrivateAsset(metaOfPrivateAsset) {
 	return assetData;
 }
 
+async function getURLAndNameByAssetUnit(assetUnit) {
+	const rows = await db.query("SELECT asset, registry_address, name FROM asset_metadata WHERE asset = ?", [assetUnit]);
+	if (rows.length) {
+		if (conf.supportedRegistries[rows[0].registry_address]) {
+			const registryMeta = conf.supportedRegistries[rows[0].registry_address];
+			let url = registryMeta.url;
+			
+			if (registryMeta.type === 'unit') {
+				url += rows[0].asset;
+			}
+			if (registryMeta.type === 'symbol') {
+				url += rows[0].name;
+			}
+			
+			return { url, name: registryMeta.name };
+		}
+	}
+	
+	return null;
+} 
+
 async function getAssetData(asset) {
 	const metaOfPrivateAsset = await getMetaOfPrivateAsset(asset);
 	if (metaOfPrivateAsset) {
@@ -612,6 +633,12 @@ async function getAssetData(asset) {
 		if (assetNameAndDecimals) {
 			assetData.name = assetNameAndDecimals.name;
 			assetData.decimals = assetNameAndDecimals.decimals;
+			
+			const urlAndName = await getURLAndNameByAssetUnit(assetUnit);
+			if (urlAndName) {
+				assetData.url = urlAndName.url;
+				assetData.urlName = urlAndName.name;
+			}
 		}
 	} else {
 		assetData.name = 'Bytes';
