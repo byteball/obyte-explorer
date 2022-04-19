@@ -70,5 +70,5 @@
 	"storageSize" : "Storage size",
 	"holders": "Holders",
 	"showMoreHolders": "Show more holders",
-	"infoAboutPrivateAsset": "This is a private asset, transaction information is not available"
+	"infoAboutPrivateAsset": "This is a private asset, transaction history and holder list are not available"
 }
