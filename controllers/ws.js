@@ -4,6 +4,7 @@
 var db = require('ocore/db.js');
 var units = require('./units');
 var address = require('./address');
+const asset = require('./asset');
 const getAssetUnit = require('../api/getAssetUnit');
 
 async function start(data) {
@@ -78,7 +79,7 @@ async function start(data) {
 		});
 	}
 	else if (data.type === 'asset') {
-		const assetData = await address.getAssetData(data.asset);
+		const assetData = await asset.getAssetData(data.asset);
 		assetData.testnet = !!process.env.testnet;
 
 		ws.emit('assetInfo', assetData);
@@ -203,7 +204,7 @@ async function nextPageAssetTransactions(data) {
 	var ws = this;
 
 	const assetUnit = await getAssetUnit(data.asset) || data.asset;
-	const transactionsData = await address.getAssetTransactions(assetUnit, data.lastInputsROWID, data.lastOutputsROWID);
+	const transactionsData = await asset.getAssetTransactions(assetUnit, data.lastInputsROWID, data.lastOutputsROWID);
 	
 	ws.emit('nextPageTransactions', {
 		transactionsData,
@@ -215,7 +216,7 @@ async function nextPageAssetHolders(data) {
 	const ws = this;
 
 	const assetUnit = await getAssetUnit(data.asset) || data.asset;
-	const holders = await address.getAssetHolders(assetUnit, data.type, data.offset);
+	const holders = await asset.getAssetHolders(assetUnit, data.type, data.offset);
 
 	ws.emit('nextPageAssetHolders', {
 		holders,
