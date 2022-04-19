@@ -5,7 +5,7 @@ var db = require('ocore/db.js');
 var storage = require('ocore/storage.js');
 var async = require('async');
 var constants = require("ocore/constants.js");
-const getAssetNameAndDecimals = require('../helpers/getAssetNameAndDecimals');
+const getAssetNameAndDecimals = require('../api/getAssetNameAndDecimals');
 
 function getLastUnits(cb) {
 	var nodes = [];
@@ -377,6 +377,11 @@ async function setAssetNameAndDecimalsInMessages(messages) {
 	return messages;
 }
 
+async function checkIsAsset(unit) {
+	const rows = await db.query("SELECT unit FROM assets WHERE unit = ?", [unit]);
+	return !!rows.length;
+}
+
 function getInfoOnUnit(unit, cb) {
 	db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable FROM units WHERE unit = ?', [unit], function(unitProps) {
 		if (!unitProps.length)
@@ -394,6 +399,7 @@ function getInfoOnUnit(unit, cb) {
 										getAaResponses(unit, function(arrAaResponses){
 											getTriggerUnit(unit, async function(trigger_unit){
 												const messages = await setAssetNameAndDecimalsInMessages(objJoint.unit.messages);
+												const isAsset = await checkIsAsset(unit);
 												var objInfo = {
 													unit: unit,
 													sequence: sequence,
@@ -414,7 +420,8 @@ function getInfoOnUnit(unit, cb) {
 													timestamp: objJoint.unit.timestamp,
 													assocCommissions: assocCommissions,
 													arrAaResponses: arrAaResponses,
-													trigger_unit: trigger_unit
+													trigger_unit: trigger_unit,
+													isAsset
 												};
 												if (unitProps.is_stable){ 
 													var {full_node_confirmation_delay, light_node_confirmation_delay} = await getConfirmationDelays(objJoint);

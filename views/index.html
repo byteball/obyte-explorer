@@ -4,7 +4,7 @@
 	<title>Obyte Explorer</title>
 	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
 	<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&amp;subset=cyrillic" rel="stylesheet">
-	<link rel="stylesheet" href="/styles/app.css?v13">
+	<link rel="stylesheet" href="/styles/app.css?v16">
 	<link rel="icon" href="/img/icon_16x16@2x.png">
 </head>
 <body>
@@ -30,6 +30,7 @@
 	<div id="infoMessagePleaseEnter"><%= i18n.__('infoMessagePleaseEnter') %></div>
 	<div id="infoMessageUnitNotFound"><%= i18n.__('infoMessageUnitNotFound') %></div>
 	<div id="infoMessageAddressNotFound"><%= i18n.__('infoMessageAddressNotFound') %></div>
+	<div id="infoMessageAssetNotFound"><%= i18n.__('infoMessageAssetNotFound') %></div>
 	<div id="infoMessageUnitDeleted"><%= i18n.__('infoMessageUnitDeleted') %></div>
 	<div id="hiddenPayments"><%= i18n.__('hiddenPayments') %></div>
 	<div id="appTypePayment"><%= i18n.__('appTypePayment') %></div>
@@ -144,8 +145,9 @@
 		</div>
 	</div>
 </div>
+<div id="loader"><img src="/img/Spinner.gif" height="36"/></div>
 <div id="addressInfo">
-	<div id="addressClose" class="row"><a href="javascript:" onclick="closeAddress()"><%= i18n.__('closeButton') %></a></div>
+	<div id="addressClose" class="row"><a href="javascript:" onclick="closePage('address')"><%= i18n.__('closeButton') %></a></div>
 	<div class="row" id="infoAndBalanceAddress">
 		<div style="margin-bottom: 10px;font-weight: bold">
 			<div><span id="address"></span></div>
@@ -201,6 +203,51 @@
 		</table>
 	</div>
 </div>
+<div id="assetInfo">
+	<div id="assetClose" class="row"><a href="javascript:" onclick="closePage('asset')"><%= i18n.__('closeButton') %></a></div>
+	<div class="row" id="infoAndBalanceAsset">
+		<div style="margin-bottom: 10px;font-weight: bold">
+			<div><span id="asset"></span></div>
+		</div>
+		<div class="infoTitle hideTitle" id="definitionTitleInAsset" onclick="showHideBlock(event, 'definition')" style="display: none">
+			<%= i18n.__('labelDefinition') %>
+			<div class="infoTitleImg"></div>
+		</div>
+		<div class="infoTitle hideTitle" id="aasFromTemplateTitleInAsset" onclick="showHideBlock(event, 'aasFromTemplate')" style="display: none">
+			<%= i18n.__('labelAasFromTemplate') %>
+			<div class="infoTitleImg"></div>
+		</div>
+		<div class="infoTitle hideTitle" id="stateVarsTitleInAsset" onclick="showHideBlock(event, 'stateVarsDiv')" style="display: none">
+			<%= i18n.__('labelStateVars') %>
+			<div class="infoTitleImg"></div>
+		</div>
+		<div>
+			<div id="assetData" style="padding-top: 10px"></div>
+		</div>
+	</div>
+	<div class="row" id="blockListTopHolders" style="margin-top: 50px">
+		<div class="infoTitle" onclick="showHideBlock(event, 'topHoldersBlock')">
+			<%= i18n.__('holders') %>
+			<div class="infoTitleImg"></div>
+		</div>
+		<div id="topHoldersBlock">
+			<div id="topHoldersList"></div>
+			<span id="showMoreHolders" onclick="showMoreHolders()"><%= i18n.__('showMoreHolders') %></span>
+		</div>
+	</div>
+	<div class="row" style="margin-top: 50px">
+		<div class="infoTitle" id="titleListAssetTransactions" style="display: none" onclick="showHideBlock(event, 'tableListAssetTransactions')">
+			<%= i18n.__('transactions') %>
+			<div class="infoTitleImg"></div>
+		</div>
+		<table id="tableListAssetTransactions">
+			<tbody id="listAssetUnits"></tbody>
+		</table>
+	</div>
+	<div id="infoAboutPrivateAsset" style="display: none">
+		<div style="text-align: center;font-weight: bold"><%= i18n.__('infoAboutPrivateAsset') %></div>
+	</div>
+</div>
 <button class="trigger-legend">i</button>
 <div class="modal">
 	<div class="modal-content">
@@ -221,6 +268,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/cytoscape.min.js"></script>
 <script src="/js/dagre.min.js"></script>
-<script src="/js/main.js?v30"></script>
+<script src="/js/main.js?v35"></script>
 </body>
 </html>

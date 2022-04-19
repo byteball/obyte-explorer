@@ -12,6 +12,9 @@ exports.storage = 'sqlite';
 
 exports.aaResponsesListed = 10;
 exports.aasFromTemplateListed = 50;
+exports.balanceDumpIntervalInHours = 12;
+
+exports.tokenRegistryAA = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
 
 exports.selectedLanguage = 'en';
 exports.languagesAvailable = {
@@ -52,5 +55,18 @@ exports.initial_witnesses = !process.env.testnet ? [
 exports.initial_peers = [
 	process.env.testnet ? 'wss://obyte.org/bb-test' : (process.env.devnet ? 'ws://localhost:6611' : 'wss://obyte.org/bb')
 ];
+
+exports.supportedRegistries = {
+	'AM6GTUKENBYA54FYDAKX2VLENFZIMXWG': { 
+		name: 'obyte.app', 
+		url: 'https://obyte.app/#!/assets/', 
+		type: 'unit' 
+	},
+	'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ': { 
+		name: 'tokens.ooo', 
+		url: process.env.testnet ? 'https://testnet.tokens.ooo/' : 'https://tokens.ooo/',
+		type: 'symbol' 
+	},
+};
 
 console.log('finished explorer conf');

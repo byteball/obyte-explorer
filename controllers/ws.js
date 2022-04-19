@@ -4,8 +4,10 @@
 var db = require('ocore/db.js');
 var units = require('./units');
 var address = require('./address');
+const asset = require('./asset');
+const getAssetUnit = require('../api/getAssetUnit');
 
-function start(data) {
+async function start(data) {
 	var ws = this;
 
 	if (data.type === 'last') {
@@ -41,27 +43,47 @@ function start(data) {
 		});
 	}
 	else if (data.type === 'address') {
-		address.getAddressInfo(data.address, data.filter || {}, function(objTransactions, unspent, objBalances, end, definition,
-			newLastInputsROWID, newLastOutputsROWID, storage_size, objStateVars, arrAaResponses, arrAasFromTemplate) {
-			if (!objTransactions && !definition)
-				return ws.emit('addressInfo');
-			ws.emit('addressInfo', {
-				address: data.address,
-				objTransactions: objTransactions,
-				unspent: unspent,
-				objBalances: objBalances,
-				end: end,
-				definition: definition,
-				newLastInputsROWID: newLastInputsROWID,
-				newLastOutputsROWID: newLastOutputsROWID,
-				storage_size: storage_size,
-				objStateVars: objStateVars,
-				arrAaResponses: arrAaResponses,
-				arrAasFromTemplate: arrAasFromTemplate,
-				testnet: !!process.env.testnet
-			});
+		const {
+			objTransactions,
+			unspent,
+			objBalances,
+			end,
+			definition,
+			newLastInputsROWID, 
+			newLastOutputsROWID,
+			storage_size,
+			objStateVars,
+			arrAaResponses,
+			arrAasFromTemplate,
+			unitAssets,
+		} = await address.getAddressInfo(data.address, data.filter || {});
+		
+		if (!objTransactions && !definition)
+			return ws.emit('addressInfo');
+		
+		ws.emit('addressInfo', {
+			address: data.address,
+			objTransactions: objTransactions,
+			unspent: unspent,
+			objBalances: objBalances,
+			end: end,
+			definition: definition,
+			newLastInputsROWID,
+			newLastOutputsROWID,
+			storage_size: storage_size,
+			objStateVars: objStateVars,
+			arrAaResponses: arrAaResponses,
+			arrAasFromTemplate: arrAasFromTemplate,
+			unitAssets,
+			testnet: !!process.env.testnet
 		});
 	}
+	else if (data.type === 'asset') {
+		const assetData = await asset.getAssetData(data.asset);
+		assetData.testnet = !!process.env.testnet;
+
+		ws.emit('assetInfo', assetData);
+	}	
 }
 
 function next(data) {
@@ -159,17 +181,46 @@ function highlightNode(data) {
 	});
 }
 
-function nextPageTransactions(data) {
+async function nextPageTransactions(data) {
+	var ws = this;
+	const {
+		objTransactions,
+		newLastInputsROWID, 
+		newLastOutputsROWID, 
+		unitAssets,
+	} = await address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {});
+	
+	ws.emit('nextPageTransactions', {
+		address: data.address,
+		objTransactions: objTransactions,
+		end: objTransactions === null || Object.keys(objTransactions).length < 5,
+		newLastInputsROWID,
+		newLastOutputsROWID,
+		unitAssets,
+	});
+}
+
+async function nextPageAssetTransactions(data) {
 	var ws = this;
 
-	address.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {}, function(objTransactions, newLastInputsROWID, newLastOutputsROWID) {
-		ws.emit('nextPageTransactions', {
-			address: data.address,
-			objTransactions: objTransactions,
-			end: objTransactions === null || Object.keys(objTransactions).length < 5,
-			newLastInputsROWID: newLastInputsROWID,
-			newLastOutputsROWID: newLastOutputsROWID
-		});
+	const assetUnit = await getAssetUnit(data.asset) || data.asset;
+	const transactionsData = await asset.getAssetTransactions(assetUnit, data.lastInputsROWID, data.lastOutputsROWID);
+	
+	ws.emit('nextPageTransactions', {
+		transactionsData,
+		end: transactionsData.objTransactions === null || Object.keys(transactionsData.objTransactions).length < 5,
+	});
+}
+
+async function nextPageAssetHolders(data) {
+	const ws = this;
+
+	const assetUnit = await getAssetUnit(data.asset) || data.asset;
+	const holders = await asset.getAssetHolders(assetUnit, data.type, data.offset);
+
+	ws.emit('nextPageAssetHolders', {
+		holders,
+		end: holders.length < 100,
 	});
 }
 
@@ -180,3 +231,5 @@ exports.newUnits = newUnits;
 exports.info = info;
 exports.highlightNode = highlightNode;
 exports.nextPageTransactions = nextPageTransactions;
+exports.nextPageAssetTransactions = nextPageAssetTransactions;
+exports.nextPageAssetHolders = nextPageAssetHolders;

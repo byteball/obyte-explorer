@@ -13,12 +13,15 @@ require('./relay');
 var conf = require('ocore/conf.js');
 var eventBus = require('ocore/event_bus.js');
 var network = require('ocore/network.js');
+const device = require('ocore/device');
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var ws = require('./controllers/ws');
+const BalanceDumpService = require('./services/BalanceDumpService');
 var i18nModule = require("i18n");
+let exchange_rates = {};
 
 var arrLanguages = [];
 for (var index in conf.languagesAvailable) {
@@ -44,10 +47,17 @@ app.get('/', function(req, res) {
 });
 
 if (conf.initial_peers) {
-	network.findOutboundPeerOrConnect(conf.initial_peers[0], (err, ws) => {
+	const firstPeer = conf.initial_peers[0];
+	const hubAddress = firstPeer.startsWith('wss://') ? firstPeer.substring(6) : firstPeer.substring(5);
+	device.setDeviceHub(hubAddress);
+	network.findOutboundPeerOrConnect(firstPeer, (err, ws) => {
 		if (err)
-			return console.log('failed to connect to initial peer ' + conf.initial_peers[0] + ': ' + err);
+			return console.log('failed to connect to initial peer ' + firstPeer + ': ' + err);
 		ws.bLoggedIn = true;
+
+		network.sendRequest(ws, 'hub/get_exchange_rates', null, null, (ws, err, result) => {
+			exchange_rates = result;
+		})
 	});
 }
 
@@ -56,11 +66,13 @@ eventBus.on('new_joint', function() {
 });
 
 eventBus.on('rates_updated', function() {
-	console.log('rates_updated: ', network.exchangeRates);
-	io.sockets.emit('rates_updated', network.exchangeRates);
+	exchange_rates = { ...exchange_rates, ...network.exchangeRates };
+	console.log('rates_updated: ', exchange_rates);
+	io.sockets.emit('rates_updated', exchange_rates);
 });
 
 io.on('connection', function(socket) {
+	io.sockets.emit('rates_updated', exchange_rates);
 	socket.on('start', ws.start);
 	socket.on('next', ws.next);
 	socket.on('prev', ws.prev);
@@ -68,6 +80,14 @@ io.on('connection', function(socket) {
 	socket.on('info', ws.info);
 	socket.on('highlightNode', ws.highlightNode);
 	socket.on('nextPageTransactions', ws.nextPageTransactions);
+	socket.on('nextPageAssetTransactions', ws.nextPageAssetTransactions);
+	socket.on('nextPageAssetHolders', ws.nextPageAssetHolders);
 });
 
 server.listen(conf.webPort);
+
+async function start() {
+	const balanceDumpService = new BalanceDumpService();
+	await balanceDumpService.start();
+}
+start();

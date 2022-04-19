@@ -9,6 +9,7 @@ var lastActiveUnit;
 var page, isInit = false;
 var queueAnimationPanUp = [], animationPlaysPanUp = false;
 let testnet = false;
+let exchangeRates = {};
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -25,7 +26,6 @@ function init(_nodes, _edges) {
 	notLastUnitDown = true;
 	activeNode = null;
 	waitGo = null;
-	exchangeRates = {};
 	createCy();
 	generate(_nodes, _edges);
 	oldOffset = _cy.getElementById(nodes[0].data.unit).position().y + 66;
@@ -43,7 +43,17 @@ function init(_nodes, _edges) {
 
 function start() {
 	var currHash = getUrlHashKey();
-	if (!currHash || (currHash.length != 45 && currHash.length != 33)) {
+
+	if (currHash.startsWith('#/asset')) {
+		const asset = currHash.slice(8);
+
+		socket.emit('start', {type: 'asset', asset});
+
+		$('#assetInfo').show();
+		$('.trigger-legend').hide();
+		$('#loader').show();
+	}
+	else if (!currHash || (currHash.length != 45 && currHash.length != 33)) {
 		socket.emit('start', {type: 'last'});
 	}
 	else if (currHash.length == 45) {
@@ -62,6 +72,7 @@ function start() {
 		});
 		$('#addressInfo').show();
 		$('.trigger-legend').hide();
+		$('#loader').show();
 	}
 }
 
@@ -635,14 +646,25 @@ function addLinksToAddresses(text){
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
-	if (currHash.length == 45) {
+	if (currHash.startsWith('#/asset')) {
+		const asset = currHash.slice(8);
+
+		socket.emit('start', {type: 'asset', asset});
+
+		$('#assetInfo').show();
+		$('#addressInfo').hide();
+		$('.trigger-legend').hide();
+		$('#loader').show();
+	}
+	else if (currHash.length === 45) {
 		highlightNode(currHash.substr(1));
+		$('#assetInfo').hide();
 		if ($('#addressInfo').css('display') == 'block') {
 			$('#addressInfo').hide();
 			$('.trigger-legend').show();
 		}
 	}
-	else if (currHash.length == 33) {
+	else if (currHash.length === 33) {
 		var currHashParams = getUrlHashParams();
 		var paramAsset = currHashParams.asset;
 		socket.emit('start', {
@@ -652,6 +674,10 @@ window.addEventListener('hashchange', function() {
 				asset: paramAsset,
 			},
 		});
+		$('#addressInfo').show();
+		$('#assetInfo').hide();
+		$('.trigger-legend').hide();
+		$('#loader').show();
 	}
 });
 
@@ -798,7 +824,7 @@ function getFormattedText(amount, bytePayment, decimals) {
 			(bytePayment ? ` bytes${getUsdText(amount)}` : '');
 }
 
-function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable) {
+function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable, unit) {
 	var messagesOut = '', blockId = 0, key, asset, assetName, assetDecimals, shownHiddenPayments = false;
 	messages.forEach(function(message) {
 		if (message.payload) {
@@ -806,7 +832,7 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 			assetName = message.payload.asset || 'bytes';
 			assetDecimals = 0;
 			if(message.payload.assetName) {
-				assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${message.payload.assetName}" target="_blank">${message.payload.assetName}</a>`;
+				assetName = `<a href="#/asset/${message.payload.assetName}">${message.payload.assetName}</a>`;
 				assetDecimals = message.payload.assetDecimals;
 			}
 			messagesOut +=
@@ -927,6 +953,9 @@ function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissi
 							messagesOut += '</div>';
 						}
 					}
+					if (message.app === 'asset') {
+						messagesOut += '<div><a href="#/asset/' + unit + '">Asset info</a></div>';
+					}
 					break;
 			}
 			messagesOut += '</div></div>';
@@ -978,7 +1007,7 @@ socket.on('info', function(data) {
 		} else
 			$('#confDelayLightDiv').hide();
 
-		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable));
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable, data.unit));
 
 		$('#fees').html(getFormattedText(parseInt(data.headers_commission) + parseInt(data.payload_commission), true) + ' (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
@@ -1018,6 +1047,287 @@ socket.on('info', function(data) {
 });
 
 socket.on('update', getNew);
+
+function addTransactionInListTransactions(type, transactionsMeta, transaction, i) {
+	if (transactionsMeta.length === i + 1) {
+		$(type === 'address' ? '#listUnits' :'#listAssetUnits').append(transaction.html);
+	} else {
+		const beforeBlock = transactionsMeta[i + 1];
+		$(`#lt_${beforeBlock.timestamp}_${beforeBlock.rowid}`).before(transaction.html);
+	}
+}
+
+const assetInfoContent = {
+	data: {},
+	name: '',
+	dollarPrice: null,
+	marketCap: null,
+	holdersIndex: 0,
+	transactionsMeta: [],
+
+	setTitle: function () {
+		let nameConditionalBlock = this.data.assetUnit;
+
+		if (this.data.name) {
+			nameConditionalBlock = this.data.name;
+			if (this.data.url) {
+				nameConditionalBlock += '<span style="font-weight: normal"> - view on <a href="' + this.data.url + '" target="_blank"> ' + this.data.urlName + ' </a></span>';
+			}
+		}
+		
+		let resultStr = '<div title="' + this.data.assetUnit + '">'+ nameConditionalBlock + '</div>';
+
+		$('#asset').html(resultStr);
+	},
+
+	setStatsInfo: function () {
+		if (!this.data.supply) {
+			$('#assetData').html('');
+			return;
+		}
+		const supply = formatAmountUsingDecimalFormat(this.data.supply, this.data.decimals);
+		let name = this.name;
+		if (this.name === 'Bytes') {
+			name = 'GBYTE';
+		}
+		if (this.name === 'GBB') {
+			name = 'GBB';
+		}
+		let resultStr =`<div>Total supply: <span class="numberFormat">${supply}</span> ${name}</div>`;
+		
+		if (this.dollarPrice !== null) {
+			resultStr += `<div>Price: $<span class="numberFormat">${Number(this.dollarPrice.toPrecision(6))}</span></div>`;
+			resultStr += `<div>Marketcap: $<span class="numberFormat">${Number(this.marketCap.toFixed(2))}</span></div>`;
+		}
+
+		$('#assetData').html(resultStr);
+	},
+	
+	getHTMLCodeForHolders(holders) {
+		let listHolders = '';
+		const assetName = `<span>${this.name}</span>`;
+		
+		holders.forEach((row) => {
+			this.holdersIndex++;
+			const place = `${this.holdersIndex}. `;
+			const balance = formatAmountUsingDecimalFormat(row.balance, this.data.decimals);
+			listHolders += [
+				`<div>${place}`,
+				`<a href="#${row.address}">${row.address}</a> `,
+				`(<span class="numberFormat">${balance}</span> `,
+				`${assetName})`,
+				`</div>`
+			].join('');
+		});
+		
+		return listHolders;
+	},
+
+	setTopAddresses: function () {
+		const listHolders = this.getHTMLCodeForHolders(this.data.holders);
+		
+		$('#topHoldersList').html(listHolders);
+
+		if (listHolders !== '') {
+			$('#blockListTopHolders').show();
+			return;
+		}
+		
+		$('#blockListTopHolders').hide();
+	},
+
+	setTransactions: function () {
+		let transactionsList = generateTransactionsList(
+			this.data.transactionsData.objTransactions,
+			null,
+			null,
+			this.data.transactionsData.unitAssets);
+
+		if (transactionsList) {
+			let html = '';
+			transactionsList = transactionsList.sort((a, b) => {
+				return b.timestamp - a.timestamp || b.rowid - a.rowid;
+			});
+			transactionsList.forEach(transaction => {
+				html += transaction.html;
+				this.transactionsMeta.push({
+					timestamp: transaction.timestamp,
+					rowid: transaction.rowid,
+				})
+			});
+			$('#listAssetUnits').html(html);
+			$('#titleListAssetTransactions').show();
+			return;
+		}
+		
+		$('#listAssetUnits').html('');
+		$('#titleListAssetTransactions').hide();		
+	},
+
+	setAdditionalData: function () {
+		lastInputsROWID = this.data.transactionsData.newLastInputsROWID;
+		lastOutputsROWID = this.data.transactionsData.newLastOutputsROWID;
+		nextPageTransactionsEnd = this.data.end;
+	},
+
+	appendAdditionalData: function (data) {
+		if (data.transactionsData.newLastInputsROWID) {
+			lastInputsROWID = data.transactionsData.newLastInputsROWID;
+			lastOutputsROWID = data.transactionsData.newLastOutputsROWID;
+		}
+		nextPageTransactionsEnd = data.end;
+	},
+	
+	appendTransactions: function (data) {
+		this.appendAdditionalData(data);
+		const transactionsList = generateTransactionsList(data.transactionsData.objTransactions, null, null, data.transactionsData.unitAssets, true);
+		if (transactionsList.length) {
+			for (let transaction of transactionsList) {
+				for (let i = this.transactionsMeta.length - 1; i >= 0; i--) {
+					if (this.transactionsMeta[i].timestamp > transaction.timestamp) {
+						addTransactionInListTransactions('asset', this.transactionsMeta, transaction, i);
+						this.transactionsMeta.splice(i + 1, 0, transaction);
+						break;
+					} else if(this.transactionsMeta[i].timestamp === transaction.timestamp) {
+						if (this.transactionsMeta[i].rowid > transaction.rowid) {
+							addTransactionInListTransactions('asset', this.transactionsMeta, transaction, i);
+							this.transactionsMeta.splice(i + 1, 0, transaction);
+							break;
+						}
+					}
+				}
+			}
+			$('.new_transaction').show(1500);
+		}
+	},
+
+	showInfoAboutPrivateAsset: function (isShow) {
+		if (isShow) {
+			$("#infoAboutPrivateAsset").show();
+		} else {
+			$("#infoAboutPrivateAsset").hide();
+		}
+	},
+
+	setAssetInfoContent: function (data) {
+		this.holdersIndex = 0;
+		this.dollarPrice = null; 
+		this.marketCap = null;
+		this.data = data;
+		this.name = this.data.name ? this.data.name : this.data.assetUnit;
+		
+		if (this.data.assetUnit === 'bytes') {
+			if (exchangeRates[`GBYTE_USD`]) {
+				this.data.supply = this.data.supply / 10 ** 9;
+				this.dollarPrice = exchangeRates[`GBYTE_USD`];
+				this.marketCap = this.dollarPrice * this.data.supply;
+			}
+		} else if (this.data.name && this.data.name === 'GBB') {
+			if (exchangeRates[`GBB_USD`]) {
+				this.data.supply = this.data.cap;
+				this.dollarPrice = exchangeRates[`GBB_USD`];
+				this.marketCap = this.dollarPrice * (this.data.supply / 10 ** 9);
+			}
+		} else if (this.data.isPrivate) {
+			if (this.data.cap) {
+				this.data.supply = this.data.cap;
+				if (exchangeRates[`${this.data.assetUnit}_USD`]) {
+					this.dollarPrice = exchangeRates[`${this.data.assetUnit}_USD`];
+					this.marketCap = this.dollarPrice * this.data.supply;
+				}
+			}
+		} else {
+			if (exchangeRates[`${this.data.assetUnit}_USD`]) {
+				this.dollarPrice = exchangeRates[`${this.data.assetUnit}_USD`];
+				this.marketCap = this.dollarPrice * (this.data.supply / 10 ** this.data.decimals);
+			}
+		}
+		
+		this.setTitle();
+		this.setStatsInfo();
+
+		if (this.data.isPrivate) {
+			$('#listAssetUnits').html('');
+			$('#titleListAssetTransactions').hide();
+			$('#blockListTopHolders').hide();
+			this.showInfoAboutPrivateAsset(true);
+			formatAllNumbers();
+			return;
+		}
+
+		if (this.data.holders.length) {
+			this.setTopAddresses();
+			if (this.data.endHolders) {
+				$('#showMoreHolders').hide();
+			} else {
+				$('#showMoreHolders').show();
+			}
+		}
+		
+		if (Object.keys(this.data.transactionsData.objTransactions).length) {
+			this.setTransactions();
+			this.setAdditionalData();
+		}
+		this.showInfoAboutPrivateAsset(false);
+		formatAllNumbers();
+	},
+
+	getMoreHolders: function () {
+		$('#showMoreHolders').hide();
+		const currHash = getUrlHashKey();
+		socket.emit('nextPageAssetHolders', {
+			asset: currHash.slice(8),
+			type: this.data.typeOfHolders,
+			offset: this.holdersIndex,
+		});
+	},
+	setMoreHolders: function (holders, end) {
+		const listHolders = this.getHTMLCodeForHolders(holders);
+		$('#topHoldersList').append(listHolders);
+
+		if (end) {
+			$('#showMoreHolders').hide();
+		} else {
+			$('#showMoreHolders').show();
+		}
+		formatAllNumbers();
+	}
+}
+
+function showMoreHolders() {
+	assetInfoContent.getMoreHolders();
+}
+
+socket.on('assetInfo', (data) => {
+	$(window).scrollTop(0);
+	$('#loader').hide();
+	$(`${pageBlockNames.address.info}`).hide();
+	$(`${pageBlockNames.address.blockList}`).hide();
+	
+	if (data && data.notFound) {
+		showInfoMessage($('#infoMessageAssetNotFound').text());
+	} else if (data && (data.isPrivate || data.holders.length)) {
+		page = 'asset';
+		testnet = data.testnet;
+		assetInfoContent.setAssetInfoContent(data);
+
+		if ($('#assetInfo').css('display') === 'none') {
+			$('#assetInfo').show();
+			$('.trigger-legend').hide();
+		}
+		formatAllNumbers()
+	} else {
+		showInfoMessage($('#infoMessageAssetNotFound').text());
+	}
+
+	bWaitingForNextPageTransactions = false;
+	
+	if (!nextPageTransactionsEnd && $('#tableListAssetTransactions').height() < $(window).height()) getNextPageTransactions();
+})
+
+socket.on('nextPageAssetHolders', function (data) {
+	assetInfoContent.setMoreHolders(data.holders, data.end);
+});
 
 socket.on('new', function(data) {
 	if (data.nodes.length) {
@@ -1072,65 +1382,90 @@ function generateAasFromTemplateList(arrAasFromTemplate){
 	return listAasFromTemplate;
 }
 
-function generateTransactionsList(objTransactions, address, filter) {
+function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {	
 	filter = filter || {};
-	var transaction, addressOut, _addressTo, listTransactions = '';
+	var transaction, addressOut, _addressTo, listTransactions = [];
 	var filterAssetKey = filter.asset;
-	for (var k in objTransactions) {
-		transaction = objTransactions[k];
-		const transactionAssetKey = transaction.asset || 'bytes';
-		let assetName = transactionAssetKey;
-		if(transaction.assetName) {
-			assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${transaction.assetName}" target="_blank">${transaction.assetName}</a>`;
-		}
-		const assetDecimals = transaction.assetDecimals;
-		if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
-			continue;
-		}
 
-		listTransactions += '<tr>' +
+	for(let key in unitAssets) {
+		const unit = key.split('_')[0];
+		const timestamp = parseInt(key.split('_')[1]);
+		const rowid = parseInt(key.split('_')[2]);
+		
+		let html = '';
+		
+		html += '<tr id="lt_'+ timestamp +'_'+ rowid +'" class="'+ (isNew ? 'new_transaction' : '') +'">' +
 			'<th class="transactionUnit" colspan="2" align="left">' +
-			'<div>'+ $('#unitID').text() +' <a href="#' + transaction.unit + '">' + transaction.unit + '</a></div>' +
-			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment.unix(transaction.timestamp).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
+			'<div>'+ $('#unitID').text() +' <a href="#' + unit + '">' + unit + '</a></div>' +
+			'</th><th class="transactionUnit" colspan="1" align="right"><div style="font-weight: normal">' + moment.unix(timestamp).format('DD.MM.YYYY HH:mm:ss') + '</div></th>' +
 			'</tr>' +
-			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>' +
-			'<tr><td>';
-		transaction.from.forEach(function(objFrom) {
-			const amount = formatAmountUsingDecimalFormat(objFrom.amount, assetDecimals);
-			var addressOut = objFrom.address == address ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
-			if (objFrom.issue) {
-				listTransactions += '<div class="transactionUnitListAddress">' +
-					'<div>' + addressOut + '</div>' +
-					'<div>Issue <span class="numberFormat">' + amount + '</span> <span class="unit">' + assetName + '</span></div>' +
-					'<div>serial number: ' + objFrom.serial_number + '</div></div>';
-			} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
-				var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
-				if (commissionName) {
-					listTransactions += '<div class="transactionUnitListAddress">' +
-						'<div>' + addressOut + ' ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
-						' to mci ' + objFrom.to_mci + '.' +
-						' Sum: <span class="numberFormat">' + objFrom.sum + '</span> bytes</div>' +
-						'</div>';
-				}
-			} else {
-				listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
-					'<div>(<span class="numberFormat">' + amount + '</span> ' + assetName + ')</div></div>';
+			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>';
+
+		unitAssets[key].forEach(asset => {
+			html += '<tr class="'+ (isNew ? 'new_transaction' : '') +'"><td>';
+				
+			const key = `${unit}_${asset}`;
+			transaction = objTransactions[key];
+			if (!transaction) return;
+			const transactionAssetKey = transaction.asset || 'bytes';
+			let assetName = transactionAssetKey;
+
+			if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
+				return;
 			}
+			
+			if (transaction.assetName) {
+				assetName = `<a href="#/asset/${transaction.assetName}">${transaction.assetName}</a>`;
+			}
+			
+			const assetDecimals = transaction.assetDecimals;
+
+			transaction.from.forEach(function(objFrom) {	
+				const amount = formatAmountUsingDecimalFormat(objFrom.amount, assetDecimals);
+				var addressOut = objFrom.address == address  && page === 'address' ? '<span class="thisAddress">' + objFrom.address + '</span>' : '<a href="#' + objFrom.address + '">' + objFrom.address + '</a>';
+				if (objFrom.issue) {
+					html += '<div class="transactionUnitListAddress">' +
+						'<div>' + addressOut + '</div>' +
+						'<div>Issue <span class="numberFormat">' + amount + '</span> <span class="unit">' + assetName + '</span></div>' +
+						'<div>serial number: ' + objFrom.serial_number + '</div></div>';
+				} else if (objFrom.commissionType && (objFrom.commissionType === 'headers' || objFrom.commissionType === 'witnessing')) {
+					var commissionName = (objFrom.commissionType === 'headers' ? 'headers' : (objFrom.commissionType === 'witnessing' ? 'witnessing' : false));
+					if (commissionName) {
+						html += '<div class="transactionUnitListAddress">' +
+							'<div>' + addressOut + ' ' + commissionName + ' commissions from mci ' + objFrom.from_mci +
+							' to mci ' + objFrom.to_mci + '.' +
+							' Sum: <span class="numberFormat">' + objFrom.sum + '</span> bytes</div>' +
+							'</div>';
+					}
+				} else {					
+					html += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
+						'<div>(<span class="numberFormat">' + amount + '</span> ' + assetName + ')</div></div>';
+				}
+			});
+			
+			html += '</td><td><img width="32" src="' + (transaction.spent ? '/img/red_right2.png' : '/img/green_right2.png') + '"></td><td>';
+			
+			for (var k in transaction.to) {
+				_addressTo = transaction.to[k];
+				const amount = formatAmountUsingDecimalFormat(_addressTo.amount, assetDecimals);
+
+				addressOut = _addressTo.address == address && page === 'address' ? '<span class="thisAddress">' + _addressTo.address + '</span>' : '<a href="#' + _addressTo.address + '">' + _addressTo.address + '</a>';
+
+				html += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
+					'<div>(<span class="numberFormat">' + amount + '</span> <span class="unit">' + assetName + '</span>, ' +
+					(_addressTo.spent === 0 ? 'not spent' : 'spent in ' + '<a href="#' + _addressTo.spent + '">' + _addressTo.spent + '</a>') +
+					')</div></div>';
+			}
+
+			html += '</td></tr><tr><th colspan="3"><div style="margin: 10px"></div></th></tr>'
 		});
-		listTransactions += '</td><td><img width="32" src="' + (transaction.spent ? '/img/red_right2.png' : '/img/green_right2.png') + '"></td><td>';
-		for (var k in transaction.to) {
-			_addressTo = transaction.to[k];
-			const amount = formatAmountUsingDecimalFormat(_addressTo.amount, assetDecimals);
-
-			addressOut = _addressTo.address == address ? '<span class="thisAddress">' + _addressTo.address + '</span>' : '<a href="#' + _addressTo.address + '">' + _addressTo.address + '</a>';
-
-			listTransactions += '<div class="transactionUnitListAddress"><div>' + addressOut + '</div>' +
-				'<div>(<span class="numberFormat">' + amount + '</span> <span class="unit">' + assetName + '</span>, ' +
-				(_addressTo.spent === 0 ? 'not spent' : 'spent in ' + '<a href="#' + _addressTo.spent + '">' + _addressTo.spent + '</a>') +
-				')</div></div>';
-		}
-		listTransactions += '</td></tr><tr><th colspan="3"><div style="margin: 10px"></div></th></tr>';
+		listTransactions.push({
+			timestamp,
+			rowid,
+			html
+		});
 	}
+	
 	return listTransactions;
 }
 
@@ -1138,6 +1473,8 @@ function generateTransactionsList(objTransactions, address, filter) {
 var addressInfoContent = {
 	currAddress: null,
 	currAssetKey: null,
+	transactionsMeta: [],
+	
 	setAddress: function (data) {
 		this.currAddress = data.address;
 
@@ -1155,7 +1492,7 @@ var addressInfoContent = {
 			else {
 				if (objBalance.assetName) {
 					const balance = formatAmountUsingDecimalFormat(objBalance.balance, objBalance.assetDecimals);
-					resultStr += '<div title="' + assetKey + '"><span class="numberFormat">' + balance + '</span> <a href="https://' + (testnet ? 'testnet.' : '') + 'tokens.ooo/' + objBalance.assetName + '" target="_blank">' + objBalance.assetName + '</a></div>';
+					resultStr += '<div title="' + assetKey + '"><span class="numberFormat">' + balance + '</span> <a href="#/asset/' + objBalance.assetName + '">' + objBalance.assetName + '</a></div>';
 				} else {
 					resultStr += '<div><span class="numberFormat">' + objBalance.balance + '</span> of ' + assetKey + '</div>';
 				}
@@ -1271,7 +1608,7 @@ var addressInfoContent = {
 				const amount = formatAmountUsingDecimalFormat(row.amount, row.assetDecimals);
 				let assetName = row.asset == null ? 'bytes' : row.asset;
 				if(row.assetName) {
-					assetName = `<a href="https://${testnet ? 'testnet.' : ''}tokens.ooo/${row.assetName}" target="_blank">${row.assetName}</a>`;
+					assetName = `<a href="#/asset/${row.assetName}">${row.assetName}</a>`;
 				}
 
 				listUnspent += [
@@ -1295,9 +1632,20 @@ var addressInfoContent = {
 	setTransactions: function (data) {
 		var transactionsList = generateTransactionsList(data.objTransactions, data.address, {
 			asset: this.currAssetKey,
-		});
+		}, data.unitAssets);
 		if (transactionsList) {
-			$('#listUnits').html(transactionsList);
+			let html = '';
+			transactionsList = transactionsList.sort((a, b) => {
+				return b.timestamp - a.timestamp || b.rowid - a.rowid;
+			});
+			transactionsList.forEach(transaction => {
+				html += transaction.html;
+				this.transactionsMeta.push({
+					timestamp: transaction.timestamp,
+					rowid: transaction.rowid,
+				})
+			});
+			$('#listUnits').html(html);
 			$('#titleListTransactions').show();
 		} else {
 			$('#listUnits').html('');
@@ -1313,9 +1661,26 @@ var addressInfoContent = {
 		this.appendAdditionalData(data);
 		var transactionsList = generateTransactionsList(data.objTransactions, data.address, {
 			asset: this.currAssetKey,
-		});
+		}, data.unitAssets, true);
 		if (transactionsList) {
-			$('#listUnits').append(transactionsList);
+			if (transactionsList.length) {
+				for (let transaction of transactionsList) {
+					for (let i = this.transactionsMeta.length - 1; i >= 0; i--) {
+						if (this.transactionsMeta[i].timestamp > transaction.timestamp) {
+							addTransactionInListTransactions('address', this.transactionsMeta, transaction, i);
+							this.transactionsMeta.splice(i + 1, 0, transaction);
+							break;
+						} else if(this.transactionsMeta[i].timestamp === transaction.timestamp) {
+							if (this.transactionsMeta[i].rowid > transaction.rowid) {
+								addTransactionInListTransactions('address', this.transactionsMeta, transaction, i);
+								this.transactionsMeta.splice(i + 1, 0, transaction);
+								break;
+							}
+						}
+					}
+				}
+				$('.new_transaction').show(1500);
+			}
 		}
 	},
 	appendAdditionalData: function (data) {
@@ -1345,7 +1710,13 @@ function changeAsset(sel) {
 }
 
 socket.on('addressInfo', function(data) {
+	$(window).scrollTop(0);
+	$('#loader').hide();
+	$(`${pageBlockNames.asset.info}`).hide();
+	$(`${pageBlockNames.asset.blockList}`).hide();
+		
 	if (data) {
+		page = 'address';
 		testnet = data.testnet;
 		var currHashParams = getUrlHashParams();
 		var currAssetKey = currHashParams.asset || 'all';
@@ -1355,7 +1726,6 @@ socket.on('addressInfo', function(data) {
 			$('#addressInfo').show();
 			$('.trigger-legend').hide();
 		}
-		page = 'address';
 		formatAllNumbers()
 	}
 	else {
@@ -1367,11 +1737,24 @@ socket.on('addressInfo', function(data) {
 
 socket.on('nextPageTransactions', function(data) {
 	if (data) {
-		addressInfoContent.appendTransactions(data);
+		if (page !== 'address' && page !== 'asset') return;
+		
+		const infoContent = page === 'address' ? addressInfoContent : assetInfoContent;
+		
+		infoContent.appendTransactions(data);
 		formatAllNumbers();
 	}
+	
 	bWaitingForNextPageTransactions = false;
-	if (!nextPageTransactionsEnd && $('#tableListTransactions').height() < $(window).height()) getNextPageTransactions();
+	
+	if (!nextPageTransactionsEnd) {
+		if (
+			(page === 'address' && $('#tableListTransactions').height() < $(window).height()) || 
+			(page === 'asset' && $('#tableListAssetTransactions').height() < $(window).height())
+		) {
+			getNextPageTransactions();
+		}
+	}
 });
 
 function getNew() {
@@ -1409,19 +1792,28 @@ function getHighlightNode(unit) {
 
 function getNextPageTransactions() {
 	var currHash = getUrlHashKey();
-	if (!bWaitingForNextPageTransactions && currHash.length == 33) {
+	if (!bWaitingForNextPageTransactions) {
 		var currHashParams = getUrlHashParams();
 		var paramAsset = currHashParams.asset;
-
-		socket.emit('nextPageTransactions', {
-			address: currHash.substr(1),
-			lastInputsROWID: lastInputsROWID,
-			lastOutputsROWID: lastOutputsROWID,
-			filter: {
-				asset: paramAsset,
-			},
-		});
-		bWaitingForNextPageTransactions = true;
+		
+		if (page === 'address') {
+			socket.emit('nextPageTransactions', {
+				address: currHash.substr(1),
+				lastInputsROWID,
+				lastOutputsROWID,
+				filter: {
+					asset: paramAsset,
+				},
+			});
+			bWaitingForNextPageTransactions = true;
+		} else if (page === 'asset') {
+			socket.emit('nextPageAssetTransactions', {
+				asset: currHash.slice(8),
+				lastInputsROWID,
+				lastOutputsROWID,
+			});
+			bWaitingForNextPageTransactions = true;
+		}
 	}
 }
 
@@ -1436,18 +1828,34 @@ function closeInfo() {
 	$('#cy, #scroll, #goToTop, .trigger-legend').removeClass('showInfoBlock');
 }
 
-function closeAddress() {
-	$('#addressInfo').hide();
+
+const pageBlockNames = {
+	address: {
+		blockList: '#blockListUnspent',
+		info: '#addressInfo',
+		transactions: '#tableListTransactions'
+	},
+	asset: {
+		blockList: '#blockListTopHolders',
+		info: '#assetInfo',
+		transactions: '#tableListAssetTransactions'
+	}
+}
+
+function closePage(currentPage) {
+	$(`${pageBlockNames[currentPage].info}`).hide();
+	$(`${pageBlockNames[currentPage].blockList}`).hide();
+	
 	$('.trigger-legend').show();
-	$('#blockListUnspent').hide();
+	
 	if (!_cy || !lastActiveUnit) {
 		$('#cy, #scroll, #goToTop').show();
 		socket.emit('start', {type: 'last'});
 		location.hash = '';
-	}
-	else {
+	} else {
 		location.hash = lastActiveUnit;
 	}
+	
 	page = 'dag';
 }
 
@@ -1573,7 +1981,7 @@ function getUrlHashKey() {
 	var currHashPrefix = '';
 	if (currHash) {
 		var currHashParts = currHash.split('?');
-		currHashPrefix = currHashParts[0];
+		currHashPrefix = currHashParts[0].replace(/%20/g, ' ');
 	}
 	return currHashPrefix;
 }
