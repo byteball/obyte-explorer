@@ -228,7 +228,11 @@ async function getURLAndNameByAssetUnit(assetUnit) {
 			let url = registryMeta.url;
 
 			if (registryMeta.type === 'unit') {
-				url += rows[0].asset;
+				if (rows[0].registry_address === 'AM6GTUKENBYA54FYDAKX2VLENFZIMXWG') {
+					url += rows[0].asset.replace(/\//g, '~2F');
+				} else {
+					url += encodeURIComponent(rows[0].asset);
+				}
 			}
 			if (registryMeta.type === 'symbol') {
 				url += rows[0].name;
