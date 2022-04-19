@@ -199,7 +199,12 @@ async function getAssetHoldersAndSupply(asset, offset = 0) {
 }
 
 async function getMetaOfPrivateAsset(asset) {
+	if (asset.toUpperCase() === 'GBB') {
+		asset = constants.BLACKBYTES_ASSET
+	}
+	
 	const rows = await db.query("SELECT unit, cap FROM assets WHERE is_private = 1 AND unit = ?", [asset]);
+	
 	if (rows.length) {
 		return rows[0];
 	}
