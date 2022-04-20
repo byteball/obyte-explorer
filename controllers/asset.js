@@ -297,12 +297,12 @@ async function getAssetData(asset) {
 		assetData.decimals = 0;
 	}
 
-	let issuer = null;
+	let issuerForUnlimitedCap = null;
 	if (!isLimitedCap) {
-		issuer = unit.authors[0].address;
+		issuerForUnlimitedCap = unit.authors[0].address;
 	}
 
-	let { holders, type, supply } = await getAssetHoldersAndSupply(assetUnit, 0, issuer);
+	let { holders, type, supply } = await getAssetHoldersAndSupply(assetUnit, 0, issuerForUnlimitedCap);
 
 	assetData.holders = holders;
 	assetData.typeOfHolders = type;

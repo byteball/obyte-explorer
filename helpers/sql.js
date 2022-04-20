@@ -21,9 +21,9 @@ function getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) {
 	}
 }
 
-function getStrSQLFilterForIssuerForUnlimitedCap(authorForLimitedCap) {
-	if (authorForLimitedCap) {
-		return " AND address != " + db.escape(authorForLimitedCap);
+function getStrSQLFilterForIssuerForUnlimitedCap(issuerForUnlimitedCap) {
+	if (issuerForUnlimitedCap) {
+		return " AND address != " + db.escape(issuerForUnlimitedCap);
 	}
 
 	return "";
