@@ -1551,9 +1551,12 @@ var addressInfoContent = {
 			function filterAndRefresh(){
 				var html = "<ul>", count = 0;
 				for (var key in data.objStateVars){
-					if (count == max_displayed)
+					if (count === max_displayed)
 						break;
-					if (!$('#stateVarsFilterInput').val() || key.indexOf($('#stateVarsFilterInput').val())> -1){
+					if (!$('#stateVarsFilterInput').val()
+						|| key.includes($('#stateVarsFilterInput').val())
+						|| String(data.objStateVars[key]).includes($('#stateVarsFilterInput').val())
+					) {
 						html+="<li>" + htmlEscape(key) + ": " + htmlEscape(data.objStateVars[key]) + "</li>";
 						count++;
 					}
