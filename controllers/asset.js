@@ -141,13 +141,13 @@ async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID) {
 	}
 }
 
-async function getAssetHolders(asset, type, offset, authorForLimitedCap) {
+async function getAssetHolders(asset, type, offset, issuerForUnlimitedCap) {
 	const lAsset = asset === 'bytes' ? 'base' : asset;
 
 	if (type === 'large') {
 		const rowsBalances = await db.query(
 			"SELECT * FROM balances \n\
-			WHERE asset = ? " + getStrSQLFilterForAuthorForLimitedCap(authorForLimitedCap) + " ORDER BY balance DESC LIMIT " + offset + ", 100", [lAsset]);
+			WHERE asset = ? " + getStrSQLFilterForAuthorForLimitedCap(issuerForUnlimitedCap) + " ORDER BY balance DESC LIMIT " + offset + ", 100", [lAsset]);
 
 		return rowsBalances.map(row => {
 			return {
@@ -161,7 +161,7 @@ async function getAssetHolders(asset, type, offset, authorForLimitedCap) {
 	const rowsBalances = await db.query(
 		"SELECT address, asset, SUM(amount) AS balance \n\
 		FROM outputs INDEXED BY outputsIndexByAsset JOIN units USING(unit) \n\
-		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + getStrSQLFilterForAuthorForLimitedCap(authorForLimitedCap) + " AND sequence='good' \n\
+		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + getStrSQLFilterForAuthorForLimitedCap(issuerForUnlimitedCap) + " AND sequence='good' \n\
 		GROUP BY address, asset	ORDER BY balance DESC LIMIT " + offset + ", 100");
 
 	return rowsBalances.map(row => {
@@ -173,27 +173,27 @@ async function getAssetHolders(asset, type, offset, authorForLimitedCap) {
 	});
 }
 
-async function getSupplyForSmallAsset(asset, authorForLimitedCap) {
+async function getSupplyForSmallAsset(asset, issuerForUnlimitedCap) {
 	const rows = await db.query(
 		"SELECT SUM(amount) AS supply \n\
 		FROM outputs INDEXED BY outputsIndexByAsset JOIN units USING(unit) \n\
-		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + getStrSQLFilterForAuthorForLimitedCap(authorForLimitedCap) + " AND sequence='good'");
+		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + getStrSQLFilterForAuthorForLimitedCap(issuerForUnlimitedCap) + " AND sequence='good'");
 
 	return rows[0].supply;
 }
 
-async function getAssetHoldersAndSupply(asset, offset = 0, authorForLimitedCap) {
+async function getAssetHoldersAndSupply(asset, offset = 0, issuerForUnlimitedCap) {
 	const lAsset = asset === 'bytes' ? 'base' : asset;
 	const rowsBalancesForLength = await db.query(
 		"SELECT COUNT(*) AS count, SUM(balance) AS supply FROM balances \n\
-		WHERE asset = ?" + getStrSQLFilterForAuthorForLimitedCap(authorForLimitedCap), [lAsset]);
+		WHERE asset = ?" + getStrSQLFilterForAuthorForLimitedCap(issuerForUnlimitedCap), [lAsset]);
 	const count = rowsBalancesForLength[0].count;
 	let supply = rowsBalancesForLength[0].supply;
 	const type = count > 1000 ? 'large' : 'small';
-	let holders = await getAssetHolders(asset, type, offset, authorForLimitedCap);
+	let holders = await getAssetHolders(asset, type, offset, issuerForUnlimitedCap);
 
 	if(type === 'small') {
-		supply = await getSupplyForSmallAsset(asset, authorForLimitedCap);
+		supply = await getSupplyForSmallAsset(asset, issuerForUnlimitedCap);
 	}
 
 	return {
@@ -297,12 +297,12 @@ async function getAssetData(asset) {
 		assetData.decimals = 0;
 	}
 
-	let author = null;
+	let issuer = null;
 	if (!isLimitedCap) {
-		author = unit.authors[0].address;
+		issuer = unit.authors[0].address;
 	}
 
-	let { holders, type, supply } = await getAssetHoldersAndSupply(assetUnit, 0, author);
+	let { holders, type, supply } = await getAssetHoldersAndSupply(assetUnit, 0, issuer);
 
 	assetData.holders = holders;
 	assetData.typeOfHolders = type;
