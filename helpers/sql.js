@@ -21,5 +21,14 @@ function getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) {
 	}
 }
 
+function getStrSQLFilterForAuthorForLimitedCap(authorForLimitedCap) {
+	if (authorForLimitedCap) {
+		return " AND address != " + db.escape(authorForLimitedCap);
+	}
+
+	return "";
+}
+
 exports.getStrSqlFilterAssetForTransactions = getStrSqlFilterAssetForTransactions;
 exports.getStrSqlFilterAssetForSingleTypeOfTransactions = getStrSqlFilterAssetForSingleTypeOfTransactions;
+exports.getStrSQLFilterForAuthorForLimitedCap = getStrSQLFilterForAuthorForLimitedCap;
