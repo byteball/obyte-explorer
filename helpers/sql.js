@@ -21,5 +21,14 @@ function getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) {
 	}
 }
 
+function getStrSQLFilterForIssuerForUnlimitedCap(issuerForUnlimitedCap) {
+	if (issuerForUnlimitedCap) {
+		return " AND address != " + db.escape(issuerForUnlimitedCap);
+	}
+
+	return "";
+}
+
 exports.getStrSqlFilterAssetForTransactions = getStrSqlFilterAssetForTransactions;
 exports.getStrSqlFilterAssetForSingleTypeOfTransactions = getStrSqlFilterAssetForSingleTypeOfTransactions;
+exports.getStrSQLFilterForIssuerForUnlimitedCap = getStrSQLFilterForIssuerForUnlimitedCap;
