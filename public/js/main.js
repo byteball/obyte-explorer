@@ -1067,13 +1067,18 @@ const assetInfoContent = {
 
 	setTitle: function () {
 		let nameConditionalBlock = this.data.assetUnit;
-
+		const htmlIfNotNameOrUrl = '<span style="font-weight: normal"> - view <a href="#' + this.data.assetUnit + '">definition</a></span>';
 		if (this.data.name) {
 			nameConditionalBlock = this.data.name;
 			if (this.data.url) {
 				nameConditionalBlock += '<span style="font-weight: normal"> - view on <a href="' + this.data.url + '" target="_blank"> ' + this.data.urlName + ' </a></span>';
+				nameConditionalBlock += `<span style="font-weight: normal"> and <a href="#${this.data.assetUnit}">definition</a></span>`;
+			} else {
+				 nameConditionalBlock += htmlIfNotNameOrUrl;
 			}
-		}
+		} else {
+			nameConditionalBlock += htmlIfNotNameOrUrl;
+		} 
 		
 		let resultStr = '<div title="' + this.data.assetUnit + '">'+ nameConditionalBlock + '</div>';
 
