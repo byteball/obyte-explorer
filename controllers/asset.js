@@ -11,7 +11,7 @@ const {
 const { 
 	getStrSqlFilterAssetForSingleTypeOfTransactions,
 	getStrSqlFilterAssetForTransactions,
-	getStrSQLFilterForAuthorForLimitedCap,
+	getStrSQLFilterForIssuerForUnlimitedCap,
 } = require('../helpers/sql');
 
 const BIGINT = 9223372036854775807;
@@ -147,7 +147,7 @@ async function getAssetHolders(asset, type, offset, issuerForUnlimitedCap) {
 	if (type === 'large') {
 		const rowsBalances = await db.query(
 			"SELECT * FROM balances \n\
-			WHERE asset = ? " + getStrSQLFilterForAuthorForLimitedCap(issuerForUnlimitedCap) + " ORDER BY balance DESC LIMIT " + offset + ", 100", [lAsset]);
+			WHERE asset = ? " + getStrSQLFilterForIssuerForUnlimitedCap(issuerForUnlimitedCap) + " ORDER BY balance DESC LIMIT " + offset + ", 100", [lAsset]);
 
 		return rowsBalances.map(row => {
 			return {
@@ -161,7 +161,7 @@ async function getAssetHolders(asset, type, offset, issuerForUnlimitedCap) {
 	const rowsBalances = await db.query(
 		"SELECT address, asset, SUM(amount) AS balance \n\
 		FROM outputs INDEXED BY outputsIndexByAsset JOIN units USING(unit) \n\
-		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + getStrSQLFilterForAuthorForLimitedCap(issuerForUnlimitedCap) + " AND sequence='good' \n\
+		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + getStrSQLFilterForIssuerForUnlimitedCap(issuerForUnlimitedCap) + " AND sequence='good' \n\
 		GROUP BY address, asset	ORDER BY balance DESC LIMIT " + offset + ", 100");
 
 	return rowsBalances.map(row => {
@@ -177,7 +177,7 @@ async function getSupplyForSmallAsset(asset, issuerForUnlimitedCap) {
 	const rows = await db.query(
 		"SELECT SUM(amount) AS supply \n\
 		FROM outputs INDEXED BY outputsIndexByAsset JOIN units USING(unit) \n\
-		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + getStrSQLFilterForAuthorForLimitedCap(issuerForUnlimitedCap) + " AND sequence='good'");
+		WHERE is_spent=0 " + getStrSqlFilterAssetForSingleTypeOfTransactions(asset) + getStrSQLFilterForIssuerForUnlimitedCap(issuerForUnlimitedCap) + " AND sequence='good'");
 
 	return rows[0].supply;
 }
@@ -186,7 +186,7 @@ async function getAssetHoldersAndSupply(asset, offset = 0, issuerForUnlimitedCap
 	const lAsset = asset === 'bytes' ? 'base' : asset;
 	const rowsBalancesForLength = await db.query(
 		"SELECT COUNT(*) AS count, SUM(balance) AS supply FROM balances \n\
-		WHERE asset = ?" + getStrSQLFilterForAuthorForLimitedCap(issuerForUnlimitedCap), [lAsset]);
+		WHERE asset = ?" + getStrSQLFilterForIssuerForUnlimitedCap(issuerForUnlimitedCap), [lAsset]);
 	const count = rowsBalancesForLength[0].count;
 	let supply = rowsBalancesForLength[0].supply;
 	const type = count > 1000 ? 'large' : 'small';
