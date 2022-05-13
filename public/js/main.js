@@ -1085,7 +1085,11 @@ const assetInfoContent = {
 			}
 		} else {
 			nameConditionalBlock += htmlIfNotNameOrUrl;
-		} 
+		}
+		
+		if (this.data.assetUnit === 'bytes') {
+			nameConditionalBlock = `${this.data.name} <span style="font-weight: normal"> - native asset</span>`;
+		}
 		
 		let resultStr = '<div title="' + this.data.assetUnit + '">'+ nameConditionalBlock + '</div>';
 
@@ -1395,20 +1399,31 @@ function generateAasFromTemplateList(arrAasFromTemplate){
 }
 
 function getHTMLBlocksForAddresses(addresses, myAddress) {
-	let blocks = '';
-	for (let i = 0; i < addresses.length; i++) {
-		let address = `<a href="#${addresses[i]}">${addresses[i]}</a>`;
+	let html = '';
+	
+	addresses.forEach((address, i) => {
+		let addressHTML = `<a href="#${address}">${address}</a>`;
 		let color = 'color: #2e81b9;';
-		if (addresses[i] === myAddress) {
-			address = addresses[i];
+		if (address === myAddress) {
+			addressHTML = address;
 			color = '';
 		}
-		blocks += `<div class="trunc" style="max-width: 240px;${color}${i > 0 ? 'margin-top:4px': ''}">
-			${address}
+		html += `<div class="trunc" style="max-width: 240px;${color}${i > 0 ? 'margin-top:8px': ''}">
+			${addressHTML}
 		</div>`;
-	}
+	});
 	
-	return blocks;
+	return html;
+}
+
+function getHTMLBlockForAmounts(amounts, assetName) {
+	let html = '';
+	
+	amounts.forEach((amount, i) => {
+		html += `<div style="${i > 0 ? 'margin-top:8px': ''}"><span class="numberFormat">${amount}</span> ${assetName}</div>`
+	});
+	
+	return html;
 }
 
 function generateTransfersView(objTransactions, address, filter, unitAssets, isNew) {
@@ -1426,8 +1441,8 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 		let html = '';
 		unitAssets[key]
 		.filter(asset => {
-			const key = `${unit}_${asset}`;
-			transaction = objTransactions[key];
+			const transactionKey = `${unit}_${asset}`;
+			transaction = objTransactions[transactionKey];
 			if (!transaction) {
 				return false;
 			}
@@ -1439,9 +1454,9 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 			
 			return true;
 		})
-		.forEach((asset, index) => {
-			const key = `${unit}_${asset}`;
-			transaction = objTransactions[key];
+		.forEach((asset, index, arr) => {
+			const transactionKey = `${unit}_${asset}`;
+			transaction = objTransactions[transactionKey];
 			const transactionAssetKey = transaction.asset || 'bytes';
 			let assetName = transactionAssetKey;
 
@@ -1459,19 +1474,24 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 
 			const lUnit = index === 0 ? `<a class="trunc" href="#${unit}">${unit}</a>` : '';
 			const lDate = index === 0 ? date : '';
+			const isLastUnit = arr.length - 1 === index;
 			const assetDecimals = transaction.assetDecimals;
 			const fromAddresses = [...new Set(transaction.from.map(t => t.address))];
 			let to = Object.values(transaction.to).filter(t => !fromAddresses.includes(t.address));
-			let amount = 0;
+			let toAddresses = {};
 			if (to.length) {
 				to.forEach(v => {
-					amount += v.amount
+					if (!toAddresses[v.address]) {
+						toAddresses[v.address] = 0;
+					}
+					toAddresses[v.address] += v.amount;
 				});
-				amount = formatAmountUsingDecimalFormat(amount, assetDecimals);
+				for (let key in toAddresses) {
+					toAddresses[key] = formatAmountUsingDecimalFormat(toAddresses[key], assetDecimals)
+				}
 			} else {
-				to = [{ address: fromAddresses[0] }];
+				toAddresses[fromAddresses[0]] = 0;
 			}
-			const toAddresses = [...new Set(to.map(t => t.address))];
 			let type = '<span style="color: #f34a4a">out</span>';
 			if (address && !fromAddresses.includes(address)) {
 				type = '<span style="color: #50d046">in</span>';
@@ -1479,7 +1499,7 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 			
 
 			const id = index === 0 ? 'lt_' + timestamp + '_' + rowid : 'lt_' + timestamp + '_' + rowid + '_' + index;
-			html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="border-bottom: 1px solid #ccc">`;
+			html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}">`;
 			html += `<td class="td_in_table">
 				<div class="trunc" style="max-width: 240px; color: #2e81b9" title="${unit}">${lUnit}</div>
 			</td>`;
@@ -1492,10 +1512,10 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 			html += address ? `<td class="td_in_table" style="width: 40px"><div>${type}</div></td>` : '';
 			html += `<td class="td_in_table">
 				<div>
-					${getHTMLBlocksForAddresses(toAddresses, address)}
+					${getHTMLBlocksForAddresses(Object.keys(toAddresses), address)}
 				</div>
 			</td>`
-			html += `<td class="td_in_table" style="max-width: 250px"><div>${amount} ${assetName}</div></td>`
+			html += `<td class="td_in_table" style="max-width: 250px"><div>${getHTMLBlockForAmounts(Object.values(toAddresses), assetName)}</div></td>`
 			html += '</tr>';
 		});
 		listTransactions.push({

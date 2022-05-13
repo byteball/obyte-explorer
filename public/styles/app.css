@@ -153,6 +153,7 @@ body {
 	padding: 5px;
 	cursor: pointer;
 	color: #333333;
+	display: inline-block;
 }
 
 .infoTitle:hover {

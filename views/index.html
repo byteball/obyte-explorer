@@ -13,6 +13,12 @@
 		<a href="https://twitter.com/ObyteOrg" target="_blank"><img src="/img/Twitter_Logo_Blue.svg"></a>
 		<a id="menuSocialSlack" href="https://obyte.org/discord" target="_blank"><img src="/img/discord_img_active.png"></a>
 	</div>
+	<div style="float:right; padding-top: 3px; padding-right: 8px">
+		<select style="padding: 4px; outline: none" class="transactionListType" onchange="viewChanged(event)">
+			<option value="transfers_view">Transfers view</option>
+			<option value="UTXO">UTXO view</option>
+		</select>
+	</div>
 	<div id="menuLeft">
 		<a href="https://obyte.org/" id="menuLeftImg"><img src="/img/obyte-tight-h64.png"></a>
 		<!--
@@ -87,51 +93,67 @@
 			<div style="padding-left: 5px" id="confDelayLightDiv"><%= i18n.__('confDelayLight') %> <span id="confDelayLight"></span></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'authors')"><%= i18n.__('authors') %>
-				<div class="infoTitleImg"></div>
+			<div>
+				<div class="infoTitle" onclick="showHideBlock(event, 'authors')"><%= i18n.__('authors') %>
+					<div class="infoTitleImg"></div>
+				</div>
 			</div>
 			<div id="authors"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'children')"><%= i18n.__('children') %>
-				<div class="infoTitleImg"></div>
+			<div>
+				<div class="infoTitle" onclick="showHideBlock(event, 'children')"><%= i18n.__('children') %>
+					<div class="infoTitleImg"></div>
+				</div>
 			</div>
 			<div id="children"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'parents')"><%= i18n.__('parents') %>
-				<div class="infoTitleImg"></div>
+			<div>
+				<div class="infoTitle" onclick="showHideBlock(event, 'parents')"><%= i18n.__('parents') %>
+					<div class="infoTitleImg"></div>
+				</div>
 			</div>
 			<div id="parents"></div>
 		</div>
 		<div>
-			<div class="infoTitle" id="divTitleTriggerUnit" onclick="showHideBlock(event, 'triggerUnit')"><%= i18n.__('triggerUnitID') %>
-				<div class="infoTitleImg"></div>
+			<div>
+				<div class="infoTitle" id="divTitleTriggerUnit" onclick="showHideBlock(event, 'triggerUnit')"><%= i18n.__('triggerUnitID') %>
+					<div class="infoTitleImg"></div>
+				</div>
 			</div>
 			<div id="triggerUnit"></div>
 		</div>
 		<div>
-			<div class="infoTitle" id="divTitleMessage" onclick="showHideBlock(event, 'messages')"><%= i18n.__('messages') %>
-				<div class="infoTitleImg"></div>
+			<div>
+				<div class="infoTitle" id="divTitleMessage" onclick="showHideBlock(event, 'messages')"><%= i18n.__('messages') %>
+					<div class="infoTitleImg"></div>
+				</div>
 			</div>
 			<div id="messages"></div>
 		</div>
 		<div>
-			<div class="infoTitle" id="divTitleAaResponse" onclick="showHideBlock(event, 'aaResponses')"><%= i18n.__('aaResponses') %>
-				<div class="infoTitleImg"></div>
+			<div>
+				<div class="infoTitle" id="divTitleAaResponse" onclick="showHideBlock(event, 'aaResponses')"><%= i18n.__('aaResponses') %>
+					<div class="infoTitleImg"></div>
+				</div>
 			</div>
 			<div id="aaResponses"></div>
 		</div>
 		<div>
-			<div class="infoTitle hideTitle" id="witnessesTitle" onclick="showHideBlock(event, 'witnesses')">
-				<%= i18n.__('witnesses') %>
-				<div class="infoTitleImg"></div>
+			<div>
+				<div class="infoTitle hideTitle" id="witnessesTitle" onclick="showHideBlock(event, 'witnesses')">
+					<%= i18n.__('witnesses') %>
+					<div class="infoTitleImg"></div>
+				</div>
 			</div>
 			<div id="witnesses" style="display: none"></div>
 		</div>
 		<div>
-			<div class="infoTitle" onclick="showHideBlock(event, 'otherInfo')"><%= i18n.__('techInfo') %>
-				<div class="infoTitleImg"></div>
+			<div>
+				<div class="infoTitle" onclick="showHideBlock(event, 'otherInfo')"><%= i18n.__('techInfo') %>
+					<div class="infoTitleImg"></div>
+				</div>
 			</div>
 			<div id="otherInfo">
 				<div id="divFees"><%= i18n.__('labelFees') %> <span id="fees"></span></div>
@@ -152,19 +174,25 @@
 		<div style="margin-bottom: 10px;font-weight: bold">
 			<div><span id="address"></span></div>
 		</div>
-		<div class="infoTitle hideTitle" id="definitionTitleInAddress" onclick="showHideBlock(event, 'definition')" style="display: none">
-			<%= i18n.__('labelDefinition') %>
-			<div class="infoTitleImg"></div>
+		<div>
+			<div class="infoTitle hideTitle" id="definitionTitleInAddress" onclick="showHideBlock(event, 'definition')" style="display: none">
+				<%= i18n.__('labelDefinition') %>
+				<div class="infoTitleImg"></div>
+			</div>
 		</div>
 		<div id="definition" style="display: none"></div>
-		<div class="infoTitle hideTitle" id="aasFromTemplateTitleInAddress" onclick="showHideBlock(event, 'aasFromTemplate')" style="display: none">
-			<%= i18n.__('labelAasFromTemplate') %>
-			<div class="infoTitleImg"></div>
+		<div>
+			<div class="infoTitle hideTitle" id="aasFromTemplateTitleInAddress" onclick="showHideBlock(event, 'aasFromTemplate')" style="display: none">
+				<%= i18n.__('labelAasFromTemplate') %>
+				<div class="infoTitleImg"></div>
+			</div>
 		</div>
 		<div id="aasFromTemplate" style="display: none"></div>
-		<div class="infoTitle hideTitle" id="stateVarsTitleInAddress" onclick="showHideBlock(event, 'stateVarsDiv')" style="display: none">
-			<%= i18n.__('labelStateVars') %>
-			<div class="infoTitleImg"></div>
+		<div>
+			<div class="infoTitle hideTitle" id="stateVarsTitleInAddress" onclick="showHideBlock(event, 'stateVarsDiv')" style="display: none">
+				<%= i18n.__('labelStateVars') %>
+				<div class="infoTitleImg"></div>
+			</div>
 		</div>
 		<div id="stateVarsDiv" style="display: none; padding-bottom: 5px;">
 			<div id="stateVarsFilterInputDiv" style="display: none;padding-left: 10px;">
@@ -173,9 +201,11 @@
 			<div id="stateVars" ></div>
 			<div id="stateVarsstorageSize" ></div>
 		</div>
-		<div class="infoTitle hideTitle" id="aaResponsesTitleInAddress" onclick="showHideBlock(event, 'lastAaResponses')" style="display: none">
-			<%= i18n.__('labelAaResponses') %>
-			<div class="infoTitleImg"></div>
+		<div>
+			<div class="infoTitle hideTitle" id="aaResponsesTitleInAddress" onclick="showHideBlock(event, 'lastAaResponses')" style="display: none">
+				<%= i18n.__('labelAaResponses') %>
+				<div class="infoTitleImg"></div>
+			</div>
 		</div>
 		<div id="lastAaResponses" style="display: none"></div>
 		<div>
@@ -187,24 +217,22 @@
 		</label>
 	</div>
 	<div class="row" id="blockListUnspent" style="margin-top: 50px">
-		<div class="infoTitle" onclick="showHideBlock(event, 'listUnspent')">
-			<%= i18n.__('unspent') %>
-			<div class="infoTitleImg"></div>
+		<div>
+			<div class="infoTitle hideTitle" onclick="showHideBlock(event, 'listUnspent')">
+				<%= i18n.__('unspent') %>
+				<div class="infoTitleImg"></div>
+			</div>
 		</div>
-		<div id="listUnspent"></div>
+		<div id="listUnspent" style="display: none"></div>
 	</div>
 	<div class="row" style="margin-top: 50px">
-		<div class="infoTitle" id="titleListTransactions" style="display: none" onclick="showHideBlock(event, 'tableListTransactions')">
-			<%= i18n.__('transactions') %>
-			<div class="infoTitleImg"></div>
+		<div>
+			<div class="infoTitle" id="titleListTransactions" style="display: none" onclick="showHideBlock(event, 'tableListTransactions')">
+				<%= i18n.__('transactions') %>
+				<div class="infoTitleImg"></div>
+			</div>
 		</div>
 		<div id="tableListTransactions">
-			<div style="text-align: right">
-				<select class="transactionListType" style="display: none" onchange="viewChanged(event)">
-					<option value="transfers_view">Transfers view</option>
-					<option value="UTXO">UTXO view</option>
-				</select>
-			</div>
 			<div style="overflow-x: auto">
 				<table class="tableForTransactions" style="width: 100%; border-collapse: collapse">
 					<thead class="theadForTransactionsList" style="display: none">
@@ -234,9 +262,11 @@
 		</div>
 	</div>
 	<div class="row" id="blockListTopHolders" style="margin-top: 50px">
-		<div class="infoTitle" onclick="showHideBlock(event, 'topHoldersBlock')">
-			<%= i18n.__('holders') %>
-			<div class="infoTitleImg"></div>
+		<div>
+			<div class="infoTitle" onclick="showHideBlock(event, 'topHoldersBlock')">
+				<%= i18n.__('holders') %>
+				<div class="infoTitleImg"></div>
+			</div>
 		</div>
 		<div id="topHoldersBlock">
 			<div id="topHoldersList"></div>
@@ -244,17 +274,13 @@
 		</div>
 	</div>
 	<div class="row" style="margin-top: 50px">
-		<div class="infoTitle" id="titleListAssetTransactions" style="display: none" onclick="showHideBlock(event, 'tableListAssetTransactions')">
-			<%= i18n.__('transactions') %>
-			<div class="infoTitleImg"></div>
+		<div>
+			<div class="infoTitle" id="titleListAssetTransactions" style="display: none" onclick="showHideBlock(event, 'tableListAssetTransactions')">
+				<%= i18n.__('transactions') %>
+				<div class="infoTitleImg"></div>
+			</div>
 		</div>
 		<div id="tableListAssetTransactions">
-			<div style="text-align: right">
-				<select style="padding: 4px; margin: 4px 0 8px; outline: none" class="transactionListType" onchange="viewChanged(event)">
-					<option value="transfers_view">Transfers view</option>
-					<option value="UTXO">UTXO view</option>
-				</select>
-			</div>
 			<div style="overflow-x: auto">
 				<table class="tableForTransactions" style="width: 100%; border-collapse: collapse">
 					<thead class="theadForTransactionsList" style="display: none">
