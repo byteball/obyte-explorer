@@ -1387,7 +1387,118 @@ function generateAasFromTemplateList(arrAasFromTemplate){
 	return listAasFromTemplate;
 }
 
-function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {	
+function getHTMLBlocksForAddresses(addresses, myAddress) {
+	let blocks = '';
+	for (let i = 0; i < addresses.length; i++) {
+		let address = `<a href="#${addresses[i]}">${addresses[i]}</a>`;
+		let color = 'color: #2e81b9;';
+		if (addresses[i] === myAddress) {
+			address = addresses[i];
+			color = '';
+		}
+		blocks += `<div class="trunc" style="max-width: 240px;${color}${i > 0 ? 'margin-top:4px': ''}">
+			${address}
+		</div>`;
+	}
+	
+	return blocks;
+}
+
+function generateTransfersView(objTransactions, address, filter, unitAssets, isNew) {
+	$('.theadForTransactionsList').show();
+	filter = filter || {};
+	const listTransactions = [];
+	const filterAssetKey = filter.asset;
+	let transaction;
+
+	for(let key in unitAssets) {
+		const unit = key.split('_')[0];
+		const timestamp = parseInt(key.split('_')[1]);
+		const rowid = parseInt(key.split('_')[2]);
+		const date = moment.unix(timestamp).format('DD.MM.YYYY HH:mm:ss');
+
+		
+		let html = '';
+		unitAssets[key].forEach((asset, index) => {
+			const key = `${unit}_${asset}`;
+			transaction = objTransactions[key];
+			if (!transaction) return;
+			const transactionAssetKey = transaction.asset || 'bytes';
+			let assetName = transactionAssetKey;
+
+			if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
+				return;
+			}
+
+			if (transactionAssetKey === 'bytes') {
+				transaction.assetName = 'GBYTE';
+				transaction.assetDecimals = 9;
+			}
+			if (transaction.assetName) {
+				if (address) {
+					assetName = `<a href="#/asset/${transaction.assetName}">${transaction.assetName}</a>`;
+				} else {
+					assetName = transaction.assetName;
+				}
+			}
+
+			const lUnit = index === 0 ? `<a href="#${unit}">${unit}</a>` : '';
+			const lDate = index === 0 ? date : '';
+			const assetDecimals = transaction.assetDecimals;
+			const fromAddresses = [...new Set(transaction.from.map(t => t.address))];
+			let to = Object.values(transaction.to).filter(t => !fromAddresses.includes(t.address));
+			let amount = 0;
+			if (to.length) {
+				to.forEach(v => {
+					amount += v.amount
+				});
+				amount = formatAmountUsingDecimalFormat(amount, assetDecimals);
+			} else {
+				to = [{ address: fromAddresses[0] }];
+			}
+			const toAddresses = [...new Set(to.map(t => t.address))];
+			let type = '<span style="color: #f34a4a">out</span>';
+			if (address && !fromAddresses.includes(address)) {
+				type = '<span style="color: #50d046">in</span>';
+			}
+			
+
+			const id = index === 0 ? 'lt_' + timestamp + '_' + rowid : 'lt_' + timestamp + '_' + rowid + '_' + index;
+			html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="border-bottom: 1px solid #ccc">`;
+			html += `<td class="td_in_table">
+				<div class="trunc" style="max-width: 240px; color: #2e81b9" title="${unit}">${lUnit}</div>
+			</td>`;
+			html += `<td class="td_in_table" style="width: 180px;text-align: center"><div>${lDate}</div></td>`
+			html += `<td class="td_in_table">
+				<div>
+					${getHTMLBlocksForAddresses(fromAddresses, address)}
+				</div>
+			</td>`;
+			html += `<td class="td_in_table" style="width: 40px"><div>${type}</div></td>`
+			html += `<td class="td_in_table">
+				<div>
+					${getHTMLBlocksForAddresses(toAddresses, address)}
+				</div>
+			</td>`
+			html += `<td class="td_in_table" style="max-width: 250px"><div>${amount} ${assetName}</div></td>`
+			html += '</tr>';
+		});
+		listTransactions.push({
+			timestamp,
+			rowid,
+			html
+		});
+	}
+	return listTransactions;
+}
+
+function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {
+	if (!localStorage.getItem('UTXO')) {
+		$('.transactionListType').val('transfers_view');
+		return generateTransfersView(objTransactions, address, filter, unitAssets, isNew);
+	}
+	$('.transactionListType').val('UTXO');
+	$('.theadForTransactionsList').hide();
 	filter = filter || {};
 	var transaction, addressOut, _addressTo, listTransactions = [];
 	var filterAssetKey = filter.asset;
@@ -1407,7 +1518,7 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets, 
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>';
 
 		unitAssets[key].forEach(asset => {
-			html += '<tr class="'+ (isNew ? 'new_transaction' : '') +'"><td>';
+			html += '<tr class="utxo '+ (isNew ? 'new_transaction' : '') +'"><td>';
 				
 			const key = `${unit}_${asset}`;
 			transaction = objTransactions[key];
@@ -2040,6 +2151,17 @@ function windowOnClick(event) {
     if (event.target === modal) {
         toggleModal();
     }
+}
+
+function viewChanged(event) {
+	if (event.target.value === 'UTXO') {
+		localStorage.setItem('UTXO', '1');
+		$('.transactionListType').val('UTXO');
+	} else {
+		localStorage.removeItem('UTXO');
+		$('.transactionListType').val('transfers_view');
+	}
+	start();
 }
 
 trigger.addEventListener("click", toggleModal);

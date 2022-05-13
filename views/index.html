@@ -198,8 +198,26 @@
 			<%= i18n.__('transactions') %>
 			<div class="infoTitleImg"></div>
 		</div>
-		<table id="tableListTransactions">
-			<tbody id="listUnits"></tbody>
+		<div id="tableListTransactions">
+			<div style="text-align: right">
+				<select class="transactionListType" onchange="viewChanged(event)">
+					<option value="transfers_view">Transfers view</option>
+					<option value="UTXO">UTXO</option>
+				</select>
+			</div>
+			<table style="width: 100%; border-collapse: collapse">
+				<thead class="theadForTransactionsList" style="display: none">
+					<tr>
+						<th>Unit id</th>
+						<th>Date</th>
+						<th>From</th>
+						<th>Direction</th>
+						<th>To</th>
+						<th>Amount</th>
+					</tr>
+				</thead>
+				<tbody id="listUnits"></tbody>
+			</table>
 		</table>
 	</div>
 </div>
@@ -228,9 +246,27 @@
 			<%= i18n.__('transactions') %>
 			<div class="infoTitleImg"></div>
 		</div>
-		<table id="tableListAssetTransactions">
-			<tbody id="listAssetUnits"></tbody>
-		</table>
+		<div id="tableListAssetTransactions">
+			<div style="text-align: right">
+				<select style="padding: 4px; margin: 4px 0 8px; outline: none" class="transactionListType" onchange="viewChanged(event)">
+					<option value="transfers_view">Transfers view</option>
+					<option value="UTXO">UTXO</option>
+				</select>
+			</div>
+			<table style="width: 100%; border-collapse: collapse">
+				<thead class="theadForTransactionsList" style="display: none">
+					<tr>
+						<th>Unit id</th>
+						<th>Date</th>
+						<th>From</th>
+						<th>Direction</th>
+						<th>To</th>
+						<th>Amount</th>
+					</tr>
+				</thead>
+				<tbody id="listAssetUnits"></tbody>
+			</table>
+		</div>
 	</div>
 	<div id="infoAboutPrivateAsset" style="display: none">
 		<div style="text-align: center;font-weight: bold"><%= i18n.__('infoAboutPrivateAsset') %></div>
