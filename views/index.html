@@ -194,18 +194,18 @@
 		<div id="listUnspent"></div>
 	</div>
 	<div class="row" style="margin-top: 50px">
-		<div class="infoTitle" id="titleListTransactions" style="display: none" onclick="showHideBlock(event, 'listTransactions')">
+		<div class="infoTitle" id="titleListTransactions" style="display: none" onclick="showHideBlock(event, 'tableListTransactions')">
 			<%= i18n.__('transactions') %>
 			<div class="infoTitleImg"></div>
 		</div>
-		<div id="listTransactions">
+		<div id="tableListTransactions">
 			<div style="text-align: right">
-				<select class="transactionListType" onchange="viewChanged(event)">
+				<select class="transactionListType" style="display: none" onchange="viewChanged(event)">
 					<option value="transfers_view">Transfers view</option>
 					<option value="UTXO">UTXO</option>
 				</select>
 			</div>
-			<table style="width: 100%; border-collapse: collapse" id="tableListTransactions">
+			<table style="width: 100%; border-collapse: collapse">
 				<thead class="theadForTransactionsList" style="display: none">
 					<tr>
 						<th>Unit id</th>
@@ -242,18 +242,18 @@
 		</div>
 	</div>
 	<div class="row" style="margin-top: 50px">
-		<div class="infoTitle" id="titleListAssetTransactions" style="display: none" onclick="showHideBlock(event, 'listAssetTransactions')">
+		<div class="infoTitle" id="titleListAssetTransactions" style="display: none" onclick="showHideBlock(event, 'tableListAssetTransactions')">
 			<%= i18n.__('transactions') %>
 			<div class="infoTitleImg"></div>
 		</div>
-		<div id="listAssetTransactions">
+		<div id="tableListAssetTransactions">
 			<div style="text-align: right">
 				<select style="padding: 4px; margin: 4px 0 8px; outline: none" class="transactionListType" onchange="viewChanged(event)">
 					<option value="transfers_view">Transfers view</option>
 					<option value="UTXO">UTXO</option>
 				</select>
 			</div>
-			<table style="width: 100%; border-collapse: collapse" id="tableListAssetTransactions">
+			<table style="width: 100%; border-collapse: collapse">
 				<thead class="theadForTransactionsList" style="display: none">
 					<tr>
 						<th>Unit id</th>

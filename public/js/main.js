@@ -43,7 +43,10 @@ function init(_nodes, _edges) {
 
 function start() {
 	var currHash = getUrlHashKey();
-
+	page = 'loading';
+	$('.theadForTransactionsList').hide();
+	$('.transactionListType').hide();
+	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
 
@@ -646,6 +649,10 @@ function addLinksToAddresses(text){
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
+	page = 'loading';
+	$('.theadForTransactionsList').hide();
+	$('.transactionListType').hide();
+	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
 
@@ -1493,6 +1500,7 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 }
 
 function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {
+	$('.transactionListType').show();
 	if (!localStorage.getItem('UTXO')) {
 		$('.transactionListType').val('transfers_view');
 		return generateTransfersView(objTransactions, address, filter, unitAssets, isNew);
