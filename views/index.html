@@ -4,7 +4,7 @@
 	<title>Obyte Explorer</title>
 	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
 	<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&amp;subset=cyrillic" rel="stylesheet">
-	<link rel="stylesheet" href="/styles/app.css?v16">
+	<link rel="stylesheet" href="/styles/app.css?v17">
 	<link rel="icon" href="/img/icon_16x16@2x.png">
 </head>
 <body>
@@ -202,22 +202,24 @@
 			<div style="text-align: right">
 				<select class="transactionListType" style="display: none" onchange="viewChanged(event)">
 					<option value="transfers_view">Transfers view</option>
-					<option value="UTXO">UTXO</option>
+					<option value="UTXO">UTXO view</option>
 				</select>
 			</div>
-			<table style="width: 100%; border-collapse: collapse">
-				<thead class="theadForTransactionsList" style="display: none">
-					<tr>
-						<th>Unit id</th>
-						<th>Date</th>
-						<th>From</th>
-						<th>Direction</th>
-						<th>To</th>
-						<th>Amount</th>
-					</tr>
-				</thead>
-				<tbody id="listUnits"></tbody>
-			</table>
+			<div style="overflow-x: auto">
+				<table class="tableForTransactions" style="width: 100%; border-collapse: collapse">
+					<thead class="theadForTransactionsList" style="display: none">
+						<tr>
+							<th>Unit id</th>
+							<th>Date</th>
+							<th>From</th>
+							<th>Direction</th>
+							<th>To</th>
+							<th>Amount</th>
+						</tr>
+					</thead>
+					<tbody id="listUnits"></tbody>
+				</table>
+			</div>
 		</div>
 	</div>
 </div>
@@ -250,22 +252,23 @@
 			<div style="text-align: right">
 				<select style="padding: 4px; margin: 4px 0 8px; outline: none" class="transactionListType" onchange="viewChanged(event)">
 					<option value="transfers_view">Transfers view</option>
-					<option value="UTXO">UTXO</option>
+					<option value="UTXO">UTXO view</option>
 				</select>
 			</div>
-			<table style="width: 100%; border-collapse: collapse">
-				<thead class="theadForTransactionsList" style="display: none">
-					<tr>
-						<th>Unit id</th>
-						<th>Date</th>
-						<th>From</th>
-						<th>Direction</th>
-						<th>To</th>
-						<th>Amount</th>
-					</tr>
-				</thead>
-				<tbody id="listAssetUnits"></tbody>
-			</table>
+			<div style="overflow-x: auto">
+				<table class="tableForTransactions" style="width: 100%; border-collapse: collapse">
+					<thead class="theadForTransactionsList" style="display: none">
+						<tr>
+							<th>Unit id</th>
+							<th>Date</th>
+							<th>From</th>
+							<th>To</th>
+							<th>Amount</th>
+						</tr>
+					</thead>
+					<tbody id="listAssetUnits"></tbody>
+				</table>
+			</div>
 		</div>
 	</div>
 	<div id="infoAboutPrivateAsset" style="display: none">
@@ -292,6 +295,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/cytoscape.min.js"></script>
 <script src="/js/dagre.min.js"></script>
-<script src="/js/main.js?v35"></script>
+<script src="/js/main.js?v36"></script>
 </body>
 </html>

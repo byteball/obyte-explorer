@@ -621,7 +621,7 @@ label {
 		display: block;
 	}
 
-	#listUnits td, #listAssetUnits td {
+	#listUnits td:not(.td_in_table), #listAssetUnits td:not(.td_in_table) {
 		display: block;
 		width: 100%;
 	}

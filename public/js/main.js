@@ -1412,7 +1412,6 @@ function getHTMLBlocksForAddresses(addresses, myAddress) {
 }
 
 function generateTransfersView(objTransactions, address, filter, unitAssets, isNew) {
-	$('.theadForTransactionsList').show();
 	filter = filter || {};
 	const listTransactions = [];
 	const filterAssetKey = filter.asset;
@@ -1423,19 +1422,28 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 		const timestamp = parseInt(key.split('_')[1]);
 		const rowid = parseInt(key.split('_')[2]);
 		const date = moment.unix(timestamp).format('DD.MM.YYYY HH:mm:ss');
-
 		
 		let html = '';
-		unitAssets[key].forEach((asset, index) => {
+		unitAssets[key]
+		.filter(asset => {
 			const key = `${unit}_${asset}`;
 			transaction = objTransactions[key];
-			if (!transaction) return;
+			if (!transaction) {
+				return false;
+			}
+			
+			const transactionAssetKey = transaction.asset || 'bytes';
+			if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
+				return false;
+			}
+			
+			return true;
+		})
+		.forEach((asset, index) => {
+			const key = `${unit}_${asset}`;
+			transaction = objTransactions[key];
 			const transactionAssetKey = transaction.asset || 'bytes';
 			let assetName = transactionAssetKey;
-
-			if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
-				return;
-			}
 
 			if (transactionAssetKey === 'bytes') {
 				transaction.assetName = 'GBYTE';
@@ -1443,13 +1451,13 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 			}
 			if (transaction.assetName) {
 				if (address) {
-					assetName = `<a href="#/asset/${transaction.assetName}">${transaction.assetName}</a>`;
+					assetName = `<a class="trunc" href="#/asset/${transaction.assetName}">${transaction.assetName}</a>`;
 				} else {
 					assetName = transaction.assetName;
 				}
 			}
 
-			const lUnit = index === 0 ? `<a href="#${unit}">${unit}</a>` : '';
+			const lUnit = index === 0 ? `<a class="trunc" href="#${unit}">${unit}</a>` : '';
 			const lDate = index === 0 ? date : '';
 			const assetDecimals = transaction.assetDecimals;
 			const fromAddresses = [...new Set(transaction.from.map(t => t.address))];
@@ -1481,7 +1489,7 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 					${getHTMLBlocksForAddresses(fromAddresses, address)}
 				</div>
 			</td>`;
-			html += `<td class="td_in_table" style="width: 40px"><div>${type}</div></td>`
+			html += address ? `<td class="td_in_table" style="width: 40px"><div>${type}</div></td>` : '';
 			html += `<td class="td_in_table">
 				<div>
 					${getHTMLBlocksForAddresses(toAddresses, address)}
@@ -1499,14 +1507,27 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 	return listTransactions;
 }
 
+function setCSSForTransfersView() {
+	$('.transactionListType').val('transfers_view');
+	$('.theadForTransactionsList').show();
+	$('#blockListUnspent').hide();
+	$('.tableForTransactions').css('min-width', '1200px');
+}
+
+function setCSSForUTXOView() {
+	$('.transactionListType').val('UTXO');
+	$('.theadForTransactionsList').hide();
+	$('#blockListUnspent').show();
+	$('.tableForTransactions').css('min-width', '');
+}
+
 function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {
 	$('.transactionListType').show();
 	if (!localStorage.getItem('UTXO')) {
-		$('.transactionListType').val('transfers_view');
+		setCSSForTransfersView();
 		return generateTransfersView(objTransactions, address, filter, unitAssets, isNew);
 	}
-	$('.transactionListType').val('UTXO');
-	$('.theadForTransactionsList').hide();
+	setCSSForUTXOView();
 	filter = filter || {};
 	var transaction, addressOut, _addressTo, listTransactions = [];
 	var filterAssetKey = filter.asset;

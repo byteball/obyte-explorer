@@ -24,7 +24,7 @@
 	"statusFinal": "stable/confirmed/final",
 	"labelDefinition": "Definition",
 	"transactionsInAssets": "Show transactions in assets:",
-	"unspent": "Unspent",
+	"unspent": "Unspent outputs",
 	"transactions": "Transactions",
 	"unitLegend": "Unit Legend",
 	"notMcNotStable": "not on main chain, not stable",
