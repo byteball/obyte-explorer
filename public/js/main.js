@@ -1472,6 +1472,7 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 				}
 			}
 
+			const id = index === 0 ? 'lt_' + timestamp + '_' + rowid : 'lt_' + timestamp + '_' + rowid + '_' + index;
 			const lUnit = index === 0 ? `<a class="trunc" href="#${unit}">${unit}</a>` : '';
 			const lDate = index === 0 ? date : '';
 			const isLastUnit = arr.length - 1 === index;
@@ -1490,6 +1491,10 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 					toAddresses[key] = formatAmountUsingDecimalFormat(toAddresses[key], assetDecimals)
 				}
 			} else {
+				if (asset === null && unitAssets[key].length > 1) {
+					html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')} qqq" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}"></tr>`;
+					return; 
+				}
 				toAddresses[fromAddresses[0]] = 0;
 			}
 			let type = '<span style="color: #f34a4a">out</span>';
@@ -1497,8 +1502,7 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 				type = '<span style="color: #50d046">in</span>';
 			}
 			
-
-			const id = index === 0 ? 'lt_' + timestamp + '_' + rowid : 'lt_' + timestamp + '_' + rowid + '_' + index;
+			
 			html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}">`;
 			html += `<td class="td_in_table">
 				<div class="trunc" style="max-width: 240px; color: #2e81b9" title="${unit}">${lUnit}</div>
