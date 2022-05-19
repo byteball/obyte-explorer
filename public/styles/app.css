@@ -350,7 +350,7 @@ label {
 	text-align: center;
 }
 
-#addressInfo, #assetInfo {
+#addressInfo, #assetInfo, #whiteBlock {
 	position: absolute;
 	top: 46px;
 	right: 0;

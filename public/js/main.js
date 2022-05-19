@@ -41,6 +41,11 @@ function init(_nodes, _edges) {
 	isInit = true;
 }
 
+function hideAll() {
+	$('#assetInfo').hide();
+	$('#addressInfo').hide();
+}
+
 function start() {
 	var currHash = getUrlHashKey();
 	page = 'loading';
@@ -51,7 +56,8 @@ function start() {
 
 		socket.emit('start', {type: 'asset', asset});
 
-		$('#assetInfo').show();
+		hideAll();
+		$('#whiteBlock').show();
 		$('.trigger-legend').hide();
 		$('#loader').show();
 	}
@@ -72,7 +78,8 @@ function start() {
 				asset: paramAsset
 			}
 		});
-		$('#addressInfo').show();
+		hideAll();
+		$('#whiteBlock').show();
 		$('.trigger-legend').hide();
 		$('#loader').show();
 	}
@@ -656,18 +663,16 @@ window.addEventListener('hashchange', function() {
 
 		socket.emit('start', {type: 'asset', asset});
 
-		$('#assetInfo').show();
-		$('#addressInfo').hide();
+		hideAll();
+		$('#whiteBlock').show();
 		$('.trigger-legend').hide();
 		$('#loader').show();
 	}
 	else if (currHash.length === 45) {
 		highlightNode(currHash.substr(1));
-		$('#assetInfo').hide();
-		if ($('#addressInfo').css('display') == 'block') {
-			$('#addressInfo').hide();
-			$('.trigger-legend').show();
-		}
+		hideAll();
+		$('#whiteBlock').hide();
+		$('.trigger-legend').show();
 	}
 	else if (currHash.length === 33) {
 		var currHashParams = getUrlHashParams();
@@ -679,8 +684,8 @@ window.addEventListener('hashchange', function() {
 				asset: paramAsset,
 			},
 		});
-		$('#addressInfo').show();
-		$('#assetInfo').hide();
+		hideAll();
+		$('#whiteBlock').show();
 		$('.trigger-legend').hide();
 		$('#loader').show();
 	}
@@ -1365,6 +1370,7 @@ socket.on('assetInfo', (data) => {
 	$('#loader').hide();
 	$(`${pageBlockNames.address.info}`).hide();
 	$(`${pageBlockNames.address.blockList}`).hide();
+	$('#whiteBlock').hide();
 	
 	if (data && data.notFound) {
 		showInfoMessage($('#infoMessageAssetNotFound').text());
@@ -1373,10 +1379,8 @@ socket.on('assetInfo', (data) => {
 		testnet = data.testnet;
 		assetInfoContent.setAssetInfoContent(data);
 
-		if ($('#assetInfo').css('display') === 'none') {
-			$('#assetInfo').show();
-			$('.trigger-legend').hide();
-		}
+		$('#assetInfo').show();
+		$('.trigger-legend').hide();
 		formatAllNumbers()
 	} else {
 		showInfoMessage($('#infoMessageAssetNotFound').text());
@@ -1931,6 +1935,7 @@ socket.on('addressInfo', function(data) {
 	$('#loader').hide();
 	$(`${pageBlockNames.asset.info}`).hide();
 	$(`${pageBlockNames.asset.blockList}`).hide();
+	$('#whiteBlock').hide();
 		
 	if (data) {
 		page = 'address';
@@ -1939,10 +1944,8 @@ socket.on('addressInfo', function(data) {
 		var currAssetKey = currHashParams.asset || 'all';
 		addressInfoContent.setNew(currAssetKey, data);
 
-		if ($('#addressInfo').css('display') == 'none') {
-			$('#addressInfo').show();
-			$('.trigger-legend').hide();
-		}
+		$('#addressInfo').show();
+		$('.trigger-legend').hide();
 		formatAllNumbers()
 	}
 	else {
@@ -2062,6 +2065,7 @@ const pageBlockNames = {
 function closePage(currentPage) {
 	$(`${pageBlockNames[currentPage].info}`).hide();
 	$(`${pageBlockNames[currentPage].blockList}`).hide();
+	$('#whiteBlock').hide();
 	
 	$('.trigger-legend').show();
 	
