@@ -1538,7 +1538,7 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 				}
 			} else {
 				if (asset === null && unitAssets[key].length > 1) {
-					html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')} qqq" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}"></tr>`;
+					html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}"><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
 					return; 
 				}
 				toAddresses[fromAddresses[0]] = 0;
