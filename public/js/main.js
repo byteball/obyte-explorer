@@ -45,7 +45,6 @@ function start() {
 	var currHash = getUrlHashKey();
 	page = 'loading';
 	$('.theadForTransactionsList').hide();
-	$('.transactionListType').hide();
 	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
@@ -651,7 +650,6 @@ window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
 	page = 'loading';
 	$('.theadForTransactionsList').hide();
-	$('.transactionListType').hide();
 	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
@@ -831,8 +829,55 @@ function getFormattedText(amount, bytePayment, decimals) {
 			(bytePayment ? ` bytes${getUsdText(amount)}` : '');
 }
 
-function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable, unit) {
+function generatePaymentMessageForTransfersView(messages, outputsUnit, authors){
+	let i = 0;
+	let html = 
+		'<div class="message">' +
+		'<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'message_payment\')">Payments</div><div class="messagesInfo" id="message_payment">';
+	
+	messages.forEach(message => {
+		const asset = message.payload.asset || 'null';
+		let assetName = message.payload.asset || 'bytes';
+		let assetDecimals = 0;
+		if(message.payload.assetName) {
+			assetName = `<a href="#/asset/${message.payload.assetName}">${message.payload.assetName}</a>`;
+			assetDecimals = message.payload.assetDecimals;
+		}
+		outputsUnit[asset].forEach(output => {
+			if (authors.includes(output.address)) {
+				return;
+			}
+			html += '<div class="outputs_div">';
+			html += '<div> <a href="#' + output.address + '">' + output.address + '</a><br><span style="">' + 
+				getFormattedText(output.amount, asset === 'null', assetDecimals) +
+				(asset !== 'null' ? ' ' + assetName : '') +
+				'</span></div>';
+			html += '</div>';
+			i++;
+		});
+	})
+	html += '</div></div>';
+
+	if (!i) return '';
+	return html;
+}
+
+function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable, unit, authors) {
 	var messagesOut = '', blockId = 0, key, asset, assetName, assetDecimals, shownHiddenPayments = false;
+	if (!localStorage.getItem('UTXO')) {
+		const _messages = [];
+		messages = messages.filter(message => {
+			if(message.app === 'payment') {
+				_messages.push(message);
+				return false;
+			}
+			return true;
+		});
+		messagesOut += generatePaymentMessageForTransfersView(_messages, outputsUnit, authors);
+		if (!messages.length && messagesOut === '') {
+			messagesOut = '<div class="messagesInfo">none</div>';
+		}
+	}
 	messages.forEach(function(message) {
 		if (message.payload) {
 			asset = message.payload.asset || 'null';
@@ -985,6 +1030,7 @@ socket.on('info', function(data) {
 			parentOut += '<div><a href="#' + unit + '">' + unit + '</a></div>';
 		});
 		var incAuthors = 0;
+		const authors = data.authors.map(author => author.address);
 		data.authors.forEach(function(author) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
@@ -1014,7 +1060,7 @@ socket.on('info', function(data) {
 		} else
 			$('#confDelayLightDiv').hide();
 
-		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable, data.unit));
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable, data.unit, authors));
 
 		$('#fees').html(getFormattedText(parseInt(data.headers_commission) + parseInt(data.payload_commission), true) + ' (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
@@ -1546,7 +1592,6 @@ function setCSSForUTXOView() {
 }
 
 function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {
-	$('.transactionListType').show();
 	if (!localStorage.getItem('UTXO')) {
 		setCSSForTransfersView();
 		return generateTransfersView(objTransactions, address, filter, unitAssets, isNew);
