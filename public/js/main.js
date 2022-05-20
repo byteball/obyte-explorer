@@ -41,15 +41,23 @@ function init(_nodes, _edges) {
 	isInit = true;
 }
 
+function hideAll() {
+	$('#assetInfo').hide();
+	$('#addressInfo').hide();
+}
+
 function start() {
 	var currHash = getUrlHashKey();
-
+	page = 'loading';
+	$('.theadForTransactionsList').hide();
+	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
 
 		socket.emit('start', {type: 'asset', asset});
 
-		$('#assetInfo').show();
+		hideAll();
+		$('#whiteBlock').show();
 		$('.trigger-legend').hide();
 		$('#loader').show();
 	}
@@ -70,7 +78,8 @@ function start() {
 				asset: paramAsset
 			}
 		});
-		$('#addressInfo').show();
+		hideAll();
+		$('#whiteBlock').show();
 		$('.trigger-legend').hide();
 		$('#loader').show();
 	}
@@ -646,23 +655,24 @@ function addLinksToAddresses(text){
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
+	page = 'loading';
+	$('.theadForTransactionsList').hide();
+	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
 
 		socket.emit('start', {type: 'asset', asset});
 
-		$('#assetInfo').show();
-		$('#addressInfo').hide();
+		hideAll();
+		$('#whiteBlock').show();
 		$('.trigger-legend').hide();
 		$('#loader').show();
 	}
 	else if (currHash.length === 45) {
 		highlightNode(currHash.substr(1));
-		$('#assetInfo').hide();
-		if ($('#addressInfo').css('display') == 'block') {
-			$('#addressInfo').hide();
-			$('.trigger-legend').show();
-		}
+		hideAll();
+		$('#whiteBlock').hide();
+		$('.trigger-legend').show();
 	}
 	else if (currHash.length === 33) {
 		var currHashParams = getUrlHashParams();
@@ -674,8 +684,8 @@ window.addEventListener('hashchange', function() {
 				asset: paramAsset,
 			},
 		});
-		$('#addressInfo').show();
-		$('#assetInfo').hide();
+		hideAll();
+		$('#whiteBlock').show();
 		$('.trigger-legend').hide();
 		$('#loader').show();
 	}
@@ -824,8 +834,55 @@ function getFormattedText(amount, bytePayment, decimals) {
 			(bytePayment ? ` bytes${getUsdText(amount)}` : '');
 }
 
-function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable, unit) {
+function generatePaymentMessageForTransfersView(messages, outputsUnit, authors){
+	let i = 0;
+	let html = 
+		'<div class="message">' +
+		'<div class="message_app infoTitleChild" onclick="showHideBlock(event, \'message_payment\')">Payments</div><div class="messagesInfo" id="message_payment">';
+	
+	messages.forEach(message => {
+		const asset = message.payload.asset || 'null';
+		let assetName = message.payload.asset || 'bytes';
+		let assetDecimals = 0;
+		if(message.payload.assetName) {
+			assetName = `<a href="#/asset/${message.payload.assetName}">${message.payload.assetName}</a>`;
+			assetDecimals = message.payload.assetDecimals;
+		}
+		outputsUnit[asset].forEach(output => {
+			if (authors.includes(output.address)) {
+				return;
+			}
+			html += '<div class="outputs_div">';
+			html += '<div> <a href="#' + output.address + '">' + output.address + '</a><br><span style="">' + 
+				getFormattedText(output.amount, asset === 'null', assetDecimals) +
+				(asset !== 'null' ? ' ' + assetName : '') +
+				'</span></div>';
+			html += '</div>';
+			i++;
+		});
+	})
+	html += '</div></div>';
+
+	if (!i) return '';
+	return html;
+}
+
+function generateMessageInfo(messages, transfersInfo, outputsUnit, assocCommissions, is_stable, unit, authors) {
 	var messagesOut = '', blockId = 0, key, asset, assetName, assetDecimals, shownHiddenPayments = false;
+	if (!localStorage.getItem('UTXO')) {
+		const _messages = [];
+		messages = messages.filter(message => {
+			if(message.app === 'payment') {
+				_messages.push(message);
+				return false;
+			}
+			return true;
+		});
+		messagesOut += generatePaymentMessageForTransfersView(_messages, outputsUnit, authors);
+		if (!messages.length && messagesOut === '') {
+			messagesOut = '<div class="messagesInfo">none</div>';
+		}
+	}
 	messages.forEach(function(message) {
 		if (message.payload) {
 			asset = message.payload.asset || 'null';
@@ -978,6 +1035,7 @@ socket.on('info', function(data) {
 			parentOut += '<div><a href="#' + unit + '">' + unit + '</a></div>';
 		});
 		var incAuthors = 0;
+		const authors = data.authors.map(author => author.address);
 		data.authors.forEach(function(author) {
 			authorsOut += '<div><a href="#' + author.address + '">' + author.address + '</a>';
 			if (author.definition) {
@@ -1007,7 +1065,7 @@ socket.on('info', function(data) {
 		} else
 			$('#confDelayLightDiv').hide();
 
-		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable, data.unit));
+		$('#messages').html(data.sequence === 'final-bad' ? '' : generateMessageInfo(data.messages, data.transfersInfo, data.outputsUnit, data.assocCommissions, data.is_stable, data.unit, authors));
 
 		$('#fees').html(getFormattedText(parseInt(data.headers_commission) + parseInt(data.payload_commission), true) + ' (<span class="numberFormat">' + data.headers_commission + '</span> '+ $('#labelHeaders').text() +', <span class="numberFormat">' + data.payload_commission + '</span> '+ $('#labelPayload').text() +')');
 		$('#last_ball_unit').html('<a href="#'+data.last_ball_unit+'">'+data.last_ball_unit+'</a>');
@@ -1078,7 +1136,11 @@ const assetInfoContent = {
 			}
 		} else {
 			nameConditionalBlock += htmlIfNotNameOrUrl;
-		} 
+		}
+		
+		if (this.data.assetUnit === 'bytes') {
+			nameConditionalBlock = `${this.data.name} <span style="font-weight: normal"> - native asset</span>`;
+		}
 		
 		let resultStr = '<div title="' + this.data.assetUnit + '">'+ nameConditionalBlock + '</div>';
 
@@ -1308,6 +1370,7 @@ socket.on('assetInfo', (data) => {
 	$('#loader').hide();
 	$(`${pageBlockNames.address.info}`).hide();
 	$(`${pageBlockNames.address.blockList}`).hide();
+	$('#whiteBlock').hide();
 	
 	if (data && data.notFound) {
 		showInfoMessage($('#infoMessageAssetNotFound').text());
@@ -1316,10 +1379,8 @@ socket.on('assetInfo', (data) => {
 		testnet = data.testnet;
 		assetInfoContent.setAssetInfoContent(data);
 
-		if ($('#assetInfo').css('display') === 'none') {
-			$('#assetInfo').show();
-			$('.trigger-legend').hide();
-		}
+		$('#assetInfo').show();
+		$('.trigger-legend').hide();
 		formatAllNumbers()
 	} else {
 		showInfoMessage($('#infoMessageAssetNotFound').text());
@@ -1387,7 +1448,159 @@ function generateAasFromTemplateList(arrAasFromTemplate){
 	return listAasFromTemplate;
 }
 
-function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {	
+function getHTMLBlocksForAddresses(addresses, myAddress) {
+	let html = '';
+	
+	addresses.forEach((address, i) => {
+		let addressHTML = `<a href="#${address}">${address}</a>`;
+		let color = 'color: #2e81b9;';
+		if (address === myAddress) {
+			addressHTML = address;
+			color = '';
+		}
+		html += `<div class="trunc" style="max-width: 240px;${color}${i > 0 ? 'margin-top:8px': ''}">
+			${addressHTML}
+		</div>`;
+	});
+	
+	return html;
+}
+
+function getHTMLBlockForAmounts(amounts, assetName) {
+	let html = '';
+	
+	amounts.forEach((amount, i) => {
+		html += `<div style="${i > 0 ? 'margin-top:8px': ''}"><span class="numberFormat">${amount}</span> ${assetName}</div>`
+	});
+	
+	return html;
+}
+
+function generateTransfersView(objTransactions, address, filter, unitAssets, isNew) {
+	filter = filter || {};
+	const listTransactions = [];
+	const filterAssetKey = filter.asset;
+	let transaction;
+
+	for(let key in unitAssets) {
+		const unit = key.split('_')[0];
+		const timestamp = parseInt(key.split('_')[1]);
+		const rowid = parseInt(key.split('_')[2]);
+		const date = moment.unix(timestamp).format('DD.MM.YYYY HH:mm:ss');
+		
+		let html = '';
+		unitAssets[key]
+		.filter(asset => {
+			const transactionKey = `${unit}_${asset}`;
+			transaction = objTransactions[transactionKey];
+			if (!transaction) {
+				return false;
+			}
+			
+			const transactionAssetKey = transaction.asset || 'bytes';
+			if (filterAssetKey && filterAssetKey !== 'all' && transactionAssetKey !== filterAssetKey) {
+				return false;
+			}
+			
+			return true;
+		})
+		.forEach((asset, index, arr) => {
+			const transactionKey = `${unit}_${asset}`;
+			transaction = objTransactions[transactionKey];
+			const transactionAssetKey = transaction.asset || 'bytes';
+			let assetName = transactionAssetKey;
+
+			if (transactionAssetKey === 'bytes') {
+				transaction.assetName = 'GBYTE';
+				transaction.assetDecimals = 9;
+			}
+			if (transaction.assetName) {
+				if (address) {
+					assetName = `<a class="trunc" href="#/asset/${transaction.assetName}">${transaction.assetName}</a>`;
+				} else {
+					assetName = transaction.assetName;
+				}
+			}
+
+			const id = index === 0 ? 'lt_' + timestamp + '_' + rowid : 'lt_' + timestamp + '_' + rowid + '_' + index;
+			const lUnit = index === 0 ? `<a class="trunc" href="#${unit}">${unit}</a>` : '';
+			const lDate = index === 0 ? date : '';
+			const isLastUnit = arr.length - 1 === index;
+			const assetDecimals = transaction.assetDecimals;
+			const fromAddresses = [...new Set(transaction.from.map(t => t.address))];
+			let to = Object.values(transaction.to).filter(t => !fromAddresses.includes(t.address));
+			let toAddresses = {};
+			if (to.length) {
+				to.forEach(v => {
+					if (!toAddresses[v.address]) {
+						toAddresses[v.address] = 0;
+					}
+					toAddresses[v.address] += v.amount;
+				});
+				for (let key in toAddresses) {
+					toAddresses[key] = formatAmountUsingDecimalFormat(toAddresses[key], assetDecimals)
+				}
+			} else {
+				if (asset === null && unitAssets[key].length > 1) {
+					html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}"><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+					return; 
+				}
+				toAddresses[fromAddresses[0]] = 0;
+			}
+			let type = '<span style="color: #f34a4a">out</span>';
+			if (address && !fromAddresses.includes(address)) {
+				type = '<span style="color: #50d046">in</span>';
+			}
+			
+			
+			html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}">`;
+			html += `<td class="td_in_table">
+				<div class="trunc" style="max-width: 240px; color: #2e81b9" title="${unit}">${lUnit}</div>
+			</td>`;
+			html += `<td class="td_in_table" style="width: 180px;text-align: center"><div>${lDate}</div></td>`
+			html += `<td class="td_in_table">
+				<div>
+					${getHTMLBlocksForAddresses(fromAddresses, address)}
+				</div>
+			</td>`;
+			html += address ? `<td class="td_in_table" style="width: 40px"><div>${type}</div></td>` : '';
+			html += `<td class="td_in_table">
+				<div>
+					${getHTMLBlocksForAddresses(Object.keys(toAddresses), address)}
+				</div>
+			</td>`
+			html += `<td class="td_in_table" style="max-width: 250px"><div>${getHTMLBlockForAmounts(Object.values(toAddresses), assetName)}</div></td>`
+			html += '</tr>';
+		});
+		listTransactions.push({
+			timestamp,
+			rowid,
+			html
+		});
+	}
+	return listTransactions;
+}
+
+function setCSSForTransfersView() {
+	$('.transactionListType').val('transfers_view');
+	$('.theadForTransactionsList').show();
+	$('#blockListUnspent').hide();
+	$('.tableForTransactions').css('min-width', '1200px');
+}
+
+function setCSSForUTXOView() {
+	$('.transactionListType').val('UTXO');
+	$('.theadForTransactionsList').hide();
+	$('#blockListUnspent').show();
+	$('.tableForTransactions').css('min-width', '');
+}
+
+function generateTransactionsList(objTransactions, address, filter, unitAssets, isNew) {
+	if (!localStorage.getItem('UTXO')) {
+		setCSSForTransfersView();
+		return generateTransfersView(objTransactions, address, filter, unitAssets, isNew);
+	}
+	setCSSForUTXOView();
 	filter = filter || {};
 	var transaction, addressOut, _addressTo, listTransactions = [];
 	var filterAssetKey = filter.asset;
@@ -1407,7 +1620,7 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets, 
 			'<tr><th colspan="3"><div style="margin: 5px"></div></th></tr>';
 
 		unitAssets[key].forEach(asset => {
-			html += '<tr class="'+ (isNew ? 'new_transaction' : '') +'"><td>';
+			html += '<tr class="utxo '+ (isNew ? 'new_transaction' : '') +'"><td>';
 				
 			const key = `${unit}_${asset}`;
 			transaction = objTransactions[key];
@@ -1722,6 +1935,7 @@ socket.on('addressInfo', function(data) {
 	$('#loader').hide();
 	$(`${pageBlockNames.asset.info}`).hide();
 	$(`${pageBlockNames.asset.blockList}`).hide();
+	$('#whiteBlock').hide();
 		
 	if (data) {
 		page = 'address';
@@ -1730,10 +1944,8 @@ socket.on('addressInfo', function(data) {
 		var currAssetKey = currHashParams.asset || 'all';
 		addressInfoContent.setNew(currAssetKey, data);
 
-		if ($('#addressInfo').css('display') == 'none') {
-			$('#addressInfo').show();
-			$('.trigger-legend').hide();
-		}
+		$('#addressInfo').show();
+		$('.trigger-legend').hide();
 		formatAllNumbers()
 	}
 	else {
@@ -1853,6 +2065,7 @@ const pageBlockNames = {
 function closePage(currentPage) {
 	$(`${pageBlockNames[currentPage].info}`).hide();
 	$(`${pageBlockNames[currentPage].blockList}`).hide();
+	$('#whiteBlock').hide();
 	
 	$('.trigger-legend').show();
 	
@@ -2040,6 +2253,17 @@ function windowOnClick(event) {
     if (event.target === modal) {
         toggleModal();
     }
+}
+
+function viewChanged(event) {
+	if (event.target.value === 'UTXO') {
+		localStorage.setItem('UTXO', '1');
+		$('.transactionListType').val('UTXO');
+	} else {
+		localStorage.removeItem('UTXO');
+		$('.transactionListType').val('transfers_view');
+	}
+	start();
 }
 
 trigger.addEventListener("click", toggleModal);

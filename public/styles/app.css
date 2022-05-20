@@ -153,6 +153,7 @@ body {
 	padding: 5px;
 	cursor: pointer;
 	color: #333333;
+	display: inline-block;
 }
 
 .infoTitle:hover {
@@ -180,15 +181,15 @@ body {
 	color: #333333;
 }
 
-#addressInfo .infoTitle {
+#addressInfo .infoTitle, #assetInfo .infoTitle {
 	padding: 5px 0;
 }
 
-#addressInfo .infoTitle > .infoTitleImg {
+#addressInfo .infoTitle > .infoTitleImg, #assetInfo .infoTitle > .infoTitleImg {
 	margin-bottom: -1px;
 }
 
-#addressInfo .infoTitle.hideTitle > .infoTitleImg {
+#addressInfo .infoTitle.hideTitle > .infoTitleImg, #assetInfo .infoTitle.hideTitle > .infoTitleImg {
 	margin-bottom: -1px;
 }
 
@@ -202,6 +203,20 @@ body {
     outline: none;
 	padding: 0 35px 0 5px;
 	cursor: pointer;
+}
+
+.transactionListType {
+	border: 1px solid #ccc;
+	height: 30px;
+	padding: 0 5px; 
+	margin: 4px 0 8px; 
+	outline: none;
+	cursor: pointer;
+}
+
+.theadForTransactionsList th {
+	padding: 7px 0;
+	background-color: #f1f1f1;
 }
 
 .infoTitleChild {
@@ -335,7 +350,7 @@ label {
 	text-align: center;
 }
 
-#addressInfo, #assetInfo {
+#addressInfo, #assetInfo, #whiteBlock {
 	position: absolute;
 	top: 46px;
 	right: 0;
@@ -377,11 +392,11 @@ label {
 	cursor: pointer;
 }
 
-#listUnits > tr > td:first-child {
+.utxo > td:first-child {
 	width: 45%;
 }
 
-#listUnits > tr > td:nth-child(2) {
+.utxo > td:nth-child(2) {
 	width: 5%;
 	text-align: center;
 }
@@ -539,6 +554,45 @@ label {
 	display: none;
 }
 
+.trunc {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.td_in_table {
+	padding: 8px 0;
+	vertical-align: top;
+}
+
+.td_in_table > div {
+	display: inline-block;
+}
+
+.moreAddressesBlock {
+	margin-left: 2px;
+}
+
+.addressesBlock {
+	position: absolute;
+	background-color: #fff;
+	padding: 6px;
+	display: none;
+	border: 1px solid #ccc;
+}
+
+.addressCounter {
+	background-color: #2980b9;
+	font-size: 15px;
+	padding: 0 6px;
+	border-radius: 6px;
+	color: #fff;
+}
+
+.moreAddressesBlock:hover .addressesBlock {
+	display: block;
+}
+
 /* adaptive */
 
 @media all and (max-width: 1200px) {
@@ -568,7 +622,7 @@ label {
 		display: block;
 	}
 
-	#listUnits td, #listAssetUnits td {
+	#listUnits td:not(.td_in_table), #listAssetUnits td:not(.td_in_table) {
 		display: block;
 		width: 100%;
 	}
