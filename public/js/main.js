@@ -1517,12 +1517,13 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 				transaction.assetName = 'GBYTE';
 				transaction.assetDecimals = 9;
 			}
+			
 			if (transaction.assetName) {
-				if (address) {
-					assetName = `<a class="trunc" href="#/asset/${transaction.assetName}">${transaction.assetName}</a>`;
-				} else {
-					assetName = transaction.assetName;
-				}
+				assetName = transaction.assetName;
+			}
+			
+			if (address) {
+				assetName = `<a class="trunc" href="#/asset/${assetName}">${assetName}</a>`;
 			}
 
 			const id = index === 0 ? 'lt_' + timestamp + '_' + rowid : 'lt_' + timestamp + '_' + rowid + '_' + index;
