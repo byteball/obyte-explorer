@@ -563,6 +563,7 @@ label {
 .td_in_table {
 	padding: 8px 0;
 	vertical-align: top;
+	white-space: nowrap;
 }
 
 .td_in_table > div {

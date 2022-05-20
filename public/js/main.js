@@ -1306,6 +1306,9 @@ const assetInfoContent = {
 		} else {
 			if (exchangeRates[`${this.data.assetUnit}_USD`]) {
 				this.dollarPrice = exchangeRates[`${this.data.assetUnit}_USD`];
+				
+				if(!this.data.decimals) this.data.decimals = 0;
+				
 				this.marketCap = this.dollarPrice * (this.data.supply / 10 ** this.data.decimals);
 			}
 		}
@@ -1712,7 +1715,7 @@ var addressInfoContent = {
 					const balance = formatAmountUsingDecimalFormat(objBalance.balance, objBalance.assetDecimals);
 					resultStr += '<div title="' + assetKey + '"><span class="numberFormat">' + balance + '</span> <a href="#/asset/' + objBalance.assetName + '">' + objBalance.assetName + '</a></div>';
 				} else {
-					resultStr += '<div><span class="numberFormat">' + objBalance.balance + '</span> of ' + assetKey + '</div>';
+					resultStr += '<div><span class="numberFormat">' + objBalance.balance + '</span> of <a href="#/asset/' + assetKey + '">' + assetKey + '</a></div>';
 				}
 			}
 		}
