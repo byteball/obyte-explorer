@@ -10,6 +10,7 @@ async function start(){
 		"PRIMARY KEY (address,asset)" +
 		")");
 	await db.query("CREATE INDEX IF NOT EXISTS balancesByAssetBalances ON balances(asset, balance DESC)");
+	await db.query("CREATE INDEX IF NOT EXISTS inputsByAsset ON inputs(asset)");
 	console.log('done')
 }
 
