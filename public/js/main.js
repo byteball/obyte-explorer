@@ -1779,7 +1779,14 @@ var addressInfoContent = {
 						|| key.includes($('#stateVarsFilterInput').val())
 						|| String(data.objStateVars[key]).includes($('#stateVarsFilterInput').val())
 					) {
-						html+="<li>" + htmlEscape(key) + ": " + htmlEscape(data.objStateVars[key]) + "</li>";
+						let stateVars;
+						try {
+							stateVars = prettifyJson(JSON.parse(data.objStateVars[key]));
+						} catch(e) {
+							stateVars = htmlEscape(data.objStateVars[key]);
+						}
+						
+						html+="<li>" + htmlEscape(key) + ":  <div><span class='payload'>" + stateVars + " </span></div></li>";
 						count++;
 					}
 				}
