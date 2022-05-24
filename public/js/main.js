@@ -611,12 +611,18 @@ function showHideBlock(event, id) {
 }
 
 function searchForm(text) {
+	if (!text.length) {
+		showInfoMessage($('#infoMessagePleaseEnter').text());
+		return;
+	}
+	
 	if (text.length == 44 || text.length == 32) {
 		location.hash = text;
+		return;
 	}
-	else {
-		showInfoMessage($('#infoMessagePleaseEnter').text());
-	}
+	
+	location.hash = `#/asset/${text.toUpperCase()}`;
+	
 	$('#inputSearch').val('');
 }
 
