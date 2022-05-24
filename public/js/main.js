@@ -621,7 +621,7 @@ function searchForm(text) {
 		return;
 	}
 	
-	location.hash = `#/asset/${text.toUpperCase()}`;
+	location.hash = `#/asset/${text}`;
 	
 	$('#inputSearch').val('');
 }
