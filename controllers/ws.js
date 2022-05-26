@@ -225,14 +225,13 @@ async function nextPageAssetHolders(data) {
 	});
 }
 
-async function getAssetsListByName(data) {
+async function fetchAssetNamesList() {
 	const ws = this;
-	
-	const foundAssets = await getAssetsListByNameFromDb(data.name);
-	
-	console.error('FOUND FOUND FOUND FOUND FOUND', foundAssets);
-	
-	ws.emit('showAssetsList', { foundAssets });
+
+	const assets = await getAssetsListByNameFromDb();
+	const assetNames = assets.map(asset => asset.name);
+
+	ws.emit('updateAssetsList', { assetNames });
 }
 
 exports.start = start;
@@ -244,4 +243,4 @@ exports.highlightNode = highlightNode;
 exports.nextPageTransactions = nextPageTransactions;
 exports.nextPageAssetTransactions = nextPageAssetTransactions;
 exports.nextPageAssetHolders = nextPageAssetHolders;
-exports.getAssetsListByName = getAssetsListByName;
+exports.fetchAssetNamesList = fetchAssetNamesList;

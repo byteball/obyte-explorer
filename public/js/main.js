@@ -6,10 +6,11 @@ var generateOffset = 0, newOffset = -116, oldOffset;
 var activeNode, waitGo;
 var notLastUnitUp = false, notLastUnitDown = true;
 var lastActiveUnit;
-var page, isInit = false;
+var page, isInit, isStarted = false;
 var queueAnimationPanUp = [], animationPlaysPanUp = false;
 let testnet = false;
 let exchangeRates = {};
+let assetNames = [];
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -50,6 +51,10 @@ function start() {
 	var currHash = getUrlHashKey();
 	page = 'loading';
 	$('.theadForTransactionsList').hide();
+	
+	if (!isStarted) {
+		socket.emit('fetchAssetNamesList');
+	}
 	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
@@ -621,9 +626,7 @@ function searchForm(text) {
 		return;
 	}
 	
-	socket.emit('getAssetsListByName', { name: text });
-	
-	//$('#inputSearch').val('');
+	$('#inputSearch').val('');
 }
 
 function goToTop() {
@@ -805,20 +808,31 @@ socket.on('rates_updated', function(data) {
 	exchangeRates = { ...exchangeRates, ...data };
 })
 
-function followToAssetPage(event) {
-	console.error('HERE HERE HRERE')
-	location.hash = `#/asset/${event.target.value}`;
-}
-
-socket.on('showAssetsList', function (data) {
-	let html = '';
-	
-	data.foundAssets.forEach((asset) => {
-		html += `<option value="${asset.name}">${asset.name}</option>`
-	})
-	
-	$('#assets').html(html);
+socket.on('updateAssetsList', function (data) {
+	isStarted = true;	
+	assetNames = data.assetNames;
 })
+
+const autoCompleteJS = new autoComplete({
+	selector: "#inputSearch",
+	data: {
+		src: async () => {
+			return assetNames;
+		},
+	},
+	resultItem: {
+		highlight: true
+	},
+	events: {
+		input: {
+			selection: (event) => {
+				autoCompleteJS.input.value = event.detail.selection.value;
+
+				location.hash = `#/asset/${event.detail.selection.value}`;
+			}
+		}
+	}
+});
 
 function generateAaResponsesInfo(aa_responses){
 	var html = '', blockId =0 ;
