@@ -27,6 +27,7 @@ async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutp
 		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? AND (is_spent=1 OR is_spent=0) " + getStrSqlFilterAssetForSingleTypeOfTransactions(
 			strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5)))",
 		"AND inputs.unit = outputs.unit",
+		getStrSqlFilterAssetForTransactions(strFilterAsset),
 		"AND units.unit = inputs.unit",
 		"GROUP BY inputs.unit",
 		"ORDER BY units.ROWID DESC LIMIT 0, 5"
