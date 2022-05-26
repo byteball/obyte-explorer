@@ -82,6 +82,7 @@ io.on('connection', function(socket) {
 	socket.on('nextPageTransactions', ws.nextPageTransactions);
 	socket.on('nextPageAssetTransactions', ws.nextPageAssetTransactions);
 	socket.on('nextPageAssetHolders', ws.nextPageAssetHolders);
+	socket.on('getAssetsListByName', ws.getAssetsListByName);
 });
 
 server.listen(conf.webPort);

@@ -621,9 +621,9 @@ function searchForm(text) {
 		return;
 	}
 	
-	location.hash = `#/asset/${text}`;
+	socket.emit('getAssetsListByName', { name: text });
 	
-	$('#inputSearch').val('');
+	//$('#inputSearch').val('');
 }
 
 function goToTop() {
@@ -803,6 +803,21 @@ socket.on('deleted', function(unit) { // happens when uncovered non serial units
 socket.on('rates_updated', function(data) {
 	console.log('rates_updated: ', data);
 	exchangeRates = { ...exchangeRates, ...data };
+})
+
+function followToAssetPage(event) {
+	console.error('HERE HERE HRERE')
+	location.hash = `#/asset/${event.target.value}`;
+}
+
+socket.on('showAssetsList', function (data) {
+	let html = '';
+	
+	data.foundAssets.forEach((asset) => {
+		html += `<option value="${asset.name}">${asset.name}</option>`
+	})
+	
+	$('#assets').html(html);
 })
 
 function generateAaResponsesInfo(aa_responses){

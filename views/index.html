@@ -26,7 +26,8 @@
 		-->
 		<div id="menuInput">
 			<form action="javascript:searchForm($('#inputSearch').val().trim())" method="post">
-				<input type="text" id="inputSearch" placeholder="<%= i18n.__('searchUnitOrAddress') %>">
+				<input type="text" id="inputSearch" list="assets" placeholder="<%= i18n.__('searchUnitOrAddress') %>">
+				<datalist id="assets" onchange="followToAssetPage(event)"></datalist>
 				<input type="submit" value="" id="submitSearch">
 			</form>
 		</div>

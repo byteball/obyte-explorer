@@ -6,6 +6,7 @@ var units = require('./units');
 var address = require('./address');
 const asset = require('./asset');
 const getAssetUnit = require('../api/getAssetUnit');
+const getAssetsListByNameFromDb = require('../helpers/getAssetsListFromDb');
 
 async function start(data) {
 	var ws = this;
@@ -224,6 +225,16 @@ async function nextPageAssetHolders(data) {
 	});
 }
 
+async function getAssetsListByName(data) {
+	const ws = this;
+	
+	const foundAssets = await getAssetsListByNameFromDb(data.name);
+	
+	console.error('FOUND FOUND FOUND FOUND FOUND', foundAssets);
+	
+	ws.emit('showAssetsList', { foundAssets });
+}
+
 exports.start = start;
 exports.next = next;
 exports.prev = prev;
@@ -233,3 +244,4 @@ exports.highlightNode = highlightNode;
 exports.nextPageTransactions = nextPageTransactions;
 exports.nextPageAssetTransactions = nextPageAssetTransactions;
 exports.nextPageAssetHolders = nextPageAssetHolders;
+exports.getAssetsListByName = getAssetsListByName;
