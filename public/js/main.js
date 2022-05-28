@@ -625,6 +625,8 @@ function searchForm(text) {
 		location.hash = text;
 		return;
 	}
+
+	location.hash = `#/asset/${text}`;
 	
 	$('#inputSearch').val('');
 }
@@ -815,6 +817,7 @@ socket.on('updateAssetsList', function (data) {
 
 const autoCompleteJS = new autoComplete({
 	selector: "#inputSearch",
+	submit: true,
 	data: {
 		src: async () => {
 			return assetNames;
