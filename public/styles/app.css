@@ -420,16 +420,16 @@ label {
 	color: #2980b9 !important;
 }
 
-.autoComplete_wrapper>ul {
+.autoComplete_wrapper > ul {
 	top: 75% !important;
 }
 
-.autoComplete_wrapper>input {
+.autoComplete_wrapper > input {
 	border-radius: 0 !important;
 	font-size: 13.3333px !important;
 }
 
-.autoComplete_wrapper>input::placeholder {
+.autoComplete_wrapper > input::placeholder {
 	color: rgb(117, 117, 117) !important;
 }
 

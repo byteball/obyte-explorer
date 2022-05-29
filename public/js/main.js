@@ -1729,6 +1729,14 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets, 
 	return listTransactions;
 }
 
+function parseJSONForStateVars(obj) {
+	const v = JSON.parse(obj);
+	if (!v || typeof v !== 'object') {
+		throw new Error('is not json');
+	}
+	
+	return v;
+}
 
 var addressInfoContent = {
 	currAddress: null,
@@ -1819,12 +1827,14 @@ var addressInfoContent = {
 					) {
 						let stateVars;
 						try {
-							stateVars = prettifyJson(JSON.parse(data.objStateVars[key]));
+							stateVars = "<div><span class='payload'>" + 
+								prettifyJson(parseJSONForStateVars(data.objStateVars[key])) + 
+								"</span></div>";
 						} catch(e) {
 							stateVars = htmlEscape(data.objStateVars[key]);
 						}
 						
-						html+="<li>" + htmlEscape(key) + ":  <div><span class='payload'>" + stateVars + " </span></div></li>";
+						html+="<li>" + htmlEscape(key) + ": " + stateVars + "</li>" ;
 						count++;
 					}
 				}
