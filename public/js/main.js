@@ -823,6 +823,9 @@ const autoCompleteJS = new autoComplete({
 			return assetNames;
 		},
 	},
+	resultsList: {
+		maxResults: 20
+	},
 	resultItem: {
 		highlight: true
 	},
