@@ -267,13 +267,13 @@ async function getAssetData(asset) {
 	
 	const isValidAsset = checkIsAssetValid(assetUnit);
 
-	if(!isValidAsset) {
+	if (!isValidAsset) {
 		return { notFound: true };
 	}
 	
 	const isAssetPresentInDb = await checkIsAssetPresentInDb(assetUnit);
 	
-	if(!isAssetPresentInDb) {
+	if (assetUnit !== 'bytes' && !isAssetPresentInDb) {
 		return { notFound: true };
 	}
 

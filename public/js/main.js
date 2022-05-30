@@ -10,7 +10,7 @@ var page, isInit, isStarted = false;
 var queueAnimationPanUp = [], animationPlaysPanUp = false;
 let testnet = false;
 let exchangeRates = {};
-let assetNames = [];
+let assetNames = ['GBYTE'];
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -626,7 +626,8 @@ function searchForm(text) {
 		return;
 	}
 
-	if (autoCompleteJS.feedback.matches.length) {
+	//console.error(autoCompleteJS);
+	if (autoCompleteJS.cursor === -1 && autoCompleteJS.feedback.matches.length) {
 		autoCompleteJS.select(0);
 		return;
 	}
@@ -816,8 +817,8 @@ socket.on('rates_updated', function(data) {
 })
 
 socket.on('updateAssetsList', function (data) {
-	isStarted = true;	
-	assetNames = data.assetNames;
+	isStarted = true;
+	assetNames = [...assetNames, ...data.assetNames];
 })
 
 const autoCompleteJS = new autoComplete({
