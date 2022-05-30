@@ -626,8 +626,13 @@ function searchForm(text) {
 		return;
 	}
 
+	if (autoCompleteJS.feedback.matches.length) {
+		autoCompleteJS.select(0);
+		return;
+	}
+
 	location.hash = `#/asset/${text}`;
-	
+
 	$('#inputSearch').val('');
 }
 
