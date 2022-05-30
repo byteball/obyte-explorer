@@ -6,7 +6,7 @@ var generateOffset = 0, newOffset = -116, oldOffset;
 var activeNode, waitGo;
 var notLastUnitUp = false, notLastUnitDown = true;
 var lastActiveUnit;
-var page, isInit, isStarted = false;
+var page, isInit, isStarted, isSearchFocused = false;
 var queueAnimationPanUp = [], animationPlaysPanUp = false;
 let testnet = false;
 let exchangeRates = {};
@@ -668,6 +668,8 @@ function addLinksToAddresses(text){
 	})
 }
 
+const searchInput = document.getElementById('inputSearch');
+
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
@@ -708,7 +710,7 @@ window.addEventListener('hashchange', function() {
 });
 
 window.addEventListener('keydown', function(e) {
-	if (page == 'dag') {
+	if (page == 'dag' && !isSearchFocused) {
 		if (e.keyCode == 38) {
 			e.preventDefault();
 			scrollUp();
@@ -727,6 +729,14 @@ $(window).scroll(function() {
 		}
 	}
 });
+
+searchInput.addEventListener('focus', () => {
+	isSearchFocused = true;
+}, true);
+
+searchInput.addEventListener('blur', () => {
+	isSearchFocused = false;
+}, true);
 
 //websocket
 var socket = io.connect(location.href);
