@@ -626,7 +626,6 @@ function searchForm(text) {
 		return;
 	}
 
-	//console.error(autoCompleteJS);
 	if (autoCompleteJS.cursor === -1 && autoCompleteJS.feedback.matches.length) {
 		autoCompleteJS.select(0);
 		return;
