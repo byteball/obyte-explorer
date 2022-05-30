@@ -1507,6 +1507,13 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 			
 			return true;
 		})
+		.filter(asset => {
+			if (asset === null && unitAssets[key].length > 1) {
+				return false;
+			}
+			
+			return true;
+		})
 		.forEach((asset, index, arr) => {
 			const transactionKey = `${unit}_${asset}`;
 			transaction = objTransactions[transactionKey];
@@ -1545,17 +1552,14 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 					toAddresses[key] = formatAmountUsingDecimalFormat(toAddresses[key], assetDecimals)
 				}
 			} else {
-				if (asset === null && unitAssets[key].length > 1) {
-					html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}"><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
-					return; 
-				}
 				toAddresses[fromAddresses[0]] = 0;
 			}
 			let type = '<span style="color: #f34a4a">out</span>';
 			if (address && !fromAddresses.includes(address)) {
 				type = '<span style="color: #50d046">in</span>';
 			}
-			
+
+			console.log(lUnit, index, unit);
 			
 			html += `<tr id="${id}" class="${(isNew ? 'new_transaction' : '')}" style="${isLastUnit ? 'border-bottom: 1px solid #ccc' : ''}">`;
 			html += `<td class="td_in_table">
