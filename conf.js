@@ -14,6 +14,8 @@ exports.aaResponsesListed = 10;
 exports.aasFromTemplateListed = 50;
 exports.balanceDumpIntervalInHours = 12;
 
+exports.CHECK_BALANCES_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours
+
 exports.tokenRegistryAA = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
 
 exports.selectedLanguage = 'en';
