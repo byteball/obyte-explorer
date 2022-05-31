@@ -19,6 +19,14 @@ let redirectList = {
 	'blackbytes': 'GBB',
 }
 
+function getAssetName(name) {
+	if (redirectList[name]){
+		return redirectList[name];
+	}
+		
+	return name;
+}
+
 function init(_nodes, _edges) {
 	nodes = _nodes;
 	edges = _edges;
@@ -628,7 +636,6 @@ function showHideBlock(event, id) {
 
 function searchForm(text) {
 	if (!text.length) {
-		showInfoMessage($('#infoMessagePleaseEnter').text());
 		return;
 	}
 	
@@ -638,9 +645,8 @@ function searchForm(text) {
 	}
 
 	if (autoCompleteJS.cursor === -1 && autoCompleteJS.feedback.matches.length) {
-		autoCompleteJS.select(0);
-		$('#inputSearch').val('');
-		return;
+		text = getAssetName(autoCompleteJS.feedback.matches[0].value);
+		autoCompleteJS.close();
 	}
 
 	location.hash = `#/asset/${text}`;
@@ -690,10 +696,8 @@ window.addEventListener('hashchange', function() {
 	
 	if (currHash.startsWith('#/asset')) {
 		let asset = currHash.slice(8);
-		if (redirectList[asset]) {
-			location.hash = '#/asset/' + redirectList[asset];
-			asset = redirectList[asset];
-		}
+		asset = getAssetName(asset);
+		location.hash = '#/asset/' + asset;
 
 		socket.emit('start', {type: 'asset', asset});
 
@@ -864,8 +868,8 @@ const autoCompleteJS = new autoComplete({
 		input: {
 			selection: (event) => {
 				autoCompleteJS.input.value = event.detail.selection.value;
-
-				location.hash = `#/asset/${event.detail.selection.value}`;
+				const asset = getAssetName(event.detail.selection.value);
+				location.hash = `#/asset/${asset}`;
 				$('#inputSearch').val('');
 			}
 		}
