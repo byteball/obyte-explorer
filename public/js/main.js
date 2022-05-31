@@ -6,10 +6,26 @@ var generateOffset = 0, newOffset = -116, oldOffset;
 var activeNode, waitGo;
 var notLastUnitUp = false, notLastUnitDown = true;
 var lastActiveUnit;
-var page, isInit = false;
+var page, isInit, isStarted, isSearchFocused = false;
 var queueAnimationPanUp = [], animationPlaysPanUp = false;
 let testnet = false;
 let exchangeRates = {};
+let assetNames = ['GBYTE', 'GBB', 'MBYTE', 'KBYTE', 'byte', 'blackbytes'];
+
+let redirectList = {
+	'MBYTE': 'GBYTE',
+	'KBYTE': 'GBYTE',
+	'byte': 'GBYTE',
+	'blackbytes': 'GBB',
+}
+
+function getAssetName(name) {
+	if (redirectList[name]){
+		return redirectList[name];
+	}
+		
+	return name;
+}
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -51,8 +67,16 @@ function start() {
 	page = 'loading';
 	$('.theadForTransactionsList').hide();
 	
+	if (!isStarted) {
+		socket.emit('fetchAssetNamesList');
+	}
+	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
+		if (redirectList[asset]) {
+			location.hash = '#/asset/' + redirectList[asset];
+			return;
+		}
 
 		socket.emit('start', {type: 'asset', asset});
 
@@ -611,12 +635,22 @@ function showHideBlock(event, id) {
 }
 
 function searchForm(text) {
+	if (!text.length) {
+		return;
+	}
+	
 	if (text.length == 44 || text.length == 32) {
 		location.hash = text;
+		return;
 	}
-	else {
-		showInfoMessage($('#infoMessagePleaseEnter').text());
+
+	if (autoCompleteJS.cursor === -1 && autoCompleteJS.feedback.matches.length) {
+		text = getAssetName(autoCompleteJS.feedback.matches[0].value);
+		autoCompleteJS.close();
 	}
+
+	location.hash = `#/asset/${text}`;
+
 	$('#inputSearch').val('');
 }
 
@@ -652,6 +686,8 @@ function addLinksToAddresses(text){
 	})
 }
 
+const searchInput = document.getElementById('inputSearch');
+
 //events
 window.addEventListener('hashchange', function() {
 	var currHash = getUrlHashKey();
@@ -659,7 +695,9 @@ window.addEventListener('hashchange', function() {
 	$('.theadForTransactionsList').hide();
 	
 	if (currHash.startsWith('#/asset')) {
-		const asset = currHash.slice(8);
+		let asset = currHash.slice(8);
+		asset = getAssetName(asset);
+		location.hash = '#/asset/' + asset;
 
 		socket.emit('start', {type: 'asset', asset});
 
@@ -692,7 +730,7 @@ window.addEventListener('hashchange', function() {
 });
 
 window.addEventListener('keydown', function(e) {
-	if (page == 'dag') {
+	if (page == 'dag' && !isSearchFocused) {
 		if (e.keyCode == 38) {
 			e.preventDefault();
 			scrollUp();
@@ -711,6 +749,14 @@ $(window).scroll(function() {
 		}
 	}
 });
+
+searchInput.addEventListener('focus', () => {
+	isSearchFocused = true;
+}, true);
+
+searchInput.addEventListener('blur', () => {
+	isSearchFocused = false;
+}, true);
 
 //websocket
 var socket = io.connect(location.href);
@@ -798,6 +844,37 @@ socket.on('rates_updated', function(data) {
 	console.log('rates_updated: ', data);
 	exchangeRates = { ...exchangeRates, ...data };
 })
+
+socket.on('updateAssetsList', function (data) {
+	isStarted = true;
+	assetNames = [...assetNames, ...data.assetNames];
+})
+
+const autoCompleteJS = new autoComplete({
+	selector: "#inputSearch",
+	submit: true,
+	data: {
+		src: async () => {
+			return assetNames;
+		},
+	},
+	resultsList: {
+		maxResults: 20
+	},
+	resultItem: {
+		highlight: true
+	},
+	events: {
+		input: {
+			selection: (event) => {
+				autoCompleteJS.input.value = event.detail.selection.value;
+				const asset = getAssetName(event.detail.selection.value);
+				location.hash = `#/asset/${asset}`;
+				$('#inputSearch').val('');
+			}
+		}
+	}
+});
 
 function generateAaResponsesInfo(aa_responses){
 	var html = '', blockId =0 ;
@@ -1320,6 +1397,7 @@ const assetInfoContent = {
 			$('#listAssetUnits').html('');
 			$('#titleListAssetTransactions').hide();
 			$('#blockListTopHolders').hide();
+			$('#tableListAssetTransactions').hide();
 			this.showInfoAboutPrivateAsset(true);
 			formatAllNumbers();
 			return;
@@ -1334,9 +1412,14 @@ const assetInfoContent = {
 			}
 		}
 		
-		if (Object.keys(this.data.transactionsData.objTransactions).length) {
+		if (this.data.transactionsData.objTransactions && Object.keys(this.data.transactionsData.objTransactions).length) {
 			this.setTransactions();
 			this.setAdditionalData();
+			$('#tableListAssetTransactions').show();
+			$('#notFoundTransactions').hide();
+		} else {
+			$('#tableListAssetTransactions').hide();
+			$('#notFoundTransactions').show();
 		}
 		this.showInfoAboutPrivateAsset(false);
 		formatAllNumbers();
@@ -1377,7 +1460,7 @@ socket.on('assetInfo', (data) => {
 	
 	if (data && data.notFound) {
 		showInfoMessage($('#infoMessageAssetNotFound').text());
-	} else if (data && (data.isPrivate || data.holders.length)) {
+	} else if (data) {
 		page = 'asset';
 		testnet = data.testnet;
 		assetInfoContent.setAssetInfoContent(data);
@@ -1695,6 +1778,14 @@ function generateTransactionsList(objTransactions, address, filter, unitAssets, 
 	return listTransactions;
 }
 
+function parseJSONForStateVars(obj) {
+	const v = JSON.parse(obj);
+	if (!v || typeof v !== 'object') {
+		throw new Error('is not json');
+	}
+	
+	return v;
+}
 
 var addressInfoContent = {
 	currAddress: null,
@@ -1783,7 +1874,16 @@ var addressInfoContent = {
 						|| key.includes($('#stateVarsFilterInput').val())
 						|| String(data.objStateVars[key]).includes($('#stateVarsFilterInput').val())
 					) {
-						html+="<li>" + htmlEscape(key) + ": " + htmlEscape(data.objStateVars[key]) + "</li>";
+						let stateVars;
+						try {
+							stateVars = "<div><span class='payload'>" + 
+								prettifyJson(parseJSONForStateVars(data.objStateVars[key])) + 
+								"</span></div>";
+						} catch(e) {
+							stateVars = htmlEscape(data.objStateVars[key]);
+						}
+						
+						html+="<li>" + htmlEscape(key) + ": " + stateVars + "</li>" ;
 						count++;
 					}
 				}

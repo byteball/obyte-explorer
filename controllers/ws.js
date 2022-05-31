@@ -6,6 +6,7 @@ var units = require('./units');
 var address = require('./address');
 const asset = require('./asset');
 const getAssetUnit = require('../api/getAssetUnit');
+const getAssetsListByNameFromDb = require('../helpers/getAssetsListFromDb');
 
 async function start(data) {
 	var ws = this;
@@ -224,6 +225,15 @@ async function nextPageAssetHolders(data) {
 	});
 }
 
+async function fetchAssetNamesList() {
+	const ws = this;
+
+	const assets = await getAssetsListByNameFromDb();
+	const assetNames = assets.map(asset => asset.name);
+
+	ws.emit('updateAssetsList', { assetNames });
+}
+
 exports.start = start;
 exports.next = next;
 exports.prev = prev;
@@ -233,3 +243,4 @@ exports.highlightNode = highlightNode;
 exports.nextPageTransactions = nextPageTransactions;
 exports.nextPageAssetTransactions = nextPageAssetTransactions;
 exports.nextPageAssetHolders = nextPageAssetHolders;
+exports.fetchAssetNamesList = fetchAssetNamesList;

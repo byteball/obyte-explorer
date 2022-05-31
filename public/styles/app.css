@@ -356,7 +356,7 @@ label {
 	right: 0;
 	bottom: 0;
 	left: 0;
-	z-index: 1000;
+	z-index: 999;
 	background-color: #fff;
 	font-size: 16px;
 	display: none;
@@ -414,6 +414,23 @@ label {
 
 #scrollBody {
 	width: 1px;
+}
+
+.autoComplete_wrapper > ul > li mark {
+	color: #2980b9 !important;
+}
+
+.autoComplete_wrapper > ul {
+	top: 75% !important;
+}
+
+.autoComplete_wrapper > input {
+	border-radius: 0 !important;
+	font-size: 13.3333px !important;
+}
+
+.autoComplete_wrapper > input::placeholder {
+	color: rgb(117, 117, 117) !important;
 }
 
 #goToTop {

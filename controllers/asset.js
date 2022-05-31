@@ -13,6 +13,8 @@ const {
 	getStrSqlFilterAssetForTransactions,
 	getStrSQLFilterForIssuerForUnlimitedCap,
 } = require('../helpers/sql');
+const checkIsAssetValid = require('../helpers/isValidAsset');
+const checkIsAssetPresentInDb = require('../helpers/isAssetPresentInDb');
 
 const BIGINT = 9223372036854775807;
 
@@ -262,6 +264,18 @@ async function getAssetData(asset) {
 	}
 
 	let assetUnit = await getAssetUnit(asset) || asset;
+	
+	const isValidAsset = checkIsAssetValid(assetUnit);
+
+	if (!isValidAsset) {
+		return { notFound: true };
+	}
+	
+	const isAssetPresentInDb = await checkIsAssetPresentInDb(assetUnit);
+	
+	if (assetUnit !== 'bytes' && !isAssetPresentInDb) {
+		return { notFound: true };
+	}
 
 	const assetData = { assetUnit };
 
