@@ -1,7 +1,7 @@
 const db = require('ocore/db');
 
 async function checkIsAssetPresentInDb(asset) {
-	const rows = await db.query('SELECT unit FROM inputs WHERE asset = ? LIMIT 1', [asset]);
+	const rows = await db.query('SELECT 1 FROM assets WHERE unit = ? LIMIT 1', [asset]);
 	
 	return !!rows.length;
 }

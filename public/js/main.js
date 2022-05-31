@@ -1390,9 +1390,14 @@ const assetInfoContent = {
 			}
 		}
 		
-		if (Object.keys(this.data.transactionsData.objTransactions).length) {
+		if (this.data.transactionsData.objTransactions && Object.keys(this.data.transactionsData.objTransactions).length) {
 			this.setTransactions();
 			this.setAdditionalData();
+			$('#tableListAssetTransactions').show();
+			$('#notFountTransactions').hide();
+		} else {
+			$('#tableListAssetTransactions').hide();
+			$('#notFountTransactions').show();
 		}
 		this.showInfoAboutPrivateAsset(false);
 		formatAllNumbers();
@@ -1433,7 +1438,7 @@ socket.on('assetInfo', (data) => {
 	
 	if (data && data.notFound) {
 		showInfoMessage($('#infoMessageAssetNotFound').text());
-	} else if (data && (data.isPrivate || data.holders.length)) {
+	} else if (data) {
 		page = 'asset';
 		testnet = data.testnet;
 		assetInfoContent.setAssetInfoContent(data);
