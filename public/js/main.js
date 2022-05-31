@@ -10,7 +10,14 @@ var page, isInit, isStarted, isSearchFocused = false;
 var queueAnimationPanUp = [], animationPlaysPanUp = false;
 let testnet = false;
 let exchangeRates = {};
-let assetNames = ['GBYTE'];
+let assetNames = ['GBYTE', 'GBB', 'MBYTE', 'KBYTE', 'byte', 'blackbytes'];
+
+let redirectList = {
+	'MBYTE': 'GBYTE',
+	'KBYTE': 'GBYTE',
+	'byte': 'GBYTE',
+	'blackbytes': 'GBB',
+}
 
 function init(_nodes, _edges) {
 	nodes = _nodes;
@@ -58,6 +65,10 @@ function start() {
 	
 	if (currHash.startsWith('#/asset')) {
 		const asset = currHash.slice(8);
+		if (redirectList[asset]) {
+			location.hash = '#/asset/' + redirectList[asset];
+			return;
+		}
 
 		socket.emit('start', {type: 'asset', asset});
 
@@ -628,6 +639,7 @@ function searchForm(text) {
 
 	if (autoCompleteJS.cursor === -1 && autoCompleteJS.feedback.matches.length) {
 		autoCompleteJS.select(0);
+		$('#inputSearch').val('');
 		return;
 	}
 
@@ -677,7 +689,11 @@ window.addEventListener('hashchange', function() {
 	$('.theadForTransactionsList').hide();
 	
 	if (currHash.startsWith('#/asset')) {
-		const asset = currHash.slice(8);
+		let asset = currHash.slice(8);
+		if (redirectList[asset]) {
+			location.hash = '#/asset/' + redirectList[asset];
+			asset = redirectList[asset];
+		}
 
 		socket.emit('start', {type: 'asset', asset});
 
@@ -850,6 +866,7 @@ const autoCompleteJS = new autoComplete({
 				autoCompleteJS.input.value = event.detail.selection.value;
 
 				location.hash = `#/asset/${event.detail.selection.value}`;
+				$('#inputSearch').val('');
 			}
 		}
 	}
@@ -1376,6 +1393,7 @@ const assetInfoContent = {
 			$('#listAssetUnits').html('');
 			$('#titleListAssetTransactions').hide();
 			$('#blockListTopHolders').hide();
+			$('#tableListAssetTransactions').hide();
 			this.showInfoAboutPrivateAsset(true);
 			formatAllNumbers();
 			return;
