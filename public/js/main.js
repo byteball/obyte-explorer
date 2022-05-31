@@ -1394,10 +1394,10 @@ const assetInfoContent = {
 			this.setTransactions();
 			this.setAdditionalData();
 			$('#tableListAssetTransactions').show();
-			$('#notFountTransactions').hide();
+			$('#notFoundTransactions').hide();
 		} else {
 			$('#tableListAssetTransactions').hide();
-			$('#notFountTransactions').show();
+			$('#notFoundTransactions').show();
 		}
 		this.showInfoAboutPrivateAsset(false);
 		formatAllNumbers();
