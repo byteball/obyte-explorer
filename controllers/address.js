@@ -18,12 +18,12 @@ const {
 
 async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter) {
 	const strFilterAsset = filter.asset;
-
+	
 	const arrQuerySql = [
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID, timestamp",
 		"FROM inputs, outputs, units",
-		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs WHERE address = ? AND ROWID < ? " + getStrSqlFilterAssetForSingleTypeOfTransactions(
-			strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5))",
+		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs INDEXED BY inputsIndexByAddress WHERE address = ? AND ROWID < ? " + 
+		getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5))",
 		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? AND (is_spent=1 OR is_spent=0) " + getStrSqlFilterAssetForSingleTypeOfTransactions(
 			strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5)))",
 		"AND inputs.unit = outputs.unit",
