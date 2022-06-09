@@ -641,6 +641,7 @@ function searchForm(text) {
 	
 	if (text.length == 44 || text.length == 32) {
 		location.hash = text;
+		$('#inputSearch').val('');
 		return;
 	}
 
