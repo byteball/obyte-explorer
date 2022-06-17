@@ -1597,15 +1597,15 @@ function generateTransfersView(objTransactions, address, filter, unitAssets, isN
 			const fromAddresses = [...new Set(transaction.from.map(t => t.address))];
 
 			if (asset === null && unitAssets[key].length > 1) {
-				let to = Object.values(transaction.to).filter(t => !fromAddresses.includes(t.address));
+				const to = Object.values(transaction.to).filter(t => !fromAddresses.includes(t.address));
 
-				if (to.find(v => v.address !== address)) {
+				if (to.length) {
 					return true;
 				}
-				
+
 				return false;
 			}
-			
+
 			return true;
 		})
 		.forEach((asset, index, arr) => {
