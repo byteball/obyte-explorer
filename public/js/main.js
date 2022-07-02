@@ -1,6 +1,6 @@
 var _cy;
 var nodes, edges;
-var firstUnit, lastUnit, phantoms = {}, phantomsTop = {}, notStable = [];
+var firstUnit, lastUnit, phantoms = {}, phantomsTop = {}, 	notStable = [];
 var nextPositionUpdates;
 var generateOffset = 0, newOffset = -116, oldOffset;
 var activeNode, waitGo;

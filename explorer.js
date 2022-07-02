@@ -16,9 +16,10 @@ var network = require('ocore/network.js');
 const device = require('ocore/device');
 var express = require('express');
 var app = express();
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
-var ws = require('./controllers/ws');
+var httpServer = require('http').Server(app);
+const { IoServer } = require('socket.io');
+const io = new IoServer(httpServer);
+const ws = require('./gateways/ws');
 const BalanceDumpService = require('./services/BalanceDumpService');
 var i18nModule = require("i18n");
 let exchange_rates = {};
@@ -71,21 +72,27 @@ eventBus.on('rates_updated', function() {
 	io.sockets.emit('rates_updated', exchange_rates);
 });
 
-io.on('connection', function(socket) {
+io.on('connection', (socket) => {
 	io.sockets.emit('rates_updated', exchange_rates);
-	socket.on('start', ws.start);
-	socket.on('next', ws.next);
-	socket.on('prev', ws.prev);
-	socket.on('new', ws.newUnits);
-	socket.on('info', ws.info);
-	socket.on('highlightNode', ws.highlightNode);
-	socket.on('nextPageTransactions', ws.nextPageTransactions);
-	socket.on('nextPageAssetTransactions', ws.nextPageAssetTransactions);
-	socket.on('nextPageAssetHolders', ws.nextPageAssetHolders);
-	socket.on('fetchAssetNamesList', ws.fetchAssetNamesList);
+
+	socket.on('info', ws.dagGateway.info);
+	socket.on('newUnits', ws.dagGateway.newUnits);
+	socket.on('nextUnits', ws.dagGateway.nextUnits);
+	socket.on('prevUnits', ws.dagGateway.prevUnits);
+	socket.on('getUnit', ws.dagGateway.getUnit);
+	socket.on('getLastUnit', ws.dagGateway.getLastUnit);
+	socket.on('highlightNode', ws.dagGateway.highlightNode);
+
+	socket.on('getAddressData', ws.addressGateway.getAddressData);
+	socket.on('loadNextPageAddressTransactions', ws.addressGateway.loadNextPageAddressTransactions);
+
+	socket.on('getAssetData', ws.assetGateway.getAssetData);
+	socket.on('loadNextPageAssetTransactions', ws.assetGateway.loadNextPageAssetTransactions);
+	socket.on('loadNextPageAssetHolders', ws.assetGateway.loadNextPageAssetHolders);
+	socket.on('fetchAssetNamesList', ws.assetGateway.fetchAssetNamesList);
 });
 
-server.listen(conf.webPort);
+httpServer.listen(conf.webPort);
 
 async function start() {
 	const balanceDumpService = new BalanceDumpService();
