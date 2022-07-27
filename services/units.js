@@ -146,13 +146,17 @@ async function getParentsAndChildren(unit) {
 }
 
 async function getTransfersInfo(unit) {
-	const rows = await db.query("SELECT outputs.output_index, outputs.unit, outputs.amount, outputs.asset FROM inputs, outputs \n\
+	const rows = await db.query("SELECT outputs.output_index, outputs.address, outputs.unit, outputs.amount, outputs.asset FROM inputs, outputs \n\
 		WHERE inputs.unit = ? AND inputs.type = 'transfer' AND outputs.output_index = inputs.src_output_index \n\
 		AND outputs.unit = inputs.src_unit AND outputs.message_index = inputs.src_message_index", [unit]);
 
 	const transfersInfo = {};
 	rows.forEach(function (row) {
-		transfersInfo[row.unit + '_' + row.output_index + '_' + row.asset] = { unit: row.unit, amount: row.amount }
+		transfersInfo[row.unit + '_' + row.output_index + '_' + row.asset] = {
+			address: row.address,
+			unit: row.unit,
+			amount: row.amount,
+		}
 	});
 
 	return transfersInfo;
@@ -425,7 +429,8 @@ async function getInfoOnUnit(unit) {
 					assocCommissions: assocCommissions,
 					arrAaResponses: arrAaResponses,
 					trigger_unit: trigger_unit,
-					isAsset
+					isAsset,
+					objJoint,
 				};
 
 				if (unitProps.is_stable) {
