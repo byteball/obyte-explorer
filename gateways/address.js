@@ -1,7 +1,13 @@
 const addressService = require('../services/address');
 
-async function getAddressData(data, cb) {
-		const {
+async function getAddressData(data) {
+	if (data.asset) {
+		data.filter = {
+			asset: data.asset,
+		};
+	}
+
+	const {
 		objTransactions,
 		unspent,
 		objBalances,
@@ -17,11 +23,10 @@ async function getAddressData(data, cb) {
 	} = await addressService.getAddressInfo(data.address, data.filter || {});
 
 	if (!objTransactions && !definition) {
-		cb(null);
-		return;
+		return { notFound: true };
 	}
-
-	cb({
+	
+	return {
 		address: data.address,
 		objTransactions: objTransactions,
 		unspent: unspent,
@@ -36,10 +41,16 @@ async function getAddressData(data, cb) {
 		arrAasFromTemplate: arrAasFromTemplate,
 		unitAssets,
 		testnet: !!process.env.testnet
-	});
+	};
 }
 
-async function loadNextPageAddressTransactions(data, cb) {
+async function loadNextPageAddressTransactions(data) {
+	if (data.asset) {
+		data.filter = {
+			asset: data.asset,
+		};
+	}
+	
 	const {
 		objTransactions,
 		newLastInputsROWID,
@@ -47,14 +58,14 @@ async function loadNextPageAddressTransactions(data, cb) {
 		unitAssets,
 	} = await addressService.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {});
 
-	cb({
+	return {
 		address: data.address,
 		objTransactions: objTransactions,
 		end: objTransactions === null || Object.keys(objTransactions).length < 5,
 		newLastInputsROWID,
 		newLastOutputsROWID,
 		unitAssets,
-	});
+	};
 }
 
 exports.getAddressData = getAddressData;

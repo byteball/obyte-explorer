@@ -75,18 +75,14 @@ async function newUnits(data, cb) {
 }
 
 
-async function info(data, cb) {
-	if (!cb) return;
-	const socket = this;
-
-	const objInfo = await units.getInfoOnUnit(data.unit);
+async function info(unit) {
+	const objInfo = await units.getInfoOnUnit(unit);
 
 	if (objInfo) {
-		cb(objInfo);
-		return;
+		return objInfo;
 	}
 
-	socket.emit('deleted', data.unit);
+	return { deleted: true };
 }
 
 async function highlightNode(data, cb) {

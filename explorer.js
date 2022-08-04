@@ -14,17 +14,19 @@ var conf = require('ocore/conf.js');
 var eventBus = require('ocore/event_bus.js');
 var network = require('ocore/network.js');
 const device = require('ocore/device');
+const express = require("express");
+const cors = require('cors')
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-
-const httpServer = createServer();
+const app = express();
+const httpServer = createServer(app);
 const io = new Server(httpServer, {
 	cors: {
 		origin: "*"
 	}
 });
 
-const ws = require('./gateways/ws');
+const api = require('./gateways/api');
 const BalanceDumpService = require('./services/BalanceDumpService');
 let exchange_rates = {};
 
@@ -54,26 +56,86 @@ eventBus.on('rates_updated', function() {
 	io.sockets.emit('rates_updated', exchange_rates);
 });
 
+app.use(cors());
+
+app.get('/unit/:unit', async(req, res) => {
+	if (req.params.unit.length !== 44) {
+		return res.json({ notFound: true });
+	}
+	
+	const result = await api.dagGateway.info(req.params.unit);
+	res.json(result);
+});
+
+app.get('/address/:address/info', async (req, res) => {
+	if (req.params.address.length !== 32) {
+		return res.json({ notFound: true });
+	}
+	
+	const params = {
+		address: req.params.address,
+		...req.query,
+	}
+	
+	const result = await api.addressGateway.getAddressData(params);
+	res.json(result);
+});
+
+app.get('/address/:address/next_page', async (req, res) => {
+	if (req.params.address.length !== 32) {
+		return res.json({ notFound: true });
+	}
+	
+	const params = {
+		address: req.params.address,
+		...req.query
+	}
+	
+	const result = await api.addressGateway.loadNextPageAddressTransactions(params);
+	res.json(result);
+});
+
+app.get('/asset/:asset/info', async (req, res) => {
+	const params = {
+		asset: req.params.asset,
+	}
+	
+	const result = await api.assetGateway.getAssetData(params);
+	res.json(result);
+});
+
+app.get('/asset/:asset/next_page_transactions', async (req, res) => {
+	const params = {
+		asset: req.params.asset,
+		...req.query,
+	}
+	
+	const result = await api.assetGateway.loadNextPageAssetTransactions(params);
+	res.json(result);
+});
+
+app.get('/asset/:asset/next_page_holders', async (req, res) => {
+	const params = {
+		asset: req.params.asset,
+		...req.query,
+	}
+	
+	const result = await api.assetGateway.loadNextPageAssetHolders(params);
+	res.json(result);
+});
+
 io.on('connection', async (socket) => {
 	socket.emit('rates_updated', exchange_rates);
 	
-	socket.on('info', ws.dagGateway.info);
-	socket.on('newUnits', ws.dagGateway.newUnits);
-	socket.on('nextUnits', ws.dagGateway.nextUnits);
-	socket.on('prevUnits', ws.dagGateway.prevUnits);
-	socket.on('getUnit', ws.dagGateway.getUnit);
-	socket.on('getLastUnits', ws.dagGateway.getLastUnits);
-	socket.on('highlightNode', ws.dagGateway.highlightNode);
+	socket.on('newUnits', api.dagGateway.newUnits);
+	socket.on('nextUnits', api.dagGateway.nextUnits);
+	socket.on('prevUnits', api.dagGateway.prevUnits);
+	socket.on('getUnit', api.dagGateway.getUnit);
+	socket.on('getLastUnits', api.dagGateway.getLastUnits);
+	socket.on('highlightNode', api.dagGateway.highlightNode);
 	
-	socket.on('getAddressData', ws.addressGateway.getAddressData);
-	socket.on('loadNextPageAddressTransactions', ws.addressGateway.loadNextPageAddressTransactions);
-	
-	socket.on('getAssetData', ws.assetGateway.getAssetData);
-	socket.on('loadNextPageAssetTransactions', ws.assetGateway.loadNextPageAssetTransactions);
-	socket.on('loadNextPageAssetHolders', ws.assetGateway.loadNextPageAssetHolders);
-	socket.on('fetchAssetNamesList', ws.assetGateway.fetchAssetNamesList);
-	
-	await ws.assetGateway.fetchAssetNamesList(({ assetNames }) => {
+	socket.on('fetchAssetNamesList', api.assetGateway.fetchAssetNamesList);
+	await api.assetGateway.fetchAssetNamesList(({ assetNames }) => {
 		socket.emit('updateAssetsList', assetNames);
 	})
 });
