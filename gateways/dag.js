@@ -75,14 +75,17 @@ async function newUnits(data, cb) {
 }
 
 
-async function info(unit) {
+async function info(unit, cb) {
+	if (!cb) return;
+	
 	const objInfo = await units.getInfoOnUnit(unit);
 
 	if (objInfo) {
-		return objInfo;
+		cb(objInfo);
+		return;
 	}
 
-	return { deleted: true };
+	cb({ deleted: true });
 }
 
 async function highlightNode(data, cb) {

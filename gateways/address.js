@@ -1,6 +1,6 @@
 const addressService = require('../services/address');
 
-async function getAddressData(data) {
+async function getAddressData(data, cb) {
 	if (data.asset) {
 		data.filter = {
 			asset: data.asset,
@@ -23,10 +23,10 @@ async function getAddressData(data) {
 	} = await addressService.getAddressInfo(data.address, data.filter || {});
 
 	if (!objTransactions && !definition) {
-		return { notFound: true };
+		cb({ notFound: true });
 	}
 	
-	return {
+	cb({
 		address: data.address,
 		objTransactions: objTransactions,
 		unspent: unspent,
@@ -41,10 +41,10 @@ async function getAddressData(data) {
 		arrAasFromTemplate: arrAasFromTemplate,
 		unitAssets,
 		testnet: !!process.env.testnet
-	};
+	});
 }
 
-async function loadNextPageAddressTransactions(data) {
+async function loadNextPageAddressTransactions(data, cb) {
 	if (data.asset) {
 		data.filter = {
 			asset: data.asset,
@@ -58,14 +58,14 @@ async function loadNextPageAddressTransactions(data) {
 		unitAssets,
 	} = await addressService.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {});
 
-	return {
+	cb({
 		address: data.address,
 		objTransactions: objTransactions,
 		end: objTransactions === null || Object.keys(objTransactions).length < 5,
 		newLastInputsROWID,
 		newLastOutputsROWID,
 		unitAssets,
-	};
+	});
 }
 
 exports.getAddressData = getAddressData;

@@ -63,8 +63,9 @@ app.get('/unit/:unit', async(req, res) => {
 		return res.json({ notFound: true });
 	}
 	
-	const result = await api.dagGateway.info(req.params.unit);
-	res.json(result);
+	await api.dagGateway.info(req.params.unit, result => {
+		res.json(result);
+	});
 });
 
 app.get('/address/:address/info', async (req, res) => {
@@ -77,8 +78,9 @@ app.get('/address/:address/info', async (req, res) => {
 		...req.query,
 	}
 	
-	const result = await api.addressGateway.getAddressData(params);
-	res.json(result);
+	await api.addressGateway.getAddressData(params, result => {
+		res.json(result);
+	});
 });
 
 app.get('/address/:address/next_page', async (req, res) => {
@@ -91,8 +93,9 @@ app.get('/address/:address/next_page', async (req, res) => {
 		...req.query
 	}
 	
-	const result = await api.addressGateway.loadNextPageAddressTransactions(params);
-	res.json(result);
+	await api.addressGateway.loadNextPageAddressTransactions(params, result => {
+		res.json(result);
+	});
 });
 
 app.get('/asset/:asset/info', async (req, res) => {
@@ -100,8 +103,9 @@ app.get('/asset/:asset/info', async (req, res) => {
 		asset: req.params.asset,
 	}
 	
-	const result = await api.assetGateway.getAssetData(params);
-	res.json(result);
+	await api.assetGateway.getAssetData(params, result => {
+		res.json(result);
+	});
 });
 
 app.get('/asset/:asset/next_page_transactions', async (req, res) => {
@@ -110,8 +114,9 @@ app.get('/asset/:asset/next_page_transactions', async (req, res) => {
 		...req.query,
 	}
 	
-	const result = await api.assetGateway.loadNextPageAssetTransactions(params);
-	res.json(result);
+	await api.assetGateway.loadNextPageAssetTransactions(params, result => {
+		res.json(result);
+	});
 });
 
 app.get('/asset/:asset/next_page_holders', async (req, res) => {
@@ -120,13 +125,15 @@ app.get('/asset/:asset/next_page_holders', async (req, res) => {
 		...req.query,
 	}
 	
-	const result = await api.assetGateway.loadNextPageAssetHolders(params);
-	res.json(result);
+	await api.assetGateway.loadNextPageAssetHolders(params, result => {
+		res.json(result);
+	});
 });
 
 io.on('connection', async (socket) => {
 	socket.emit('rates_updated', exchange_rates);
 	
+	socket.on('info', api.dagGateway.info);
 	socket.on('newUnits', api.dagGateway.newUnits);
 	socket.on('nextUnits', api.dagGateway.nextUnits);
 	socket.on('prevUnits', api.dagGateway.prevUnits);
@@ -134,6 +141,12 @@ io.on('connection', async (socket) => {
 	socket.on('getLastUnits', api.dagGateway.getLastUnits);
 	socket.on('highlightNode', api.dagGateway.highlightNode);
 	
+	socket.on('getAddressData', api.addressGateway.getAddressData);
+	socket.on('loadNextPageAddressTransactions', api.addressGateway.loadNextPageAddressTransactions);
+	
+	socket.on('getAssetData', api.assetGateway.getAssetData);
+	socket.on('loadNextPageAssetTransactions', api.assetGateway.loadNextPageAssetTransactions);
+	socket.on('loadNextPageAssetHolders', api.assetGateway.loadNextPageAssetHolders);
 	socket.on('fetchAssetNamesList', api.assetGateway.fetchAssetNamesList);
 	await api.assetGateway.fetchAssetNamesList(({ assetNames }) => {
 		socket.emit('updateAssetsList', assetNames);
