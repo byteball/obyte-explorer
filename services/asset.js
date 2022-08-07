@@ -8,7 +8,7 @@ const {
 	getSpentOutputs,
 	getAmountForInfoAddress,
 } = require('./transactions');
-const { 
+const {
 	getStrSqlFilterAssetForSingleTypeOfTransactions,
 	getStrSqlFilterAssetForTransactions,
 	getStrSQLFilterForIssuerForUnlimitedCap,
@@ -145,6 +145,9 @@ async function getAssetTransactions(asset, lastInputsROWID, lastOutputsROWID) {
 
 async function getAssetHolders(asset, type, offset, issuerForUnlimitedCap) {
 	const lAsset = asset === 'bytes' ? 'base' : asset;
+	if (!offset) {
+		offset = 0;
+	}
 
 	if (type === 'large') {
 		const rowsBalances = await db.query(
