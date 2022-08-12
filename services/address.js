@@ -7,7 +7,7 @@ var BIGINT = 9223372036854775807;
 var storage = require('ocore/storage.js');
 var conf = require('ocore/conf.js');
 const { getAndSaveAssetNameAndDecimals } = require('./asset');
-const { 
+const {
 	getStrSqlFilterAssetForSingleTypeOfTransactions,
 	getStrSqlFilterAssetForTransactions,
 } = require('../helpers/sql');
@@ -22,7 +22,7 @@ async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutp
 	const arrQuerySql = [
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID, timestamp",
 		"FROM inputs, outputs, units",
-		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs INDEXED BY inputsIndexByAddress WHERE address = ? AND ROWID < ? " + 
+		"WHERE (( units.unit IN (SELECT DISTINCT unit FROM inputs INDEXED BY inputsIndexByAddress WHERE address = ? AND ROWID < ? " +
 		getStrSqlFilterAssetForSingleTypeOfTransactions(strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5))",
 		"OR ( units.unit IN (SELECT DISTINCT unit FROM outputs WHERE address = ? AND ROWID < ? AND (is_spent=1 OR is_spent=0) " + getStrSqlFilterAssetForSingleTypeOfTransactions(
 			strFilterAsset) + " ORDER BY ROWID DESC LIMIT 0, 5)))",
@@ -144,6 +144,11 @@ async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID
 	}
 }
 
+async function checkAssetsForBalances(asset, address) {
+	const rows = await db.query("SELECT 1 FROM assets JOIN unit_authors USING(unit) WHERE cap IS NULL AND unit = ? AND address = ? LIMIT 1", [asset, address]);
+	return rows.length ? 'exclude' : 'save';
+}
+
 async function getAddressInfo(address, filter) {
 	const { objTransactions, newLastInputsROWID, newLastOutputsROWID, objAssetsCache, unitAssets } = await getAddressTransactions(
 		address, BIGINT, BIGINT, filter, []);
@@ -156,6 +161,7 @@ async function getAddressInfo(address, filter) {
 	if (objTransactions !== null || rowsOutputs.length) {
 		var strFilterAsset = filter.asset;
 		var objBalances = { bytes: { balance: 0 } }, unspent = [];
+		const checkedAssets = {};
 		if (typeof strFilterAsset === 'undefined') {
 			strFilterAsset = 'all';
 		} else if (strFilterAsset === 'bytes') {
@@ -165,6 +171,16 @@ async function getAddressInfo(address, filter) {
 		for (let k in rowsOutputs) {
 			const row = rowsOutputs[k];
 			const assetKey = row.asset;
+			if (checkedAssets[assetKey] && checkedAssets[assetKey] === 'exclude') {
+				continue;
+			}
+			if (assetKey !== null && !checkedAssets[assetKey]) {
+				const status = await checkAssetsForBalances(assetKey, address);
+				checkedAssets[assetKey] = status;
+				
+				if (status === 'exclude') continue;
+			}
+			
 			if (strFilterAsset === 'all' || strFilterAsset === assetKey) {
 				if (row.asset) {
 					const objResult = await getAndSaveAssetNameAndDecimals(assetKey,
@@ -220,7 +236,7 @@ async function getAddressInfo(address, filter) {
 			objBalances,
 			end,
 			definition: rows[0].definition,
-			newLastInputsROWID, 
+			newLastInputsROWID,
 			newLastOutputsROWID,
 			storage_size: rows[0].storage_size,
 			objStateVars,
@@ -242,7 +258,7 @@ async function getAddressInfo(address, filter) {
 						objBalances,
 						end,
 						definition: JSON.stringify(definition),
-						newLastInputsROWID, 
+						newLastInputsROWID,
 						newLastOutputsROWID,
 						unitAssets,
 					});
@@ -254,7 +270,7 @@ async function getAddressInfo(address, filter) {
 						objBalances,
 						end,
 						definition: false,
-						newLastInputsROWID, 
+						newLastInputsROWID,
 						newLastOutputsROWID,
 						unitAssets,
 					});
