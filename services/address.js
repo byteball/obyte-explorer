@@ -144,7 +144,7 @@ async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID
 	}
 }
 
-async function checkAssetsForBalances(asset, address) {
+async function checkIfExcludeAsset(asset, address) {
 	const rows = await db.query("SELECT 1 FROM assets JOIN unit_authors USING(unit) WHERE cap IS NULL AND unit = ? AND address = ? LIMIT 1", [asset, address]);
 	return rows.length ? 'exclude' : 'save';
 }
@@ -175,7 +175,7 @@ async function getAddressInfo(address, filter) {
 				continue;
 			}
 			if (assetKey !== null && !checkedAssets[assetKey]) {
-				const status = await checkAssetsForBalances(assetKey, address);
+				const status = await checkIfExcludeAsset(assetKey, address);
 				checkedAssets[assetKey] = status;
 				
 				if (status === 'exclude') continue;
