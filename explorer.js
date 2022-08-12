@@ -58,7 +58,7 @@ eventBus.on('rates_updated', function() {
 
 app.use(cors());
 
-app.get('/unit/:unit', async(req, res) => {
+app.get('/api/unit/:unit', async(req, res) => {
 	if (req.params.unit.length !== 44) {
 		return res.json({ notFound: true });
 	}
@@ -68,7 +68,7 @@ app.get('/unit/:unit', async(req, res) => {
 	});
 });
 
-app.get('/address/:address/info', async (req, res) => {
+app.get('/api/address/:address/info', async (req, res) => {
 	if (req.params.address.length !== 32) {
 		return res.json({ notFound: true });
 	}
@@ -83,7 +83,7 @@ app.get('/address/:address/info', async (req, res) => {
 	});
 });
 
-app.get('/address/:address/next_page', async (req, res) => {
+app.get('/api/address/:address/next_page', async (req, res) => {
 	if (req.params.address.length !== 32) {
 		return res.json({ notFound: true });
 	}
@@ -98,7 +98,7 @@ app.get('/address/:address/next_page', async (req, res) => {
 	});
 });
 
-app.get('/asset/:asset/info', async (req, res) => {
+app.get('/api/asset/:asset/info', async (req, res) => {
 	const params = {
 		asset: req.params.asset,
 	}
@@ -108,7 +108,7 @@ app.get('/asset/:asset/info', async (req, res) => {
 	});
 });
 
-app.get('/asset/:asset/next_page_transactions', async (req, res) => {
+app.get('/api/asset/:asset/next_page_transactions', async (req, res) => {
 	const params = {
 		asset: req.params.asset,
 		...req.query,
@@ -119,7 +119,7 @@ app.get('/asset/:asset/next_page_transactions', async (req, res) => {
 	});
 });
 
-app.get('/asset/:asset/next_page_holders', async (req, res) => {
+app.get('/api/asset/:asset/next_page_holders', async (req, res) => {
 	const params = {
 		asset: req.params.asset,
 		...req.query,
