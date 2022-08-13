@@ -35,6 +35,5 @@
     "socket.io": "^4.5.1"
   },
   "resolutions": {
-    "level-rocksdb": "^4.0.0"
   }
 }
