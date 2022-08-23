@@ -39,3 +39,4 @@ Session.vim
 package-lock.json
 log
 .env
+dist

@@ -1,13 +1,14 @@
 /*jslint node: true */
 "use strict";
-var fs = require('fs');
+const { existsSync, renameSync, watchFile, readFileSync } = require('fs');
+const { readFile } = require('fs').promises;
 var desktopApp = require('ocore/desktop_app.js');
 var appDataDir = desktopApp.getAppDataDir();
 var path = require('path');
 
-if (require.main === module && !fs.existsSync(appDataDir) && fs.existsSync(path.dirname(appDataDir)+'/byteball-explorer')){
+if (require.main === module && !existsSync(appDataDir) && existsSync(path.dirname(appDataDir)+'/byteball-explorer')){
 	console.log('=== will rename old explorer data dir');
-	fs.renameSync(path.dirname(appDataDir)+'/byteball-explorer', appDataDir);
+	renameSync(path.dirname(appDataDir)+'/byteball-explorer', appDataDir);
 }
 require('./relay');
 var conf = require('ocore/conf.js');
@@ -20,14 +21,20 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const app = express();
 const httpServer = createServer(app);
+
+const checkIsUnitValid = require('./helpers/isValidUnit');
+const { checkAndChangeAssetName } = require('./helpers/checkAndChangeAssetName');
+
+const api = require('./gateways/api');
+const getAssetNameAndDecimals = require("./api/getAssetNameAndDecimals");
+const BalanceDumpService = require('./services/BalanceDumpService');
+
 const io = new Server(httpServer, {
 	cors: {
 		origin: "*"
 	}
 });
 
-const api = require('./gateways/api');
-const BalanceDumpService = require('./services/BalanceDumpService');
 let exchange_rates = {};
 
 
@@ -57,6 +64,55 @@ eventBus.on('rates_updated', function() {
 });
 
 app.use(cors());
+
+const pathToIndex = path.join(conf.pathToDist, 'index.html');
+if (!existsSync(pathToIndex)) {
+	throw Error('index.html not found');
+}
+let indexFile = readFileSync(pathToIndex).toString();
+const desc = "Obyte DAG explorer";
+
+watchFile(pathToIndex, async () => {
+	console.error('INDEX CHANGED');
+	indexFile = (await readFile(pathToIndex)).toString();
+});
+
+function indexHandler(req, res) {
+	let title = '';
+	if (req.params.unit) {
+		title = `Unit ${req.params.unit} details on Obyte DAG chain | `
+	}
+	title += desc;
+	
+	const html = indexFile.replace('{og_title}', title).replace('{og_desc}', title);
+	res.send(html);
+}
+
+function addressHandler(req, res) {
+	let title = `Address ${req.params.address} transactions and portfolio | ` +  desc;
+	
+	const html = indexFile.replace('{og_title}', title).replace('{og_desc}', title);
+	res.send(html);
+}
+
+async function assetHandler(req, res) {
+	let asset = req.params.asset
+	if (checkIsUnitValid(asset)) {
+		const assetNameAndDecimals = await getAssetNameAndDecimals(asset);
+		if (assetNameAndDecimals) {
+			asset = assetNameAndDecimals.name;
+		}
+	}
+	asset = checkAndChangeAssetName(asset);
+	let title = `Token ${asset} transactions and holders | ` +  desc;
+	
+	const html = indexFile.replace('{og_title}', title).replace('{og_desc}', title);
+	res.send(html);
+}
+
+app.get('/', indexHandler);
+app.get('/address/:address', addressHandler);
+app.get('/asset/:asset', assetHandler);
 
 app.get('/api/unit/:unit', async(req, res) => {
 	if (req.params.unit.length !== 44) {
@@ -129,6 +185,8 @@ app.get('/api/asset/:asset/next_page_holders', async (req, res) => {
 		res.json(result);
 	});
 });
+
+app.get('/:unit(*)', indexHandler);
 
 io.on('connection', async (socket) => {
 	socket.emit('rates_updated', exchange_rates);
