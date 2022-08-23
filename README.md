@@ -30,7 +30,7 @@ server {
 		proxy_pass http://127.0.0.1:4000;
 	}
 
-	location ~ \.(js|ico|css) {
+	location ~ \.(js|ico|css|png) {
 		root /path/to/dist;
 	}
 }
