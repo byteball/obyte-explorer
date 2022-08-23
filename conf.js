@@ -25,6 +25,8 @@ exports.languagesAvailable = {
 	zh: {name: "中文", file: "explorer_zh-CN"}
 };
 
+exports.pathToDist = process.env.pathToDist || './dist/';
+
 exports.initial_witnesses = !process.env.testnet ? [
 	'DXYWHSZ72ZDNDZ7WYZXKWBBH425C6WZN',
 	'2TO6NYBGX3NF5QS24MQLFR7KXYAMCIE5',
