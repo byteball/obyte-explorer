@@ -65,7 +65,7 @@ eventBus.on('rates_updated', function() {
 
 app.use(cors());
 
-const pathToIndex = path.join(conf.pathToDist, 'index.html');
+const pathToIndex = path.join(__dirname, conf.pathToDist, 'index.html');
 if (!existsSync(pathToIndex)) {
 	throw Error('index.html not found');
 }
