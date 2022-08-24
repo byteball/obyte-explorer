@@ -84,14 +84,14 @@ function indexHandler(req, res) {
 	}
 	title += desc;
 	
-	const html = indexFile.replace('{og_title}', title).replace('{og_desc}', title);
+	const html = indexFile.replaceAll('{og_text}', title);
 	res.send(html);
 }
 
 function addressHandler(req, res) {
 	let title = `Address ${req.params.address} transactions and portfolio | ` +  desc;
 	
-	const html = indexFile.replace('{og_title}', title).replace('{og_desc}', title);
+	const html = indexFile.replaceAll('{og_text}', title);
 	res.send(html);
 }
 
@@ -106,7 +106,7 @@ async function assetHandler(req, res) {
 	asset = checkAndChangeAssetName(asset);
 	let title = `Token ${asset} transactions and holders | ` +  desc;
 	
-	const html = indexFile.replace('{og_title}', title).replace('{og_desc}', title);
+	const html = indexFile.replaceAll('{og_text}', title);
 	res.send(html);
 }
 
