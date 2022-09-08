@@ -23,7 +23,7 @@ async function getAddressData(data, cb) {
 	} = await addressService.getAddressInfo(data.address, data.filter || {});
 
 	if (!objTransactions && !definition) {
-		cb({ notFound: true });
+		return cb({ notFound: true });
 	}
 	
 	cb({
