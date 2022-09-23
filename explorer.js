@@ -23,6 +23,7 @@ const app = express();
 const httpServer = createServer(app);
 
 const checkIsUnitValid = require('./helpers/isValidUnit');
+const escape = require('./helpers/escape');
 const { checkAndChangeAssetName } = require('./helpers/checkAndChangeAssetName');
 
 const api = require('./gateways/api');
@@ -80,7 +81,7 @@ watchFile(pathToIndex, async () => {
 function indexHandler(req, res) {
 	let title = '';
 	if (req.params.unit) {
-		title = `Unit ${req.params.unit} details on Obyte DAG chain | `
+		title = `Unit ${escape(req.params.unit)} details on Obyte DAG chain | `
 	}
 	title += desc;
 	
@@ -89,7 +90,7 @@ function indexHandler(req, res) {
 }
 
 function addressHandler(req, res) {
-	let title = `Address ${req.params.address} transactions and portfolio | ` +  desc;
+	let title = `Address ${escape(req.params.address)} transactions and portfolio | ` +  desc;
 	
 	const html = indexFile.replaceAll('{og_text}', title);
 	res.send(html);
@@ -104,7 +105,7 @@ async function assetHandler(req, res) {
 		}
 	}
 	asset = checkAndChangeAssetName(asset);
-	let title = `Token ${asset} transactions and holders | ` +  desc;
+	let title = `Token ${escape(asset)} transactions and holders | ` +  desc;
 	
 	const html = indexFile.replaceAll('{og_text}', title);
 	res.send(html);
