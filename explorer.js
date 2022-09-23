@@ -15,6 +15,7 @@ var conf = require('ocore/conf.js');
 var eventBus = require('ocore/event_bus.js');
 var network = require('ocore/network.js');
 const device = require('ocore/device');
+const { isValidAddress } = require('ocore/validation_utils.js');
 const express = require("express");
 const cors = require('cors')
 const { createServer } = require("http");
@@ -23,6 +24,7 @@ const app = express();
 const httpServer = createServer(app);
 
 const checkIsUnitValid = require('./helpers/isValidUnit');
+const escape = require('./helpers/escape');
 const { checkAndChangeAssetName } = require('./helpers/checkAndChangeAssetName');
 
 const api = require('./gateways/api');
@@ -80,6 +82,9 @@ watchFile(pathToIndex, async () => {
 function indexHandler(req, res) {
 	let title = '';
 	if (req.params.unit) {
+		if (!checkIsUnitValid(req.params.unit)) {
+			return res.redirect('/');
+		}
 		title = `Unit ${req.params.unit} details on Obyte DAG chain | `
 	}
 	title += desc;
@@ -89,6 +94,10 @@ function indexHandler(req, res) {
 }
 
 function addressHandler(req, res) {
+	if (!req.params.address || !isValidAddress(req.params.address)) {
+		return res.redirect('/');
+	}
+	
 	let title = `Address ${req.params.address} transactions and portfolio | ` +  desc;
 	
 	const html = indexFile.replaceAll('{og_text}', title);
@@ -104,7 +113,7 @@ async function assetHandler(req, res) {
 		}
 	}
 	asset = checkAndChangeAssetName(asset);
-	let title = `Token ${asset} transactions and holders | ` +  desc;
+	let title = `Token ${escape(asset)} transactions and holders | ` +  desc;
 	
 	const html = indexFile.replaceAll('{og_text}', title);
 	res.send(html);
