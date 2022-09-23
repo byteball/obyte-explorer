@@ -15,6 +15,7 @@ var conf = require('ocore/conf.js');
 var eventBus = require('ocore/event_bus.js');
 var network = require('ocore/network.js');
 const device = require('ocore/device');
+const { isValidAddress } = require('ocore/validation_utils.js');
 const express = require("express");
 const cors = require('cors')
 const { createServer } = require("http");
@@ -81,7 +82,10 @@ watchFile(pathToIndex, async () => {
 function indexHandler(req, res) {
 	let title = '';
 	if (req.params.unit) {
-		title = `Unit ${escape(req.params.unit)} details on Obyte DAG chain | `
+		if (!checkIsUnitValid(req.params.unit)) {
+			return res.redirect('/');
+		}
+		title = `Unit ${req.params.unit} details on Obyte DAG chain | `
 	}
 	title += desc;
 	
@@ -90,7 +94,11 @@ function indexHandler(req, res) {
 }
 
 function addressHandler(req, res) {
-	let title = `Address ${escape(req.params.address)} transactions and portfolio | ` +  desc;
+	if (!req.params.address || !isValidAddress(req.params.address)) {
+		return res.redirect('/');
+	}
+	
+	let title = `Address ${req.params.address} transactions and portfolio | ` +  desc;
 	
 	const html = indexFile.replaceAll('{og_text}', title);
 	res.send(html);
