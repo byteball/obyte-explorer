@@ -121,7 +121,7 @@ async function assetHandler(req, res) {
 
 app.get('/', indexHandler);
 app.get('/address/:address', addressHandler);
-app.get('/asset/:asset', assetHandler);
+app.get('/asset/:asset(*)', assetHandler);
 
 app.get('/api/unit/:unit', async(req, res) => {
 	if (req.params.unit.length !== 44) {
