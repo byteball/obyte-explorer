@@ -40,8 +40,6 @@ const io = new Server(httpServer, {
 
 let exchange_rates = {};
 
-await runMigration();
-
 if (conf.initial_peers) {
 	const firstPeer = conf.initial_peers[0];
 	const hubAddress = firstPeer.startsWith('wss://') ? firstPeer.substring(6) : firstPeer.substring(5);
@@ -226,6 +224,7 @@ io.on('connection', async (socket) => {
 httpServer.listen(conf.webPort);
 
 async function start() {
+	await runMigration();
 	const balanceDumpService = new BalanceDumpService();
 	await balanceDumpService.start();
 }
