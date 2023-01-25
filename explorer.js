@@ -30,6 +30,7 @@ const { checkAndChangeAssetName } = require('./helpers/checkAndChangeAssetName')
 const api = require('./gateways/api');
 const getAssetNameAndDecimals = require("./api/getAssetNameAndDecimals");
 const BalanceDumpService = require('./services/BalanceDumpService');
+const { runMigration } = require('./migration');
 
 const io = new Server(httpServer, {
 	cors: {
@@ -39,6 +40,7 @@ const io = new Server(httpServer, {
 
 let exchange_rates = {};
 
+await runMigration();
 
 if (conf.initial_peers) {
 	const firstPeer = conf.initial_peers[0];
