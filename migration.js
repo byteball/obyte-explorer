@@ -1,6 +1,6 @@
 const db = require('ocore/db');
 
-async function start(){
+const runMigration = async () => {
 	await db.query("CREATE INDEX IF NOT EXISTS unitsByTimestamp ON units(timestamp)");
 	await db.query("CREATE TABLE IF NOT EXISTS balances (" +
 		"address CHAR(32) NOT NULL," +
@@ -14,4 +14,4 @@ async function start(){
 	console.log('done')
 }
 
-start();
+exports.runMigration = runMigration;

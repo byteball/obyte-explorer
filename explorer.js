@@ -30,6 +30,7 @@ const { checkAndChangeAssetName } = require('./helpers/checkAndChangeAssetName')
 const api = require('./gateways/api');
 const getAssetNameAndDecimals = require("./api/getAssetNameAndDecimals");
 const BalanceDumpService = require('./services/BalanceDumpService');
+const { runMigration } = require('./migration');
 
 const io = new Server(httpServer, {
 	cors: {
@@ -38,7 +39,6 @@ const io = new Server(httpServer, {
 });
 
 let exchange_rates = {};
-
 
 if (conf.initial_peers) {
 	const firstPeer = conf.initial_peers[0];
@@ -224,6 +224,7 @@ io.on('connection', async (socket) => {
 httpServer.listen(conf.webPort);
 
 async function start() {
+	await runMigration();
 	const balanceDumpService = new BalanceDumpService();
 	await balanceDumpService.start();
 }
