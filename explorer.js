@@ -30,7 +30,6 @@ const { checkAndChangeAssetName } = require('./helpers/checkAndChangeAssetName')
 const api = require('./gateways/api');
 const getAssetNameAndDecimals = require("./api/getAssetNameAndDecimals");
 const BalanceDumpService = require('./services/BalanceDumpService');
-const { runMigration } = require('./migration');
 
 const io = new Server(httpServer, {
 	cors: {
@@ -66,7 +65,7 @@ eventBus.on('rates_updated', function() {
 });
 
 app.use(cors());
-app.use(express.static('dist', { extensions: ['js','ico','css','png'] }));
+app.use(express.static(path.join(__dirname, conf.pathToDist), { extensions: ['js','ico','css','png'] }));
 
 const pathToIndex = path.join(__dirname, conf.pathToDist, 'index.html');
 if (!existsSync(pathToIndex)) {
@@ -224,7 +223,6 @@ io.on('connection', async (socket) => {
 httpServer.listen(conf.webPort);
 
 async function start() {
-	await runMigration();
 	const balanceDumpService = new BalanceDumpService();
 	await balanceDumpService.start();
 }
