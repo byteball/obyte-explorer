@@ -1,6 +1,6 @@
 const addressService = require('../services/address');
 
-async function getAddressData(data, cb) {
+async function getAddressData(data, cb) {	
 	if (data.asset) {
 		data.filter = {
 			asset: data.asset,
@@ -11,6 +11,7 @@ async function getAddressData(data, cb) {
 		objTransactions,
 		unspent,
 		objBalances,
+		objAddressAssets,
 		end,
 		definition,
 		newLastInputsROWID,
@@ -31,6 +32,7 @@ async function getAddressData(data, cb) {
 		objTransactions: objTransactions,
 		unspent: unspent,
 		objBalances: objBalances,
+		objAddressAssets: objAddressAssets,
 		end: end,
 		definition: definition,
 		newLastInputsROWID,
