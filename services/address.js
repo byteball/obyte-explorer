@@ -179,13 +179,16 @@ async function getAddressInfo(address, filter) {
 				const status = await checkIfExcludeAsset(assetKey, address);
 				checkedAssets[assetKey] = status;
 
+				objAddressAssets[assetKey] = {
+					assetName: null
+				};
+
 				const objResult = await getAndSaveAssetNameAndDecimals(assetKey, objAssetsCache);
-				if (objResult && !objAddressAssets[assetKey]) {
-					objAddressAssets[assetKey] = {
-						assetName: objResult.name
-					};
+
+				if (objResult) {
+					objAddressAssets[assetKey].assetName = objResult.name;
 				}
-				
+
 				if (status === 'exclude') continue;
 			}
 			
@@ -213,12 +216,6 @@ async function getAddressInfo(address, filter) {
 							assetName: objResult.name,
 							assetDecimals: objResult.decimals
 						};
-
-						if (!objAddressAssets[assetKey]) {
-							objAddressAssets[assetKey] = {
-								assetName: objResult.name
-							};
-						}
 					} else {
 						objBalances[assetKey] = { balance: 0 };
 					}
