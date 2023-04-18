@@ -137,10 +137,10 @@ async function getAddressTransactions(address, lastInputsROWID, lastOutputsROWID
 			objTransactions = await getSpentOutputs(objTransactions);
 			return { objTransactions, newLastInputsROWID, newLastOutputsROWID, objAssetsCache, unitAssets }
 		} else {
-			return { objTransactions: null };
+			return { objTransactions: null, objAssetsCache: {} };
 		}
 	} else {
-		return { objTransactions: null };
+		return { objTransactions: null, objAssetsCache: {} };
 	}
 }
 
@@ -161,6 +161,7 @@ async function getAddressInfo(address, filter) {
 	if (objTransactions !== null || rowsOutputs.length) {
 		var strFilterAsset = filter.asset;
 		var objBalances = { bytes: { balance: 0 } }, unspent = [];
+		var objAddressAssets = { bytes: { assetName: null } };
 		const checkedAssets = {};
 		if (typeof strFilterAsset === 'undefined') {
 			strFilterAsset = 'all';
@@ -177,7 +178,17 @@ async function getAddressInfo(address, filter) {
 			if (assetKey !== null && !checkedAssets[assetKey]) {
 				const status = await checkIfExcludeAsset(assetKey, address);
 				checkedAssets[assetKey] = status;
-				
+
+				objAddressAssets[assetKey] = {
+					assetName: null
+				};
+
+				const objResult = await getAndSaveAssetNameAndDecimals(assetKey, objAssetsCache);
+
+				if (objResult) {
+					objAddressAssets[assetKey].assetName = objResult.name;
+				}
+
 				if (status === 'exclude') continue;
 			}
 			
@@ -234,6 +245,7 @@ async function getAddressInfo(address, filter) {
 			objTransactions,
 			unspent,
 			objBalances,
+			objAddressAssets,
 			end,
 			definition: rows[0].definition,
 			newLastInputsROWID,
@@ -256,6 +268,7 @@ async function getAddressInfo(address, filter) {
 						objTransactions,
 						unspent,
 						objBalances,
+						objAddressAssets,
 						end,
 						definition: JSON.stringify(definition),
 						newLastInputsROWID,
@@ -268,6 +281,7 @@ async function getAddressInfo(address, filter) {
 						objTransactions,
 						unspent,
 						objBalances,
+						objAddressAssets,
 						end,
 						definition: false,
 						newLastInputsROWID,
