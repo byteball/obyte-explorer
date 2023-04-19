@@ -65,7 +65,7 @@ eventBus.on('rates_updated', function() {
 });
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, conf.pathToDist), { extensions: ['js','ico','css','png'] }));
+app.use(express.static(path.join(__dirname, conf.pathToDist), { index: false, extensions: ['js','ico','css','png'] }));
 
 const pathToIndex = path.join(__dirname, conf.pathToDist, 'index.html');
 if (!existsSync(pathToIndex)) {
