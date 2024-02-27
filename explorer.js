@@ -1,7 +1,6 @@
 /*jslint node: true */
 "use strict";
-const { existsSync, renameSync, watchFile, readFileSync } = require('fs');
-const { readFile } = require('fs').promises;
+const { existsSync, renameSync } = require('fs');
 var desktopApp = require('ocore/desktop_app.js');
 var appDataDir = desktopApp.getAppDataDir();
 var path = require('path');
@@ -15,7 +14,6 @@ var conf = require('ocore/conf.js');
 var eventBus = require('ocore/event_bus.js');
 var network = require('ocore/network.js');
 const device = require('ocore/device');
-const { isValidAddress } = require('ocore/validation_utils.js');
 const express = require("express");
 const cors = require('cors')
 const { createServer } = require("http");
@@ -23,12 +21,8 @@ const { Server } = require("socket.io");
 const app = express();
 const httpServer = createServer(app);
 
-const checkIsUnitValid = require('./helpers/isValidUnit');
-const escape = require('./helpers/escape');
-const { checkAndChangeAssetName } = require('./helpers/checkAndChangeAssetName');
 
 const api = require('./gateways/api');
-const getAssetNameAndDecimals = require("./api/getAssetNameAndDecimals");
 const BalanceDumpService = require('./services/BalanceDumpService');
 
 const io = new Server(httpServer, {
@@ -65,63 +59,6 @@ eventBus.on('rates_updated', function() {
 });
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, conf.pathToDist), { index: false, extensions: ['js','ico','css','png'] }));
-
-const pathToIndex = path.join(__dirname, conf.pathToDist, 'index.html');
-if (!existsSync(pathToIndex)) {
-	throw Error('index.html not found');
-}
-let indexFile = readFileSync(pathToIndex).toString();
-const desc = "Obyte DAG explorer";
-
-watchFile(pathToIndex, async () => {
-	console.error('INDEX CHANGED');
-	indexFile = (await readFile(pathToIndex)).toString();
-});
-
-function indexHandler(req, res) {
-	let title = '';
-	if (req.params.unit) {
-		if (!checkIsUnitValid(req.params.unit)) {
-			return res.redirect('/');
-		}
-		title = `Unit ${req.params.unit} details on Obyte DAG chain | `
-	}
-	title += desc;
-	
-	const html = indexFile.replaceAll('{og_text}', title);
-	res.send(html);
-}
-
-function addressHandler(req, res) {
-	if (!req.params.address || !isValidAddress(req.params.address)) {
-		return res.redirect('/');
-	}
-	
-	let title = `Address ${req.params.address} transactions and portfolio | ` +  desc;
-	
-	const html = indexFile.replaceAll('{og_text}', title);
-	res.send(html);
-}
-
-async function assetHandler(req, res) {
-	let asset = req.params.asset
-	if (checkIsUnitValid(asset)) {
-		const assetNameAndDecimals = await getAssetNameAndDecimals(asset);
-		if (assetNameAndDecimals) {
-			asset = assetNameAndDecimals.name;
-		}
-	}
-	asset = checkAndChangeAssetName(asset);
-	let title = `Token ${escape(asset)} transactions and holders | ` +  desc;
-	
-	const html = indexFile.replaceAll('{og_text}', title);
-	res.send(html);
-}
-
-app.get('/', indexHandler);
-app.get('/address/:address', addressHandler);
-app.get('/asset/:asset(*)', assetHandler);
 
 app.get('/api/unit/:unit', async(req, res) => {
 	if (req.params.unit.length !== 44) {
@@ -195,7 +132,6 @@ app.get('/api/asset/:asset/next_page_holders', async (req, res) => {
 	});
 });
 
-app.get('/:unit(*)', indexHandler);
 
 io.on('connection', async (socket) => {
 	socket.emit('rates_updated', exchange_rates);

@@ -8,10 +8,6 @@ Install node.js 10+, clone the repository, then
 
 1) `yarn`
 2) `node migration.js`
-3) set pathToDist in .env or
-```bash
-ln -s path/to/byte-explorer-frontend/dist/ .
-```
 
 #### Run
 
