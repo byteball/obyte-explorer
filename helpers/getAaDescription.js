@@ -32,31 +32,31 @@ async function fetchAaDescription(address, docUrl) {
 	}
 }
 
-async function getAaDescription(address, definition) {
+async function getAaDescription(address, definition, baseAA) {
 	const descriptionRows = await getAaDescriptionFromDb(address);
 
-	if(descriptionRows.length) {
+	if (descriptionRows.length) {
 		return descriptionRows[0].description;
 	}
 
 	const docUrl = definition[1].doc_url;
 
-	if(docUrl) {
+	if (docUrl) {
 		const description = await fetchAaDescription(address, docUrl);
 
-		if(description) {
+		if (description) {
 			await saveAaDescriptionToDb(address, docUrl, description);
 		}
 
 		return description;
 	}
 
-	if(definition.base_aa) {
-		const rows = await db.query("SELECT definition FROM aa_addresses WHERE address = ?", [definition.base_aa]);
-		
+	if (baseAA) {
+		const rows = await db.query("SELECT definition FROM aa_addresses WHERE address = ?", [baseAA]);
+
 		const baseAaDefinition = rows[0].definition;
-		
-		return getAaDescription(definition.base_aa, baseAaDefinition);
+
+		return getAaDescription(baseAA, baseAaDefinition);
 	}
 
 	await saveAaDescriptionToDb(address);

@@ -228,7 +228,7 @@ async function getAddressInfo(address, filter) {
 	var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
 	if (isFinite(constants.formulaUpgradeMci)) {
 		const rows = await db.query(
-			"SELECT definition,storage_size FROM aa_addresses WHERE address=?",
+			"SELECT definition, storage_size, base_aa FROM aa_addresses WHERE address=?",
 			[address]);
 
 		if (rows.length === 0) {
@@ -236,7 +236,7 @@ async function getAddressInfo(address, filter) {
 		}
 		
 		const aaDefinition = JSON.parse(rows[0].definition);
-		const aaDescription = await getAaDescription(address, aaDefinition);
+		const aaDescription = await getAaDescription(address, aaDefinition, rows[0].base_aa);
 		
 		let objStateVars = await storage.readAAStateVars(address);
 		for (let key in objStateVars) {
