@@ -20,6 +20,7 @@ async function getAddressData(data, cb) {
 		objStateVars,
 		arrAaResponses,
 		arrAasFromTemplate,
+		aaDescription,
 		unitAssets,
 	} = await addressService.getAddressInfo(data.address, data.filter || {});
 
@@ -41,6 +42,7 @@ async function getAddressData(data, cb) {
 		objStateVars: objStateVars,
 		arrAaResponses: arrAaResponses,
 		arrAasFromTemplate: arrAasFromTemplate,
+		aaDescription,
 		unitAssets,
 		testnet: !!process.env.testnet
 	});

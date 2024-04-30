@@ -11,7 +11,13 @@ const start = async () => {
 		")");
 	await db.query("CREATE INDEX IF NOT EXISTS balancesByAssetBalances ON balances(asset, balance DESC)");
 	await db.query("CREATE INDEX IF NOT EXISTS inputsByAsset ON inputs(asset)");
-	console.log('done')
+
+	await db.query("CREATE TABLE IF NOT EXISTS aa_descriptions (" +
+		"address CHAR(32) PRIMARY KEY NOT NULL," +
+		"doc_url TEXT," +
+		"description TEXT" +
+		")");
+	console.log('done');
 }
 
 start();

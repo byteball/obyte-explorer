@@ -15,6 +15,7 @@ const {
 	getSpentOutputs,
 	getAmountForInfoAddress,
 } = require('./transactions');
+const getAaDescription = require("../helpers/getAaDescription");
 
 async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter) {
 	const strFilterAsset = filter.asset;
@@ -229,8 +230,13 @@ async function getAddressInfo(address, filter) {
 		const rows = await db.query(
 			"SELECT definition,storage_size FROM aa_addresses WHERE address=?",
 			[address]);
-		if (rows.length === 0)
+
+		if (rows.length === 0) {
 			return findRegularDefinition();
+		}
+		
+		const aaDefinition = JSON.parse(rows[0].definition);
+		const aaDescription = await getAaDescription(address, aaDefinition);
 		
 		let objStateVars = await storage.readAAStateVars(address);
 		for (let key in objStateVars) {
@@ -254,6 +260,7 @@ async function getAddressInfo(address, filter) {
 			objStateVars,
 			arrAaResponses,
 			arrAasFromTemplate,
+			aaDescription,
 			unitAssets,
 		};
 
