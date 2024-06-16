@@ -478,3 +478,4 @@ exports.getUnitsAfterRowId = getUnitsAfterRowId;
 exports.getInfoOnUnit = getInfoOnUnit;
 exports.getUnitsThatBecameStable = getUnitsThatBecameStable;
 exports.getRowIdByUnit = getRowIdByUnit;
+exports.getTriggerUnit = getTriggerUnit;

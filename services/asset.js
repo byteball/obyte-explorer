@@ -15,6 +15,7 @@ const {
 } = require('../helpers/sql');
 const checkIsAssetValid = require('../helpers/isValidAsset');
 const checkIsAssetPresentInDb = require('../helpers/isAssetPresentInDb');
+const { getTriggerUnit } = require("./units");
 
 const BIGINT = 9223372036854775807;
 
@@ -260,6 +261,133 @@ async function getURLAndNameByAssetUnit(assetUnit) {
 	return null;
 }
 
+const tokenRegistry = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
+
+async function getMessageByApp(messages, app) {
+	return messages.find(msg => msg.app === app);
+}
+
+async function getAADefinition(address) {
+	return db.query("SELECT definition FROM aa_addresses WHERE address=?", [address]);
+}
+
+async function getUnitAuthor(unit) {
+	return db.query('SELECT * FROM unit_authors WHERE unit = ?', [unit]);
+}
+
+async function getAssetInfo(assetUnit) {
+	const assetInfo = {
+		author: '',
+		data: null
+	}
+
+	const rows = await db.query("SELECT metadata_unit, registry_address FROM asset_metadata WHERE asset = ?", [assetUnit]);
+
+	if (rows[0].registry_address !== tokenRegistry) {
+		const metadataUnit = await storage.readUnit(rows[0].metadata_unit);
+
+		assetInfo.author = metadataUnit.authors[0].address;
+
+		assetInfo.data = metadataUnit.data;
+	}
+
+	const triggerUnit = await getTriggerUnit(assetUnit);
+
+	if (!triggerUnit) {
+		const triggerUnitOfMetadataUnit = await getTriggerUnit(rows[0].metadata_unit);
+
+		const triggerUnit = await storage.readUnit(triggerUnitOfMetadataUnit);
+
+		const triggerUnitDataMessage = await getMessageByApp(triggerUnit.messages, 'data');
+
+		console.error('mu trigger messages', triggerUnitDataMessage);
+
+		assetInfo.author = triggerUnit.authors[0].address;
+		assetInfo.data = triggerUnitDataMessage.payload;
+
+		return assetInfo;
+	}
+
+	console.error('trigger', triggerUnit);	
+
+	// используем автора триггер юнита как автора
+	const triggerUnitAuthor = await getUnitAuthor(triggerUnit);
+
+	const triggerUnitPayload = await storage.readUnit(triggerUnit);
+	
+	console.error('tp', triggerUnitPayload);
+	
+	const triggerUnitDefinitionMessage = await getMessageByApp(triggerUnitPayload.messages, 'definition');
+
+	console.error('triggerUnitDefinitionMessage', triggerUnitDefinitionMessage);
+
+	if (!triggerUnitDefinitionMessage) {
+		assetInfo.author = triggerUnitAuthor[0].address;
+		// - if no definition - then mark trigger_unit author as author
+		// *ideally check if author is AA, and if it is AA then show its meta, if no show just its address 
+		console.error('triggerUnitAuthor', triggerUnitAuthor[0]);
+
+		// ToDo: ???
+		const authorDefinitionRows = await getAADefinition(triggerUnitAuthor[0].address);
+		
+		console.error('authorDefinitionRows', authorDefinitionRows);
+
+		if (authorDefinitionRows.length) {
+			const authorDefinition = JSON.parse(authorDefinitionRows[0].definition);
+
+			if(authorDefinition[0] === 'autonomous agent') {
+				assetInfo.authorDefinition = authorDefinitionRows[0].definition;
+
+				if(authorDefinitionRows[0].definition)
+				
+				assetInfo.authorDefinition = authorDefinitionRows[0].definition;
+			}
+		}
+
+		return assetInfo;
+	}
+
+	const triggerUnitDefinition = triggerUnitDefinitionMessage.payload.definition[1];
+
+	console.error('triggerUnitDefinition', triggerUnitDefinition);
+
+	if (triggerUnitDefinition.base_aa) {
+		assetInfo.author = triggerUnitDefinition.base_aa;
+		
+		const authorDefinitionRows = await getAADefinition(triggerUnitDefinition.base_aa);
+		
+		if (authorDefinitionRows.length) {
+
+			const authorDefinition = JSON.parse(authorDefinitionRows[0].definition);
+
+			console.error('base authorDefinition', authorDefinition);
+
+			if(authorDefinition[0] === 'autonomous agent') {
+				assetInfo.authorDefinition = authorDefinitionRows[0].definition;
+			}
+		}
+
+		return assetInfo;
+	}
+
+	assetInfo.author = triggerUnitDefinition.base_aa;
+
+	// if definition have no base_aa - return author as trigger unit author
+	const authorDefinitionRows = await getAADefinition(triggerUnitAuthor[0].address);
+
+	if(authorDefinitionRows.length) {
+		const authorDefinition = JSON.parse(authorDefinitionRows[0].definition);
+
+		console.error('not-base authorDefinition', authorDefinition);
+
+		if(authorDefinition[0] === 'autonomous agent') {
+			assetInfo.authorDefinition = authorDefinitionRows[0].definition;
+		}	
+	}
+
+	return assetInfo;
+}
+
 async function getAssetData(asset) {
 	const metaOfPrivateAsset = await getMetaOfPrivateAsset(asset);
 	if (metaOfPrivateAsset) {
@@ -267,15 +395,15 @@ async function getAssetData(asset) {
 	}
 
 	let assetUnit = await getAssetUnit(asset) || asset;
-	
+
 	const isValidAsset = checkIsAssetValid(assetUnit);
 
 	if (!isValidAsset) {
 		return { notFound: true };
 	}
-	
+
 	const isAssetPresentInDb = await checkIsAssetPresentInDb(assetUnit);
-	
+
 	if (assetUnit !== 'bytes' && !isAssetPresentInDb) {
 		return { notFound: true };
 	}
@@ -283,6 +411,11 @@ async function getAssetData(asset) {
 	const assetData = { assetUnit };
 
 	const unit = await storage.readUnit(assetUnit);
+
+	const assetInfo = await getAssetInfo(assetUnit);
+
+	console.error('assetInfo', assetInfo);
+	
 	let isLimitedCap = false;
 
 	if (assetUnit !== 'bytes') {
@@ -327,6 +460,8 @@ async function getAssetData(asset) {
 	assetData.endHolders = holders.length < 100;
 	assetData.supply = supply;
 	assetData.transactionsData = await getAssetTransactions(assetUnit, BIGINT, BIGINT, []);
+
+	assetData.assetInfo = assetInfo;
 
 	assetData.end = assetData.transactionsData.objTransactions ? Object.keys(assetData.transactionsData.objTransactions).length < 5 : false;
 
