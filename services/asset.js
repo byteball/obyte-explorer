@@ -263,133 +263,89 @@ async function getURLAndNameByAssetUnit(assetUnit) {
 
 const tokenRegistry = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
 
-async function getMessageByApp(messages, app) {
-	return messages.find(msg => msg.app === app);
-}
-
-async function getAADefinition(address) {
-	return db.query("SELECT definition FROM aa_addresses WHERE address=?", [address]);
-}
-
 async function getUnitAuthor(unit) {
 	return db.query('SELECT * FROM unit_authors WHERE unit = ?', [unit]);
+}
+
+async function getDefinitionByAddress(address) {
+	const rows = await db.query("SELECT definition FROM definitions WHERE definition_chash=? UNION SELECT definition FROM aa_addresses WHERE address=? LIMIT 1", [address, address])
+
+	return rows[0] ? JSON.parse(rows[0].definition) : storage.getUnconfirmedAADefinition(address);
+}
+
+async function getAssetDescriptionFromVars(asset, registrar) {
+	const currentDescVarName = `current_desc_${asset}`;
+
+	const currentDescUnit = await storage.readAAStateVar(registrar, currentDescVarName);
+
+	if (!currentDescUnit) {
+		return '';
+	}
+
+	const descVarName = `desc_${currentDescUnit}`;
+
+	const description = await storage.readAAStateVar(registrar, descVarName);
+
+	if (!description) {
+		return '';
+	}
+
+	return description;
+}
+
+async function getAssetDescription(assetUnit) {
+	const rows = await db.query("SELECT metadata_unit, registry_address FROM asset_metadata WHERE asset = ?", [assetUnit]);
+
+	if (rows[0].registry_address !== tokenRegistry) {
+		//ToDo: implement not tokenRegistry flow
+
+		return '';
+	}
+
+	return getAssetDescriptionFromVars(assetUnit, rows[0].registry_address);
 }
 
 async function getAssetInfo(assetUnit) {
 	const assetInfo = {
 		author: '',
-		data: null
+		authorDefinition: null,
+		assetDescription: ''
 	}
 
-	const rows = await db.query("SELECT metadata_unit, registry_address FROM asset_metadata WHERE asset = ?", [assetUnit]);
+	assetInfo.assetDescription = await getAssetDescription(assetUnit);
 
-	if (rows[0].registry_address !== tokenRegistry) {
-		const metadataUnit = await storage.readUnit(rows[0].metadata_unit);
+	const assetAuthorsRows = await getUnitAuthor(assetUnit);
 
-		assetInfo.author = metadataUnit.authors[0].address;
+	const author = assetAuthorsRows[0].address;
 
-		assetInfo.data = metadataUnit.data;
-	}
+	const authorsDefinition = await getDefinitionByAddress(author);
 
-	const triggerUnit = await getTriggerUnit(assetUnit);
 
-	if (!triggerUnit) {
-		const triggerUnitOfMetadataUnit = await getTriggerUnit(rows[0].metadata_unit);
-
-		const triggerUnit = await storage.readUnit(triggerUnitOfMetadataUnit);
-
-		const triggerUnitDataMessage = await getMessageByApp(triggerUnit.messages, 'data');
-
-		console.error('mu trigger messages', triggerUnitDataMessage);
-
-		assetInfo.author = triggerUnit.authors[0].address;
-		assetInfo.data = triggerUnitDataMessage.payload;
+	if (!authorsDefinition.length || authorsDefinition[0] !== 'autonomous agent') {
+		assetInfo.author = author;
 
 		return assetInfo;
 	}
 
-	console.error('trigger', triggerUnit);	
-
-	// используем автора триггер юнита как автора
-	const triggerUnitAuthor = await getUnitAuthor(triggerUnit);
-
-	const triggerUnitPayload = await storage.readUnit(triggerUnit);
-	
-	console.error('tp', triggerUnitPayload);
-	
-	const triggerUnitDefinitionMessage = await getMessageByApp(triggerUnitPayload.messages, 'definition');
-
-	console.error('triggerUnitDefinitionMessage', triggerUnitDefinitionMessage);
-
-	if (!triggerUnitDefinitionMessage) {
-		assetInfo.author = triggerUnitAuthor[0].address;
-		// - if no definition - then mark trigger_unit author as author
-		// *ideally check if author is AA, and if it is AA then show its meta, if no show just its address 
-		console.error('triggerUnitAuthor', triggerUnitAuthor[0]);
-
-		// ToDo: ???
-		const authorDefinitionRows = await getAADefinition(triggerUnitAuthor[0].address);
-		
-		console.error('authorDefinitionRows', authorDefinitionRows);
-
-		if (authorDefinitionRows.length) {
-			const authorDefinition = JSON.parse(authorDefinitionRows[0].definition);
-
-			if(authorDefinition[0] === 'autonomous agent') {
-				assetInfo.authorDefinition = authorDefinitionRows[0].definition;
-
-				if(authorDefinitionRows[0].definition)
-				
-				assetInfo.authorDefinition = authorDefinitionRows[0].definition;
-			}
-		}
+	if (!authorsDefinition[1].base_aa) {
+		assetInfo.author = author;
+		assetInfo.authorDefinition = JSON.stringify(authorsDefinition);
 
 		return assetInfo;
 	}
 
-	const triggerUnitDefinition = triggerUnitDefinitionMessage.payload.definition[1];
+	const baseAA = authorsDefinition[1].base_aa;
+	const baseAADefinition = await getDefinitionByAddress(baseAA);
 
-	console.error('triggerUnitDefinition', triggerUnitDefinition);
-
-	if (triggerUnitDefinition.base_aa) {
-		assetInfo.author = triggerUnitDefinition.base_aa;
-		
-		const authorDefinitionRows = await getAADefinition(triggerUnitDefinition.base_aa);
-		
-		if (authorDefinitionRows.length) {
-
-			const authorDefinition = JSON.parse(authorDefinitionRows[0].definition);
-
-			console.error('base authorDefinition', authorDefinition);
-
-			if(authorDefinition[0] === 'autonomous agent') {
-				assetInfo.authorDefinition = authorDefinitionRows[0].definition;
-			}
-		}
-
-		return assetInfo;
-	}
-
-	assetInfo.author = triggerUnitDefinition.base_aa;
-
-	// if definition have no base_aa - return author as trigger unit author
-	const authorDefinitionRows = await getAADefinition(triggerUnitAuthor[0].address);
-
-	if(authorDefinitionRows.length) {
-		const authorDefinition = JSON.parse(authorDefinitionRows[0].definition);
-
-		console.error('not-base authorDefinition', authorDefinition);
-
-		if(authorDefinition[0] === 'autonomous agent') {
-			assetInfo.authorDefinition = authorDefinitionRows[0].definition;
-		}	
-	}
+	assetInfo.author = baseAA;
+	assetInfo.authorDefinition = JSON.stringify(baseAADefinition);
 
 	return assetInfo;
 }
 
 async function getAssetData(asset) {
 	const metaOfPrivateAsset = await getMetaOfPrivateAsset(asset);
+
 	if (metaOfPrivateAsset) {
 		return getAssetDataForPrivateAsset(metaOfPrivateAsset);
 	}
@@ -413,8 +369,6 @@ async function getAssetData(asset) {
 	const unit = await storage.readUnit(assetUnit);
 
 	const assetInfo = await getAssetInfo(assetUnit);
-
-	console.error('assetInfo', assetInfo);
 	
 	let isLimitedCap = false;
 
