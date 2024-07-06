@@ -261,7 +261,7 @@ async function getURLAndNameByAssetUnit(assetUnit) {
 	return null;
 }
 
-const tokenRegistry = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
+const newTokenRegistry = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
 
 async function getUnitAuthor(unit) {
 	return db.query('SELECT * FROM unit_authors WHERE unit = ?', [unit]);
@@ -296,8 +296,18 @@ async function getAssetDescriptionFromVars(asset, registrar) {
 async function getAssetDescription(assetUnit) {
 	const rows = await db.query("SELECT metadata_unit, registry_address FROM asset_metadata WHERE asset = ?", [assetUnit]);
 
-	if (rows[0].registry_address !== tokenRegistry) {
-		//ToDo: implement not tokenRegistry flow
+	if (rows[0].registry_address !== newTokenRegistry) {
+		const rows2 = await db.query("SELECT payload FROM messages WHERE unit = ? AND app = 'data'", [rows[0].metadata_unit]);
+		if (rows2.length) {
+			try {
+				const data = JSON.parse(rows2[0].payload);
+				if (data.description) {
+					return data.description;
+				}
+			} catch (e) {
+				// nothing
+			}
+		}
 
 		return '';
 	}
