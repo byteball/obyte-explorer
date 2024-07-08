@@ -261,7 +261,7 @@ async function getURLAndNameByAssetUnit(assetUnit) {
 	return null;
 }
 
-const newTokenRegistry = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
+const tokenRegistryAA = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
 
 async function getUnitAuthor(unit) {
 	return db.query('SELECT * FROM unit_authors WHERE unit = ?', [unit]);
@@ -296,7 +296,7 @@ async function getAssetDescriptionFromVars(asset, registrar) {
 async function getAssetDescription(assetUnit) {
 	const rows = await db.query("SELECT metadata_unit, registry_address FROM asset_metadata WHERE asset = ?", [assetUnit]);
 
-	if (rows[0].registry_address !== newTokenRegistry) {
+	if (rows[0].registry_address !== tokenRegistryAA) {
 		const rows2 = await db.query("SELECT payload FROM messages WHERE unit = ? AND app = 'data'", [rows[0].metadata_unit]);
 		if (rows2.length) {
 			try {
@@ -328,23 +328,23 @@ async function getAssetInfo(assetUnit) {
 
 	const author = assetAuthorsRows[0].address;
 
-	const authorsDefinition = await getDefinitionByAddress(author);
+	const definitionOfAuthor = await getDefinitionByAddress(author);
 
 
-	if (!authorsDefinition.length || authorsDefinition[0] !== 'autonomous agent') {
+	if (!definitionOfAuthor.length || definitionOfAuthor[0] !== 'autonomous agent') {
 		assetInfo.author = author;
 
 		return assetInfo;
 	}
 
-	if (!authorsDefinition[1].base_aa) {
+	if (!definitionOfAuthor[1].base_aa) {
 		assetInfo.author = author;
-		assetInfo.authorDefinition = JSON.stringify(authorsDefinition);
+		assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
 
 		return assetInfo;
 	}
 
-	const baseAA = authorsDefinition[1].base_aa;
+	const baseAA = definitionOfAuthor[1].base_aa;
 	const baseAADefinition = await getDefinitionByAddress(baseAA);
 
 	assetInfo.author = baseAA;
