@@ -15,6 +15,7 @@ const {
 } = require('../helpers/sql');
 const checkIsAssetValid = require('../helpers/isValidAsset');
 const checkIsAssetPresentInDb = require('../helpers/isAssetPresentInDb');
+const { getTriggerUnit } = require("./units");
 
 const BIGINT = 9223372036854775807;
 
@@ -260,22 +261,115 @@ async function getURLAndNameByAssetUnit(assetUnit) {
 	return null;
 }
 
+const tokenRegistryAA = 'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ';
+
+async function getUnitAuthor(unit) {
+	return db.query('SELECT * FROM unit_authors WHERE unit = ?', [unit]);
+}
+
+async function getDefinitionByAddress(address) {
+	const rows = await db.query("SELECT definition FROM definitions WHERE definition_chash=? UNION SELECT definition FROM aa_addresses WHERE address=? LIMIT 1", [address, address])
+
+	return rows[0] ? JSON.parse(rows[0].definition) : storage.getUnconfirmedAADefinition(address);
+}
+
+async function getAssetDescriptionFromVars(asset, registrar) {
+	const currentDescVarName = `current_desc_${asset}`;
+
+	const currentDescUnit = await storage.readAAStateVar(registrar, currentDescVarName);
+
+	if (!currentDescUnit) {
+		return '';
+	}
+
+	const descVarName = `desc_${currentDescUnit}`;
+
+	const description = await storage.readAAStateVar(registrar, descVarName);
+
+	if (!description) {
+		return '';
+	}
+
+	return description;
+}
+
+async function getAssetDescription(assetUnit) {
+	const rows = await db.query("SELECT metadata_unit, registry_address FROM asset_metadata WHERE asset = ?", [assetUnit]);
+
+	if (rows[0].registry_address !== tokenRegistryAA) {
+		const rows2 = await db.query("SELECT payload FROM messages WHERE unit = ? AND app = 'data'", [rows[0].metadata_unit]);
+		if (rows2.length) {
+			try {
+				const data = JSON.parse(rows2[0].payload);
+				if (data.description) {
+					return data.description;
+				}
+			} catch (e) {
+				// nothing
+			}
+		}
+
+		return '';
+	}
+
+	return getAssetDescriptionFromVars(assetUnit, rows[0].registry_address);
+}
+
+async function getAssetInfo(assetUnit) {
+	const assetInfo = {
+		author: '',
+		authorDefinition: null,
+		assetDescription: ''
+	}
+
+	assetInfo.assetDescription = await getAssetDescription(assetUnit);
+
+	const assetAuthorsRows = await getUnitAuthor(assetUnit);
+
+	const author = assetAuthorsRows[0].address;
+
+	const definitionOfAuthor = await getDefinitionByAddress(author);
+
+
+	if (!definitionOfAuthor.length || definitionOfAuthor[0] !== 'autonomous agent') {
+		assetInfo.author = author;
+
+		return assetInfo;
+	}
+
+	if (!definitionOfAuthor[1].base_aa) {
+		assetInfo.author = author;
+		assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
+
+		return assetInfo;
+	}
+
+	const baseAA = definitionOfAuthor[1].base_aa;
+	const baseAADefinition = await getDefinitionByAddress(baseAA);
+
+	assetInfo.author = baseAA;
+	assetInfo.authorDefinition = JSON.stringify(baseAADefinition);
+
+	return assetInfo;
+}
+
 async function getAssetData(asset) {
 	const metaOfPrivateAsset = await getMetaOfPrivateAsset(asset);
+
 	if (metaOfPrivateAsset) {
 		return getAssetDataForPrivateAsset(metaOfPrivateAsset);
 	}
 
 	let assetUnit = await getAssetUnit(asset) || asset;
-	
+
 	const isValidAsset = checkIsAssetValid(assetUnit);
 
 	if (!isValidAsset) {
 		return { notFound: true };
 	}
-	
+
 	const isAssetPresentInDb = await checkIsAssetPresentInDb(assetUnit);
-	
+
 	if (assetUnit !== 'bytes' && !isAssetPresentInDb) {
 		return { notFound: true };
 	}
@@ -283,6 +377,9 @@ async function getAssetData(asset) {
 	const assetData = { assetUnit };
 
 	const unit = await storage.readUnit(assetUnit);
+
+	const assetInfo = await getAssetInfo(assetUnit);
+	
 	let isLimitedCap = false;
 
 	if (assetUnit !== 'bytes') {
@@ -327,6 +424,8 @@ async function getAssetData(asset) {
 	assetData.endHolders = holders.length < 100;
 	assetData.supply = supply;
 	assetData.transactionsData = await getAssetTransactions(assetUnit, BIGINT, BIGINT, []);
+
+	assetData.assetInfo = assetInfo;
 
 	assetData.end = assetData.transactionsData.objTransactions ? Object.keys(assetData.transactionsData.objTransactions).length < 5 : false;
 

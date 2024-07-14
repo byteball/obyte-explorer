@@ -63,7 +63,7 @@ exports.initial_peers = [
 exports.supportedRegistries = {
 	'AM6GTUKENBYA54FYDAKX2VLENFZIMXWG': { 
 		name: 'obyte.app', 
-		url: 'https://obyte.app/#!/assets/', 
+		url: 'https://asset.obyte.app/#!/assets/', 
 		type: 'unit' 
 	},
 	'O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ': { 
