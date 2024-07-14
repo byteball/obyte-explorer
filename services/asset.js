@@ -295,8 +295,11 @@ async function getAssetDescriptionFromVars(asset, registrar) {
 
 async function getAssetDescription(assetUnit) {
 	const rows = await db.query("SELECT metadata_unit, registry_address FROM asset_metadata WHERE asset = ?", [assetUnit]);
-
-	if (rows.length && rows[0].registry_address !== tokenRegistryAA) {
+	if (!rows.length) {
+		return '';
+	}
+	
+	if (rows[0].registry_address !== tokenRegistryAA) {
 		const rows2 = await db.query("SELECT payload FROM messages WHERE unit = ? AND app = 'data'", [rows[0].metadata_unit]);
 		if (rows2.length) {
 			try {
