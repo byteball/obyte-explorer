@@ -324,6 +324,12 @@ async function getAssetInfo(assetUnit) {
 		authorDefinition: null,
 		assetDescription: ''
 	}
+	
+	if (assetUnit === 'bytes') {
+		assetInfo.assetDescription = 'Main asset in Obyte network';
+		
+		return assetInfo;
+	}
 
 	assetInfo.assetDescription = await getAssetDescription(assetUnit);
 
@@ -332,7 +338,6 @@ async function getAssetInfo(assetUnit) {
 	const author = assetAuthorsRows[0].address;
 
 	const definitionOfAuthor = await getDefinitionByAddress(author);
-
 
 	if (!definitionOfAuthor.length || definitionOfAuthor[0] !== 'autonomous agent') {
 		assetInfo.author = author;
