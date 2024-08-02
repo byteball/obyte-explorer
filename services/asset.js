@@ -326,7 +326,7 @@ async function getAssetInfo(assetUnit) {
 	}
 	
 	if (assetUnit === 'bytes') {
-		assetInfo.assetDescription = 'Basic asset in Obyte network';
+		assetInfo.assetDescription = 'Main asset in Obyte network';
 		
 		return assetInfo;
 	}
