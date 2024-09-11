@@ -149,10 +149,18 @@ async function checkIfExcludeAsset(asset, address) {
 	return rows.length ? 'exclude' : 'save';
 }
 
+async function getTpsFeesBalance(address) {
+	const rows = await db.query("SELECT tps_fees_balance FROM tps_fees_balances WHERE address = ? ORDER BY mci DESC LIMIT 1", [address]);
+	
+	return rows.length ? rows[0].tps_fees_balance : null;
+}
+
 async function getAddressInfo(address, filter) {
 	const { objTransactions, newLastInputsROWID, newLastOutputsROWID, objAssetsCache, unitAssets } = await getAddressTransactions(
 		address, BIGINT, BIGINT, filter, []);
-	
+
+	const tpsFeesBalance = await getTpsFeesBalance(address);
+
 	const rowsOutputs = await db.query(
 		"SELECT * \n\
 		FROM outputs \n\
@@ -263,6 +271,7 @@ async function getAddressInfo(address, filter) {
 			arrAaResponses,
 			arrAasFromTemplate,
 			unitAssets,
+			tpsFeesBalance
 		};
 
 	} else
@@ -282,6 +291,7 @@ async function getAddressInfo(address, filter) {
 						newLastInputsROWID,
 						newLastOutputsROWID,
 						unitAssets,
+						tpsFeesBalance
 					});
 				},
 				ifDefinitionNotFound: function () {
@@ -295,6 +305,7 @@ async function getAddressInfo(address, filter) {
 						newLastInputsROWID,
 						newLastOutputsROWID,
 						unitAssets,
+						tpsFeesBalance
 					});
 				}
 			});

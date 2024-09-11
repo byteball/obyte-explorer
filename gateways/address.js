@@ -21,7 +21,8 @@ async function getAddressData(data, cb) {
 		arrAaResponses,
 		arrAasFromTemplate,
 		unitAssets,
-		baseAaDefinition
+		baseAaDefinition,
+		tpsFeesBalance
 	} = await addressService.getAddressInfo(data.address, data.filter || {});
 
 	if (!objTransactions && !definition) {
@@ -44,6 +45,7 @@ async function getAddressData(data, cb) {
 		arrAasFromTemplate: arrAasFromTemplate,
 		unitAssets,
 		...(baseAaDefinition ? { baseAaDefinition } : {}),
+		tpsFeesBalance,
 		testnet: !!process.env.testnet
 	});
 }
