@@ -150,7 +150,7 @@ async function checkIfExcludeAsset(asset, address) {
 }
 
 async function getTpsFeesBalance(address) {
-	const rows = await db.query("SELECT SUM(tps_fees_balance) as tps_fees_balance FROM tps_fees_balances WHERE address = ? GROUP BY address", [address]);
+	const rows = await db.query("SELECT tps_fees_balance FROM tps_fees_balances WHERE address = ? ORDER BY ROWID DESC LIMIT 1", [address]);
 	
 	return rows.length ? rows[0].tps_fees_balance : null;
 }
