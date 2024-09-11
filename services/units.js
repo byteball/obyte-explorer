@@ -385,7 +385,7 @@ async function checkIsAsset(unit) {
 
 async function getInfoOnUnit(unit) {
 	return new Promise(async (resolve) => {
-		const rows = await db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable FROM units WHERE unit = ?', [unit]);
+		const rows = await db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable,tps_fee,actual_tps_fee,burn_fee,oversize_fee FROM units WHERE unit = ?', [unit]);
 
 		if (!rows.length) {
 			resolve(null);
@@ -419,6 +419,10 @@ async function getInfoOnUnit(unit) {
 					main_chain_index: unitProps.main_chain_index,
 					latest_included_mc_index: unitProps.latest_included_mc_index,
 					level: unitProps.level,
+					tps_fee: unitProps.tps_fee,
+					actual_tps_fee: unitProps.actual_tps_fee,
+					burn_fee: unitProps.burn_fee,
+					oversize_fee: unitProps.oversize_fee,
 					witnessed_level: unitProps.witnessed_level,
 					is_stable: unitProps.is_stable,
 					last_ball_unit: objJoint.unit.last_ball_unit,
