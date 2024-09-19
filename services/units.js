@@ -445,6 +445,10 @@ async function getInfoOnUnit(unit) {
 					objInfo.light_node_confirmation_delay = light_node_confirmation_delay;
 					objInfo.full_node_confirmation_delay = full_node_confirmation_delay;
 				}
+				
+				if (parseInt(objJoint.unit.version) >= 4) {
+					return resolve(objInfo);
+				}
 
 				if (objJoint.unit.witnesses) {
 					objInfo.witnesses = objJoint.unit.witnesses;
