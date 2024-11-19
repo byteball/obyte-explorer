@@ -321,6 +321,7 @@ async function getAssetDescription(assetUnit) {
 async function getAssetInfo(assetUnit) {
 	const assetInfo = {
 		author: '',
+		triggerAuthor: '',
 		authorDefinition: null,
 		assetDescription: ''
 	}
@@ -344,19 +345,17 @@ async function getAssetInfo(assetUnit) {
 
 		return assetInfo;
 	}
-
-	if (!definitionOfAuthor[1].base_aa) {
+	
+	if (definitionOfAuthor[0] === 'autonomous agent') {
+		const triggerUnit = await getTriggerUnit(assetUnit);
+		const triggerUnitAuthorRows = await getUnitAuthor(triggerUnit);
+		
 		assetInfo.author = author;
-		assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
-
-		return assetInfo;
+		assetInfo.triggerAuthor = triggerUnitAuthorRows[0].address;
 	}
 
-	const baseAA = definitionOfAuthor[1].base_aa;
-	const baseAADefinition = await getDefinitionByAddress(baseAA);
-
-	assetInfo.author = baseAA;
-	assetInfo.authorDefinition = JSON.stringify(baseAADefinition);
+	assetInfo.author = author;
+	assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
 
 	return assetInfo;
 }
