@@ -354,14 +354,15 @@ async function getAssetInfo(assetUnit) {
 		
 		assetInfo.author = author;
 		assetInfo.isAuthorAA = true;
+		assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
 		assetInfo.triggerAuthor = triggerUnitAuthorRows[0].address;
-		assetInfo.isTriggerAuthorAA = true;
+
+		const definitionOfTriggerAuthor = await getDefinitionByAddress(author);
+
+		assetInfo.isTriggerAuthorAA = definitionOfTriggerAuthor[0] === 'autonomous agent';
+		
+		return assetInfo;
 	}
-
-	assetInfo.author = author;
-	assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
-
-	return assetInfo;
 }
 
 async function getAssetData(asset) {
