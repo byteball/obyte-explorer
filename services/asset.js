@@ -321,7 +321,9 @@ async function getAssetDescription(assetUnit) {
 async function getAssetInfo(assetUnit) {
 	const assetInfo = {
 		author: '',
+		isAuthorAA: false,
 		triggerAuthor: '',
+		isTriggerAuthorAA: false,
 		authorDefinition: null,
 		assetDescription: ''
 	}
@@ -351,7 +353,9 @@ async function getAssetInfo(assetUnit) {
 		const triggerUnitAuthorRows = await getUnitAuthor(triggerUnit);
 		
 		assetInfo.author = author;
+		assetInfo.isAuthorAA = true;
 		assetInfo.triggerAuthor = triggerUnitAuthorRows[0].address;
+		assetInfo.isTriggerAuthorAA = true;
 	}
 
 	assetInfo.author = author;
