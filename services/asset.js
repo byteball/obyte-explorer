@@ -353,12 +353,24 @@ async function getAssetInfo(assetUnit) {
 
 	assetInfo.author = author;
 	assetInfo.isAuthorAA = true;
-	assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
 	assetInfo.triggerAuthor = triggerUnitAuthorRows[0].address;
 
-	const definitionOfTriggerAuthor = await getDefinitionByAddress(author);
+	const definitionOfTriggerAuthor = await getDefinitionByAddress(assetInfo.triggerAuthor);
 
 	assetInfo.isTriggerAuthorAA = definitionOfTriggerAuthor[0] === 'autonomous agent';
+	
+	const definitionForMetadata = assetInfo.isTriggerAuthorAA ? definitionOfTriggerAuthor : definitionOfAuthor;
+
+	if (!definitionForMetadata[1].base_aa) {
+		assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
+
+		return assetInfo;
+	}
+
+	const baseAA = definitionForMetadata[1].base_aa;
+	const baseAADefinition = await getDefinitionByAddress(baseAA);
+
+	assetInfo.authorDefinition = JSON.stringify(baseAADefinition);
 
 	return assetInfo;
 }
