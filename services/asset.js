@@ -318,6 +318,20 @@ async function getAssetDescription(assetUnit) {
 	return getAssetDescriptionFromVars(assetUnit, rows[0].registry_address);
 }
 
+async function getUnitAuthorOfFirstTrigger(lastTriggerUnit) {
+	const previousTriggerUnit = await getTriggerUnit(lastTriggerUnit);
+
+	const triggerUnitAuthorRows = await getUnitAuthor(previousTriggerUnit);
+
+	const definitionOfTriggerAuthor = await getDefinitionByAddress(triggerUnitAuthorRows[0].address);
+	
+	if (definitionOfTriggerAuthor[0] === 'autonomous agent') {
+		return getUnitAuthorOfFirstTrigger(previousTriggerUnit);
+	}
+	
+	return triggerUnitAuthorRows[0].address;
+}
+
 async function getAssetInfo(assetUnit) {
 	const assetInfo = {
 		author: '',
@@ -348,26 +362,17 @@ async function getAssetInfo(assetUnit) {
 		return assetInfo;
 	}
 
-	const triggerUnit = await getTriggerUnit(assetUnit);
-	const triggerUnitAuthorRows = await getUnitAuthor(triggerUnit);
-
 	assetInfo.author = author;
 	assetInfo.isAuthorAA = true;
-	assetInfo.triggerAuthor = triggerUnitAuthorRows[0].address;
+	assetInfo.triggerAuthor = await getUnitAuthorOfFirstTrigger(assetUnit);
 
-	const definitionOfTriggerAuthor = await getDefinitionByAddress(assetInfo.triggerAuthor);
-
-	assetInfo.isTriggerAuthorAA = definitionOfTriggerAuthor[0] === 'autonomous agent';
-	
-	const definitionForMetadata = assetInfo.isTriggerAuthorAA ? definitionOfTriggerAuthor : definitionOfAuthor;
-
-	if (!definitionForMetadata[1].base_aa) {
+	if (!definitionOfAuthor[1].base_aa) {
 		assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
 
 		return assetInfo;
 	}
 
-	const baseAA = definitionForMetadata[1].base_aa;
+	const baseAA = definitionOfAuthor[1].base_aa;
 	const baseAADefinition = await getDefinitionByAddress(baseAA);
 
 	assetInfo.authorDefinition = JSON.stringify(baseAADefinition);
