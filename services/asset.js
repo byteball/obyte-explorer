@@ -335,9 +335,7 @@ async function getUnitAuthorOfFirstTrigger(lastTriggerUnit) {
 async function getAssetInfo(assetUnit) {
 	const assetInfo = {
 		author: '',
-		isAuthorAA: false,
 		triggerAuthor: '',
-		isTriggerAuthorAA: false,
 		authorDefinition: null,
 		assetDescription: ''
 	}
