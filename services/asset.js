@@ -361,7 +361,6 @@ async function getAssetInfo(assetUnit) {
 	}
 
 	assetInfo.author = author;
-	assetInfo.isAuthorAA = true;
 	assetInfo.triggerAuthor = await getUnitAuthorOfFirstTrigger(assetUnit);
 
 	if (!definitionOfAuthor[1].base_aa) {
