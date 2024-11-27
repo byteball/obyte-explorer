@@ -7,6 +7,8 @@ var async = require('async');
 var constants = require("ocore/constants.js");
 const getAssetNameAndDecimals = require('../api/getAssetNameAndDecimals');
 
+const badUnits = ['WuGpVC1GmjRl6MAiTTodiH+sYExyoJ+NMQrog1DnO3o='];
+
 async function getLastUnits() {
 	const nodes = [];
 	const edges = {};
@@ -385,6 +387,10 @@ async function checkIsAsset(unit) {
 
 async function getInfoOnUnit(unit) {
 	return new Promise(async (resolve) => {
+		if (badUnits.includes(unit)) {
+			return resolve(null);
+		}
+		
 		const rows = await db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable,tps_fee,actual_tps_fee,burn_fee,oversize_fee FROM units WHERE unit = ?', [unit]);
 
 		if (!rows.length) {

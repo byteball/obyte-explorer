@@ -15,9 +15,21 @@ const {
 	getSpentOutputs,
 	getAmountForInfoAddress,
 } = require('./transactions');
+const getAssetUnit = require("../api/getAssetUnit");
+const checkIsAssetValid = require("../helpers/isValidAsset");
 
 async function getUnitsForTransactionsAddress(address, lastInputsROWID, lastOutputsROWID, filter) {
 	const strFilterAsset = filter.asset;
+	
+	if (strFilterAsset && strFilterAsset !== 'all' && strFilterAsset !== 'bytes') {
+		let assetUnit = await getAssetUnit(strFilterAsset) || strFilterAsset;
+		
+		const isValidAsset = checkIsAssetValid(assetUnit);
+		
+		if (!isValidAsset) {
+			return { arrUnits: [] };
+		}
+	}
 	
 	const arrQuerySql = [
 		"SELECT inputs.unit, MIN(inputs.ROWID) AS inputsROWID, MIN(outputs.ROWID) AS outputsROWID, timestamp",
