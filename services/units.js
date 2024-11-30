@@ -251,6 +251,12 @@ async function setDefinitionInAuthors(unit, objJoint) {
 	return objJoint;
 }
 
+async function getUnitSequence(unit) {
+	const rows = await db.query('SELECT sequence FROM units WHERE unit = ?', [unit]);
+
+	return rows[0].sequence;
+}
+
 async function getAaResponses(unit) {
 	const rows = await db.query('SELECT aa_address, response,bounced, response_unit FROM aa_responses WHERE trigger_unit = ?', [unit]);
 
@@ -379,91 +385,85 @@ async function checkIsAsset(unit) {
 
 async function getInfoOnUnit(unit) {
 	return new Promise(async (resolve) => {
-		const rows = await db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable,tps_fee,actual_tps_fee,burn_fee,oversize_fee,sequence FROM units WHERE unit = ?', [unit]);
+		const rows = await db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable,tps_fee,actual_tps_fee,burn_fee,oversize_fee FROM units WHERE unit = ?', [unit]);
 
 		if (!rows.length) {
 			resolve(null);
 		}
 
 		const unitProps = rows[0];
-		const objParentsAndChildren = await getParentsAndChildren(unit);
-		const transfersInfo = await getTransfersInfo(unit)
-		const unitOutputs = await getUnitOutputs(unit);
-		const assocCommissions = await getUnitCommissions(unit);
-		
-		const arrAaResponses = await getAaResponses(unit);
-		const trigger_unit = await getTriggerUnit(unit);
-		const isAsset = await checkIsAsset(unit);
-		
-		let objInfo = {
-			unit: unit,
-			sequence: unitProps.sequence,
-			child: objParentsAndChildren.children,
-			parents: objParentsAndChildren.parents,
-			main_chain_index: unitProps.main_chain_index,
-			latest_included_mc_index: unitProps.latest_included_mc_index,
-			level: unitProps.level,
-			tps_fee: unitProps.tps_fee,
-			actual_tps_fee: unitProps.actual_tps_fee,
-			burn_fee: unitProps.burn_fee,
-			oversize_fee: unitProps.oversize_fee,
-			witnessed_level: unitProps.witnessed_level,
-			is_stable: unitProps.is_stable,
-			transfersInfo: transfersInfo,
-			outputsUnit: unitOutputs,
-			assocCommissions: assocCommissions,
-			arrAaResponses: arrAaResponses,
-			trigger_unit: trigger_unit,
-			isAsset,
-		};
-		
-		if (unitProps.sequence !== 'good') {
-			return resolve(objInfo);
-		}
-		
-		let objJoint;
-		try {
-			objJoint = await storage.readJoint(db, unit);
-		} catch (e) {
-			return resolve(null);
-		}
-		
-		objJoint = await setDefinitionInAuthors(unit, objJoint);
-		const messages = await setAssetNameAndDecimalsInMessages(objJoint.unit.messages);
-		objInfo = {
-			...objInfo,
-			authors: objJoint.unit.authors,
-			headers_commission: objJoint.unit.headers_commission,
-			payload_commission: objJoint.unit.payload_commission,
-			last_ball_unit: objJoint.unit.last_ball_unit,
-			messages: messages,
-			timestamp: objJoint.unit.timestamp,
-			objJoint,
-		}
-		
-		
-		if (unitProps.is_stable) {
-			const {
-				full_node_confirmation_delay,
-				light_node_confirmation_delay
-			} = await getConfirmationDelays(objJoint);
-			objInfo.light_node_confirmation_delay = light_node_confirmation_delay;
-			objInfo.full_node_confirmation_delay = full_node_confirmation_delay;
-		}
-		
-		if (parseInt(objJoint.unit.version) >= 4) {
-			return resolve(objInfo);
-		}
-		
-		if (objJoint.unit.witnesses) {
-			objInfo.witnesses = objJoint.unit.witnesses;
-			
-			resolve(objInfo);
-		} else {
-			objInfo.witnesses = await storage.readWitnesses(db, unit);
-			
-			resolve(objInfo);
-		}
+
+		storage.readJoint(db, unit, {
+			ifFound: async function (objJoint) {
+				const objParentsAndChildren = await getParentsAndChildren(unit);
+				const transfersInfo = await getTransfersInfo(unit)
+				const unitOutputs = await getUnitOutputs(unit);
+				const assocCommissions = await getUnitCommissions(unit);
+
+				objJoint = await setDefinitionInAuthors(unit, objJoint);
+
+				const sequence = await getUnitSequence(unit);
+				const arrAaResponses = await getAaResponses(unit);
+				const trigger_unit = await getTriggerUnit(unit);
+				const messages = await setAssetNameAndDecimalsInMessages(objJoint.unit.messages);
+				const isAsset = await checkIsAsset(unit);
+
+				const objInfo = {
+					unit: unit,
+					sequence: sequence,
+					child: objParentsAndChildren.children,
+					parents: objParentsAndChildren.parents,
+					authors: objJoint.unit.authors,
+					headers_commission: objJoint.unit.headers_commission,
+					payload_commission: objJoint.unit.payload_commission,
+					main_chain_index: unitProps.main_chain_index,
+					latest_included_mc_index: unitProps.latest_included_mc_index,
+					level: unitProps.level,
+					tps_fee: unitProps.tps_fee,
+					actual_tps_fee: unitProps.actual_tps_fee,
+					burn_fee: unitProps.burn_fee,
+					oversize_fee: unitProps.oversize_fee,
+					witnessed_level: unitProps.witnessed_level,
+					is_stable: unitProps.is_stable,
+					last_ball_unit: objJoint.unit.last_ball_unit,
+					messages: messages,
+					transfersInfo: transfersInfo,
+					outputsUnit: unitOutputs,
+					timestamp: objJoint.unit.timestamp,
+					assocCommissions: assocCommissions,
+					arrAaResponses: arrAaResponses,
+					trigger_unit: trigger_unit,
+					isAsset,
+					objJoint,
+				};
+
+				if (unitProps.is_stable) {
+					const {
+						full_node_confirmation_delay,
+						light_node_confirmation_delay
+					} = await getConfirmationDelays(objJoint);
+					objInfo.light_node_confirmation_delay = light_node_confirmation_delay;
+					objInfo.full_node_confirmation_delay = full_node_confirmation_delay;
+				}
+				
+				if (parseInt(objJoint.unit.version) >= 4) {
+					return resolve(objInfo);
+				}
+
+				if (objJoint.unit.witnesses) {
+					objInfo.witnesses = objJoint.unit.witnesses;
+
+					resolve(objInfo);
+				} else {
+					objInfo.witnesses = await storage.readWitnesses(db, unit);
+
+					resolve(objInfo);
+				}
+			},
+			ifNotFound: function () {
+				resolve(null);
+			}
+		});
 	})
 }
 
