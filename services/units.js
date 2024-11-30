@@ -364,6 +364,10 @@ async function goDownMainChainToDetermineConfirmationTimes(parent, arrWitnesses,
 }
 
 async function setAssetNameAndDecimalsInMessages(messages) {
+	if (!messages || messages.length === 0) {
+		return [];
+	}
+	
 	for(let i = 0; i < messages.length; i++) {
 		const m = messages[i];
 		if (m.app === 'payment' && m.payload && m.payload.asset) {
