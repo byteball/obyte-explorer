@@ -18,6 +18,8 @@ const express = require("express");
 const cors = require('cors')
 const { createServer } = require("http");
 const { Server } = require("socket.io");
+const randomString = require('./utils/randomString');
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -56,6 +58,26 @@ eventBus.on('rates_updated', function() {
 	exchange_rates = { ...exchange_rates, ...network.exchangeRates };
 	console.log('rates_updated: ', exchange_rates);
 	io.sockets.emit('rates_updated', exchange_rates);
+});
+
+const activeRequests = new Map();
+app.use((req, res, next) => {
+	const id = randomString();
+	const start = Date.now();
+
+	activeRequests.set(id, { start, url: req.url, method: req.method, params: req.query });
+
+	console.log(`[start:${id}] ${req.url}`);
+	
+	res.on('finish', () => {
+		const end = Date.now() - start;
+		const isLong = end > 1000;
+		console.log(`[end:${id}] ${req.url} ${res.statusCode} ${end}ms${isLong ? ' (long)' : ''}`);
+
+		activeRequests.delete(id);
+	});
+	
+	next();
 });
 
 app.use(cors());
@@ -163,3 +185,15 @@ async function start() {
 	await balanceDumpService.start();
 }
 start();
+
+process.on('uncaughtException', (err) => {
+	console.error('uncaughtException', err);
+	console.error('activeRequests', activeRequests);
+	process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+	console.error('unhandledRejection', reason);
+	console.error('activeRequests', activeRequests);
+	process.exit(1);
+});
