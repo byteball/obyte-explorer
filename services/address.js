@@ -256,7 +256,7 @@ async function getAddressInfo(address, filter) {
 		if(rows[0].base_aa) {
 			const baseAaRows = await db.query("SELECT definition FROM aa_addresses WHERE address=?", [rows[0].base_aa]);
 
-			baseAaDefinition = baseAaRows[0] ? baseAaRows[0].definition : null;
+			baseAaDefinition = baseAaRows[0].definition;
 		}
 		
 		let objStateVars = await storage.readAAStateVars(address);

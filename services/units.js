@@ -273,9 +273,6 @@ function getConfirmationDelays(objJoint){
 	return new Promise((resolve)=>{
 		db.query("SELECT unit FROM units WHERE is_on_main_chain=1 AND main_chain_index=?",[objJoint.unit.main_chain_index],
 			function(rows){
-				if (!rows[0]) {
-					return resolve({ full_node_confirmation_delay: null, light_node_confirmation_delay: null });
-				}
 				goDownMainChainToDetermineConfirmationTimes(rows[0].unit, null,  [], null,
 					function(fullConfirmationTime, lightConfirmationTime) {
 						var full_node_confirmation_delay = fullConfirmationTime ? fullConfirmationTime - objJoint.unit.timestamp : null;
