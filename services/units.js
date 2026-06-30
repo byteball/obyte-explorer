@@ -477,7 +477,7 @@ async function getUnitsThatBecameStable(arrUnits) {
 		return [];
 	}
 
-	return db.query("SELECT unit, is_on_main_chain, is_stable FROM units WHERE unit IN(?) AND is_stable=1", [arrUnits]);
+	return db.query("SELECT unit, is_on_main_chain, is_stable FROM units WHERE unit IN("+arrUnits.map(db.escape).join(', ')+") AND is_stable=1");
 }
 
 async function getRowIdByUnit(unit) {
