@@ -11,6 +11,10 @@ async function getAssetFromDBByName(name) {
 }
 
 module.exports = async (name) => {
+	if (typeof name !== 'string') {
+		return null;
+	}
+
 	if (name === 'base' || name.toLowerCase() === 'gbyte') {
 		return 'bytes';
 	}

@@ -238,7 +238,7 @@ async function setDefinitionInAuthors(unit, objJoint) {
 		if (rowUnitAuthors.length) {
 			const rowDefinitions = await db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash]);
 
-			if (rowDefinitions) {
+			if (rowDefinitions.length) {
 				objJoint.unit.authors[key].definition = rowDefinitions[0].definition;
 			} else {
 				objJoint.unit.authors[key].definition = false;
@@ -254,7 +254,7 @@ async function setDefinitionInAuthors(unit, objJoint) {
 async function getUnitSequence(unit) {
 	const rows = await db.query('SELECT sequence FROM units WHERE unit = ?', [unit]);
 
-	return rows[0].sequence;
+	return rows[0] ? rows[0].sequence : null;
 }
 
 async function getAaResponses(unit) {
@@ -273,6 +273,9 @@ function getConfirmationDelays(objJoint){
 	return new Promise((resolve)=>{
 		db.query("SELECT unit FROM units WHERE is_on_main_chain=1 AND main_chain_index=?",[objJoint.unit.main_chain_index],
 			function(rows){
+				if (!rows[0]) {
+					return resolve({ full_node_confirmation_delay: null, light_node_confirmation_delay: null });
+				}
 				goDownMainChainToDetermineConfirmationTimes(rows[0].unit, null,  [], null,
 					function(fullConfirmationTime, lightConfirmationTime) {
 						var full_node_confirmation_delay = fullConfirmationTime ? fullConfirmationTime - objJoint.unit.timestamp : null;
@@ -392,7 +395,7 @@ async function getInfoOnUnit(unit) {
 		const rows = await db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable,tps_fee,actual_tps_fee,burn_fee,oversize_fee FROM units WHERE unit = ?', [unit]);
 
 		if (!rows.length) {
-			resolve(null);
+			return resolve(null);
 		}
 
 		const unitProps = rows[0];
@@ -473,11 +476,11 @@ async function getInfoOnUnit(unit) {
 
 
 async function getUnitsThatBecameStable(arrUnits) {
-	if (!arrUnits.length) {
+	if (!Array.isArray(arrUnits) || !arrUnits.length || !arrUnits.every(unit => typeof unit === 'string')) {
 		return [];
 	}
 
-	return db.query("SELECT unit, is_on_main_chain, is_stable FROM units WHERE unit IN("+arrUnits.map(db.escape).join(', ')+") AND is_stable=1");
+	return db.query("SELECT unit, is_on_main_chain, is_stable FROM units WHERE unit IN(?) AND is_stable=1", [arrUnits]);
 }
 
 async function getRowIdByUnit(unit) {

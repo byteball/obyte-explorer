@@ -210,6 +210,10 @@ async function getAssetHoldersAndSupply(asset, offset = 0, issuerForUnlimitedCap
 }
 
 async function getMetaOfPrivateAsset(asset) {
+	if (typeof asset !== 'string') {
+		return false;
+	}
+
 	if (asset.toUpperCase() === 'GBB') {
 		asset = constants.BLACKBYTES_ASSET
 	}
@@ -270,7 +274,15 @@ async function getUnitAuthor(unit) {
 async function getDefinitionByAddress(address) {
 	const rows = await db.query("SELECT definition FROM definitions WHERE definition_chash=? UNION SELECT definition FROM aa_addresses WHERE address=? LIMIT 1", [address, address])
 
-	return rows[0] ? JSON.parse(rows[0].definition) : storage.getUnconfirmedAADefinition(address);
+	if (!rows[0]) {
+		return storage.getUnconfirmedAADefinition(address) || [];
+	}
+
+	try {
+		return JSON.parse(rows[0].definition);
+	} catch (e) {
+		return [];
+	}
 }
 
 async function getAssetDescriptionFromVars(asset, registrar) {
@@ -320,8 +332,14 @@ async function getAssetDescription(assetUnit) {
 
 async function getUnitAuthorOfFirstTrigger(lastTriggerUnit) {
 	const previousTriggerUnit = await getTriggerUnit(lastTriggerUnit);
+	if (!previousTriggerUnit) {
+		return '';
+	}
 
 	const triggerUnitAuthorRows = await getUnitAuthor(previousTriggerUnit);
+	if (!triggerUnitAuthorRows[0]) {
+		return '';
+	}
 
 	const definitionOfTriggerAuthor = await getDefinitionByAddress(triggerUnitAuthorRows[0].address);
 	
@@ -349,6 +367,9 @@ async function getAssetInfo(assetUnit) {
 	assetInfo.assetDescription = await getAssetDescription(assetUnit);
 
 	const assetAuthorsRows = await getUnitAuthor(assetUnit);
+	if (!assetAuthorsRows[0]) {
+		return assetInfo;
+	}
 
 	const author = assetAuthorsRows[0].address;
 
@@ -363,7 +384,7 @@ async function getAssetInfo(assetUnit) {
 	assetInfo.author = author;
 	assetInfo.triggerAuthor = await getUnitAuthorOfFirstTrigger(assetUnit);
 
-	if (!definitionOfAuthor[1].base_aa) {
+	if (!definitionOfAuthor[1] || !definitionOfAuthor[1].base_aa) {
 		assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
 
 		return assetInfo;
@@ -378,6 +399,10 @@ async function getAssetInfo(assetUnit) {
 }
 
 async function getAssetData(asset) {
+	if (typeof asset !== 'string') {
+		return { notFound: true };
+	}
+
 	const metaOfPrivateAsset = await getMetaOfPrivateAsset(asset);
 
 	if (metaOfPrivateAsset) {
@@ -410,7 +435,8 @@ async function getAssetData(asset) {
 		if (!unit) {
 			return { notFound: true };
 		}
-		const message = unit.messages.find(msg => msg.app === 'asset');
+		const messages = Array.isArray(unit.messages) ? unit.messages : [];
+		const message = messages.find(msg => msg.app === 'asset');
 		if (message && message.payload.cap) {
 			isLimitedCap = true;
 		}
@@ -437,6 +463,9 @@ async function getAssetData(asset) {
 
 	let issuerForUnlimitedCap = null;
 	if (!isLimitedCap) {
+		if (!unit.authors || !unit.authors[0]) {
+			return { notFound: true };
+		}
 		issuerForUnlimitedCap = unit.authors[0].address;
 	}
 
