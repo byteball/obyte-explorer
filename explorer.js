@@ -97,6 +97,9 @@ function sendJsonResult(res, result) {
 
 function sendRouteError(res, err) {
 	console.error('route error', err);
+	if (res.headersSent || res.writableEnded) {
+		return;
+	}
 	res.status(500).json({ error: 'internal_error', message: 'Internal error' });
 }
 
