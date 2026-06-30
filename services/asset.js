@@ -210,6 +210,10 @@ async function getAssetHoldersAndSupply(asset, offset = 0, issuerForUnlimitedCap
 }
 
 async function getMetaOfPrivateAsset(asset) {
+	if (typeof asset !== 'string') {
+		return false;
+	}
+
 	if (asset.toUpperCase() === 'GBB') {
 		asset = constants.BLACKBYTES_ASSET
 	}
@@ -363,7 +367,7 @@ async function getAssetInfo(assetUnit) {
 	assetInfo.author = author;
 	assetInfo.triggerAuthor = await getUnitAuthorOfFirstTrigger(assetUnit);
 
-	if (!definitionOfAuthor[1].base_aa) {
+	if (!definitionOfAuthor[1]?.base_aa) {
 		assetInfo.authorDefinition = JSON.stringify(definitionOfAuthor);
 
 		return assetInfo;
@@ -378,6 +382,10 @@ async function getAssetInfo(assetUnit) {
 }
 
 async function getAssetData(asset) {
+	if (typeof asset !== 'string') {
+		return { notFound: true };
+	}
+
 	const metaOfPrivateAsset = await getMetaOfPrivateAsset(asset);
 
 	if (metaOfPrivateAsset) {

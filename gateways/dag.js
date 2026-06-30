@@ -13,6 +13,7 @@ async function getLastUnits(cb) {
 
 async function getUnit(data, cb) {
 	if (!cb) return;
+	data = data || {};
 	const rows = await units.getRowIdByUnit(data.unit);
 
 	if (!rows.length) {
@@ -38,6 +39,7 @@ async function getUnit(data, cb) {
 
 async function nextUnits(data, cb) {
 	if (!cb) return;
+	data = data || {};
 	const arrStableUnits = await units.getUnitsThatBecameStable(data.notStable);
 	const { nodes, edges } = await units.getUnitsBeforeRowId(data.last, 100);
 
@@ -50,6 +52,7 @@ async function nextUnits(data, cb) {
 
 async function prevUnits(data, cb) {
 	if (!cb) return;
+	data = data || {};
 	const arrStableUnits = await units.getUnitsThatBecameStable(data.notStable);
 
 	const { nodes, edges } = await units.getUnitsAfterRowId(data.first, 100);
@@ -64,6 +67,7 @@ async function prevUnits(data, cb) {
 
 async function newUnits(data, cb) {
 	if (!cb) return;
+	data = data || {};
 	const arrStableUnits = await units.getUnitsThatBecameStable(data.notStable);
 	const { nodes, edges } = await units.getUnitsAfterRowId(data.unit, 100);
 
@@ -91,6 +95,7 @@ async function info(unit, cb) {
 async function highlightNode(data, cb) {
 	if (!cb) cb = () => {
 	};
+	data = data || {};
 	
 	const rows = await units.getRowIdByUnit(data.unit);
 	

@@ -68,114 +68,161 @@ app.use((req, res, next) => {
 	activeRequests.set(id, { start, url: req.url, method: req.method, params: req.query });
 
 	console.log(`[start:${id}] ${req.url}`);
-	
-	res.on('finish', () => {
+
+	let cleaned = false;
+	function cleanup() {
+		if (cleaned) return;
+		cleaned = true;
 		const end = Date.now() - start;
 		const isLong = end > 1000;
 		console.log(`[end:${id}] ${req.url} ${res.statusCode} ${end}ms${isLong ? ' (long)' : ''}`);
 
 		activeRequests.delete(id);
-	});
-	
+	}
+
+	res.once('finish', cleanup);
+	res.once('close', cleanup);
+
 	next();
 });
 
 app.use(cors());
 
-app.get('/api/unit/:unit', async(req, res) => {
+function sendJsonResult(res, result) {
+	if (result && result.statusCode) {
+		res.status(result.statusCode);
+	}
+	res.json(result);
+}
+
+function sendRouteError(res, err) {
+	console.error('route error', err);
+	if (res.headersSent || res.writableEnded) {
+		return;
+	}
+	res.status(500).json({ error: 'internal_error', message: 'Internal error' });
+}
+
+function asyncRoute(handler) {
+	return (req, res) => {
+		Promise.resolve(handler(req, res)).catch(err => sendRouteError(res, err));
+	};
+}
+
+function registerSocketHandler(socket, eventName, handler) {
+	socket.on(eventName, async (...args) => {
+		const cb = args[args.length - 1];
+		if (typeof cb !== 'function') {
+			return;
+		}
+
+		try {
+			await handler(...args);
+		} catch (err) {
+			console.error('socket handler error', eventName, err);
+			cb({ error: 'internal_error', message: 'Internal error' });
+		}
+	});
+}
+
+app.get('/api/unit/:unit', asyncRoute(async(req, res) => {
 	if (req.params.unit.length !== 44) {
 		return res.json({ notFound: true });
 	}
-	
-	await api.dagGateway.info(req.params.unit, result => {
-		res.json(result);
-	});
-});
 
-app.get('/api/address/:address/info', async (req, res) => {
+	await api.dagGateway.info(req.params.unit, result => {
+		sendJsonResult(res, result);
+	});
+}));
+
+app.get('/api/address/:address/info', asyncRoute(async (req, res) => {
 	if (req.params.address.length !== 32) {
 		return res.json({ notFound: true });
 	}
-	
+
 	const params = {
 		address: req.params.address,
 		...req.query,
 	}
-	
-	await api.addressGateway.getAddressData(params, result => {
-		res.json(result);
-	});
-});
 
-app.get('/api/address/:address/next_page', async (req, res) => {
+	await api.addressGateway.getAddressData(params, result => {
+		sendJsonResult(res, result);
+	});
+}));
+
+app.get('/api/address/:address/next_page', asyncRoute(async (req, res) => {
 	if (req.params.address.length !== 32) {
 		return res.json({ notFound: true });
 	}
-	
+
 	const params = {
 		address: req.params.address,
 		...req.query
 	}
-	
+
 	await api.addressGateway.loadNextPageAddressTransactions(params, result => {
-		res.json(result);
+		sendJsonResult(res, result);
 	});
-});
+}));
 
-app.get('/api/asset/:asset/info', async (req, res) => {
+app.get('/api/asset/:asset/info', asyncRoute(async (req, res) => {
 	const params = {
 		asset: req.params.asset,
 	}
-	
+
 	await api.assetGateway.getAssetData(params, result => {
-		res.json(result);
+		sendJsonResult(res, result);
 	});
-});
+}));
 
-app.get('/api/asset/:asset/next_page_transactions', async (req, res) => {
+app.get('/api/asset/:asset/next_page_transactions', asyncRoute(async (req, res) => {
 	const params = {
 		asset: req.params.asset,
 		...req.query,
 	}
-	
+
 	await api.assetGateway.loadNextPageAssetTransactions(params, result => {
-		res.json(result);
+		sendJsonResult(res, result);
 	});
-});
+}));
 
-app.get('/api/asset/:asset/next_page_holders', async (req, res) => {
+app.get('/api/asset/:asset/next_page_holders', asyncRoute(async (req, res) => {
 	const params = {
 		asset: req.params.asset,
 		...req.query,
 	}
-	
+
 	await api.assetGateway.loadNextPageAssetHolders(params, result => {
-		res.json(result);
+		sendJsonResult(res, result);
 	});
-});
+}));
 
 
 io.on('connection', async (socket) => {
 	socket.emit('rates_updated', exchange_rates);
-	
-	socket.on('info', api.dagGateway.info);
-	socket.on('newUnits', api.dagGateway.newUnits);
-	socket.on('nextUnits', api.dagGateway.nextUnits);
-	socket.on('prevUnits', api.dagGateway.prevUnits);
-	socket.on('getUnit', api.dagGateway.getUnit);
-	socket.on('getLastUnits', api.dagGateway.getLastUnits);
-	socket.on('highlightNode', api.dagGateway.highlightNode);
-	
-	socket.on('getAddressData', api.addressGateway.getAddressData);
-	socket.on('loadNextPageAddressTransactions', api.addressGateway.loadNextPageAddressTransactions);
-	
-	socket.on('getAssetData', api.assetGateway.getAssetData);
-	socket.on('loadNextPageAssetTransactions', api.assetGateway.loadNextPageAssetTransactions);
-	socket.on('loadNextPageAssetHolders', api.assetGateway.loadNextPageAssetHolders);
-	socket.on('fetchAssetNamesList', api.assetGateway.fetchAssetNamesList);
-	await api.assetGateway.fetchAssetNamesList(({ assetNames }) => {
-		socket.emit('updateAssetsList', assetNames);
-	})
+
+	registerSocketHandler(socket, 'info', api.dagGateway.info);
+	registerSocketHandler(socket, 'newUnits', api.dagGateway.newUnits);
+	registerSocketHandler(socket, 'nextUnits', api.dagGateway.nextUnits);
+	registerSocketHandler(socket, 'prevUnits', api.dagGateway.prevUnits);
+	registerSocketHandler(socket, 'getUnit', api.dagGateway.getUnit);
+	registerSocketHandler(socket, 'getLastUnits', api.dagGateway.getLastUnits);
+	registerSocketHandler(socket, 'highlightNode', api.dagGateway.highlightNode);
+
+	registerSocketHandler(socket, 'getAddressData', api.addressGateway.getAddressData);
+	registerSocketHandler(socket, 'loadNextPageAddressTransactions', api.addressGateway.loadNextPageAddressTransactions);
+
+	registerSocketHandler(socket, 'getAssetData', api.assetGateway.getAssetData);
+	registerSocketHandler(socket, 'loadNextPageAssetTransactions', api.assetGateway.loadNextPageAssetTransactions);
+	registerSocketHandler(socket, 'loadNextPageAssetHolders', api.assetGateway.loadNextPageAssetHolders);
+	registerSocketHandler(socket, 'fetchAssetNamesList', api.assetGateway.fetchAssetNamesList);
+	try {
+		await api.assetGateway.fetchAssetNamesList(({ assetNames }) => {
+			socket.emit('updateAssetsList', assetNames);
+		})
+	} catch (err) {
+		console.error('failed to fetch asset names list', err);
+	}
 });
 
 httpServer.listen(conf.webPort);

@@ -1,10 +1,28 @@
 const addressService = require('../services/address');
+const getInvalidAssetResponse = require('../helpers/getInvalidAssetResponse');
 
-async function getAddressData(data, cb) {	
+function normalizeFilter(data) {
 	if (data.asset) {
-		data.filter = {
-			asset: data.asset,
-		};
+		if (typeof data.asset !== 'string') {
+			return getInvalidAssetResponse();
+		}
+		return { filter: { asset: data.asset } };
+	}
+
+	const filter = data.filter || {};
+	if (filter.asset && typeof filter.asset !== 'string') {
+		return getInvalidAssetResponse();
+	}
+
+	return { filter };
+}
+
+async function getAddressData(data, cb) {
+	data = data || {};
+
+	const normalized = normalizeFilter(data);
+	if (normalized.error) {
+		return cb(normalized);
 	}
 
 	const {
@@ -23,12 +41,12 @@ async function getAddressData(data, cb) {
 		unitAssets,
 		baseAaDefinition,
 		tpsFeesBalance
-	} = await addressService.getAddressInfo(data.address, data.filter || {});
+	} = await addressService.getAddressInfo(data.address, normalized.filter);
 
 	if (!objTransactions && !definition) {
 		return cb({ notFound: true });
 	}
-	
+
 	cb({
 		address: data.address,
 		objTransactions: objTransactions,
@@ -51,18 +69,19 @@ async function getAddressData(data, cb) {
 }
 
 async function loadNextPageAddressTransactions(data, cb) {
-	if (data.asset) {
-		data.filter = {
-			asset: data.asset,
-		};
+	data = data || {};
+
+	const normalized = normalizeFilter(data);
+	if (normalized.error) {
+		return cb(normalized);
 	}
-	
+
 	const {
 		objTransactions,
 		newLastInputsROWID,
 		newLastOutputsROWID,
 		unitAssets,
-	} = await addressService.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, data.filter || {});
+	} = await addressService.getAddressTransactions(data.address, data.lastInputsROWID, data.lastOutputsROWID, normalized.filter);
 
 	cb({
 		address: data.address,

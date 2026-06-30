@@ -238,7 +238,7 @@ async function setDefinitionInAuthors(unit, objJoint) {
 		if (rowUnitAuthors.length) {
 			const rowDefinitions = await db.query("SELECT * FROM definitions WHERE definition_chash = ?", [rowUnitAuthors[0].definition_chash]);
 
-			if (rowDefinitions) {
+			if (rowDefinitions.length) {
 				objJoint.unit.authors[key].definition = rowDefinitions[0].definition;
 			} else {
 				objJoint.unit.authors[key].definition = false;
@@ -254,7 +254,7 @@ async function setDefinitionInAuthors(unit, objJoint) {
 async function getUnitSequence(unit) {
 	const rows = await db.query('SELECT sequence FROM units WHERE unit = ?', [unit]);
 
-	return rows[0].sequence;
+	return rows[0] ? rows[0].sequence : null;
 }
 
 async function getAaResponses(unit) {
@@ -392,7 +392,7 @@ async function getInfoOnUnit(unit) {
 		const rows = await db.query('SELECT main_chain_index,latest_included_mc_index,level,witnessed_level,is_stable,tps_fee,actual_tps_fee,burn_fee,oversize_fee FROM units WHERE unit = ?', [unit]);
 
 		if (!rows.length) {
-			resolve(null);
+			return resolve(null);
 		}
 
 		const unitProps = rows[0];
@@ -473,7 +473,7 @@ async function getInfoOnUnit(unit) {
 
 
 async function getUnitsThatBecameStable(arrUnits) {
-	if (!arrUnits.length) {
+	if (!Array.isArray(arrUnits) || !arrUnits.length || !arrUnits.every(unit => typeof unit === 'string')) {
 		return [];
 	}
 
