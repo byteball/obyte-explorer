@@ -247,7 +247,7 @@ async function getAddressInfo(address, filter) {
 	var end = objTransactions ? Object.keys(objTransactions).length < 5 : null;
 	if (isFinite(constants.formulaUpgradeMci)) {
 		const rows = await db.query(
-			"SELECT definition, storage_size, base_aa FROM aa_addresses WHERE address=?",
+			"SELECT definition, unit, storage_size, base_aa FROM aa_addresses WHERE address=?",
 			[address]);
 		if (rows.length === 0)
 			return findRegularDefinition();
@@ -275,6 +275,7 @@ async function getAddressInfo(address, filter) {
 			objAddressAssets,
 			end,
 			definition: rows[0].definition,
+			definitionUnit: rows[0].unit,
 			newLastInputsROWID,
 			newLastOutputsROWID,
 			storage_size: rows[0].storage_size,
