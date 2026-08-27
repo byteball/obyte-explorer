@@ -294,7 +294,7 @@ function getWitnessesForUnit(unit){
 
 function findUnitWhereUnitBecameStable(unit){
 	return new Promise((resolve)=>{
-		db.query("SELECT unit, main_chain_index,\n\
+		db.query("SELECT unit, version, main_chain_index,\n\
 		CASE timestamp \n\
 			WHEN 0 THEN "+ db.getUnixTimestamp("units.creation_date")+" ELSE timestamp \n\
 		END timestamp \n\
@@ -331,6 +331,8 @@ async function goDownMainChainToDetermineConfirmationTimes(parent, arrWitnesses,
 		if (!objStabilizingUnit)
 			return handle();
 		fullConfirmationTime = objStabilizingUnit.timestamp;
+		if (parseFloat(objStabilizingUnit.version) >= constants.fVersion4 && objStabilizingUnit.main_chain_index === null)
+			return handle(fullConfirmationTime);
 		arrWitnesses = await getWitnessesForUnit(objStabilizingUnit.unit);
 		parent = objStabilizingUnit.unit;
 	}
